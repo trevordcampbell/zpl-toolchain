@@ -603,7 +603,7 @@ dependencies = [
 
 [[package]]
 name = "zpl_toolchain_cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "ariadne",
@@ -617,7 +617,7 @@ dependencies = [
 
 [[package]]
 name = "zpl_toolchain_core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -628,7 +628,7 @@ dependencies = [
 
 [[package]]
 name = "zpl_toolchain_diagnostics"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -645,7 +645,7 @@ dependencies = [
 
 [[package]]
 name = "zpl_toolchain_profile"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -663,7 +663,7 @@ dependencies = [
 
 [[package]]
 name = "zpl_toolchain_spec_compiler"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -675,7 +675,7 @@ dependencies = [
 
 [[package]]
 name = "zpl_toolchain_spec_tables"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",

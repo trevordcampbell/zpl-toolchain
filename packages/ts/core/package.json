@@ -1,6 +1,6 @@
 {
   "name": "@zpl-toolchain/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "ZPL II toolchain — parse, validate, and format Zebra Programming Language files",
   "type": "module",
   "exports": {
@@ -15,7 +15,14 @@
     "typecheck": "npx tsc --noEmit",
     "test": "node --test"
   },
-  "keywords": ["zpl", "zebra", "label", "printer", "parser", "formatter"],
+  "keywords": [
+    "zpl",
+    "zebra",
+    "label",
+    "printer",
+    "parser",
+    "formatter"
+  ],
   "license": "MIT OR Apache-2.0",
   "author": "zpl-toolchain contributors",
   "repository": {

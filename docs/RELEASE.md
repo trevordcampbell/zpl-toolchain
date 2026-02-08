@@ -82,8 +82,9 @@ they are distributed through npm, PyPI, and binary downloads instead.
 
 ## Required GitHub secrets
 
-| Secret | Registry | Used by |
-|--------|----------|---------|
+| Secret | Purpose | Used by |
+|--------|---------|---------|
+| `RELEASE_PLZ_TOKEN` | GitHub PAT (contents + PRs) | release-plz.yml |
 | `CARGO_REGISTRY_TOKEN` | crates.io | release-plz.yml |
 | `NPM_TOKEN` | npmjs.com | release-plz.yml |
 | `PYPI_TOKEN` | pypi.org | release-plz.yml |

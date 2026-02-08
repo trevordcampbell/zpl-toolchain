@@ -1,6 +1,6 @@
 # Publish All Packages — Plan
 
-> **Status (2026-02-08):** Phase 6 complete. Full release automation via release-plz is configured. First publish pending (use `scripts/publish.sh` for v0.1.0, then release-plz handles all future releases).
+> **Status (2026-02-08):** All phases complete. v0.1.0 published to crates.io. All future releases are automated via release-plz.
 
 ## How releases work
 
@@ -18,7 +18,7 @@
 
 ### Manual fallback — `scripts/publish.sh`
 
-For first-time publishing or emergencies. Dry-run by default — pass `--live` to publish.
+For emergencies or manual one-off publishes. Dry-run by default — pass `--live` to publish.
 
 ```bash
 ./scripts/publish.sh crates           # dry-run 6 crates to crates.io

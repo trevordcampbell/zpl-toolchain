@@ -305,3 +305,35 @@ jobs:
           tag_name: ${{ needs.release.outputs.tag }}
           files: |
             artifacts/**/*
+
+  # ── Tag the Go module so `go get` can resolve versions ────────────────
+  tag-go:
+    name: Tag Go module
+    needs: [release]
+    if: needs.release.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+          token: ${{ secrets.RELEASE_PLZ_TOKEN }}
+
+      - name: Create Go module tag
+        run: |
+          # Go modules in subdirectories need a prefixed tag:
+          #   packages/go/zpltoolchain/v0.1.1
+          VERSION="${TAG#v}"
+          GO_TAG="packages/go/zpltoolchain/v${VERSION}"
+
+          # Idempotent: skip if the tag already exists (e.g., workflow re-run)
+          if git ls-remote --tags origin "refs/tags/$GO_TAG" | grep -q "$GO_TAG"; then
+            echo "Go module tag $GO_TAG already exists — skipping"
+          else
+            echo "Creating Go module tag: $GO_TAG"
+            git tag "$GO_TAG"
+            git push origin "$GO_TAG"
+          fi
+        env:
+          TAG: ${{ needs.release.outputs.tag }}

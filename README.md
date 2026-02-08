@@ -1,5 +1,11 @@
 # zpl-toolchain
 
+[![CI](https://github.com/trevordcampbell/zpl-toolchain/actions/workflows/ci.yml/badge.svg)](https://github.com/trevordcampbell/zpl-toolchain/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/zpl_toolchain_cli.svg)](https://crates.io/crates/zpl_toolchain_cli)
+[![npm](https://img.shields.io/npm/v/@zpl-toolchain/core.svg)](https://www.npmjs.com/package/@zpl-toolchain/core)
+[![PyPI](https://img.shields.io/pypi/v/zpl-toolchain.svg)](https://pypi.org/project/zpl-toolchain/)
+[![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue.svg)](#license)
+
 A spec-first, offline, deterministic **ZPL II toolchain** — parse, validate, format, and lint Zebra Programming Language files with a Rust core and bindings for TypeScript, Python, Go, and .NET.
 
 ## Features
@@ -43,11 +49,15 @@ graph TD
 cargo install zpl_toolchain_cli
 ```
 
+> [crates.io/crates/zpl_toolchain_cli](https://crates.io/crates/zpl_toolchain_cli)
+
 ### Rust library
 
 ```bash
 cargo add zpl_toolchain_core
 ```
+
+> [crates.io/crates/zpl_toolchain_core](https://crates.io/crates/zpl_toolchain_core)
 
 ### TypeScript / JavaScript (WASM)
 
@@ -55,11 +65,24 @@ cargo add zpl_toolchain_core
 npm install @zpl-toolchain/core
 ```
 
+> [npmjs.com/package/@zpl-toolchain/core](https://www.npmjs.com/package/@zpl-toolchain/core)
+
 ### Python
 
 ```bash
 pip install zpl-toolchain
 ```
+
+> [pypi.org/project/zpl-toolchain](https://pypi.org/project/zpl-toolchain/)
+
+### Go
+
+```bash
+go get github.com/trevordcampbell/zpl-toolchain/packages/go/zpltoolchain
+```
+
+> Requires the C FFI shared library (`libzpl_toolchain_ffi`) — see the [Go package README](packages/go/zpltoolchain/README.md) for setup instructions.
+> Pre-built FFI binaries for Linux, macOS, and Windows are attached to each [GitHub Release](https://github.com/trevordcampbell/zpl-toolchain/releases).
 
 ## Getting started
 

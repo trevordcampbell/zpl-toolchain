@@ -24,9 +24,6 @@ use crate::render::{Format, print_summary, render_diagnostics};
 #[cfg(has_embedded_tables)]
 const EMBEDDED_TABLES_JSON: &str = include_str!(concat!(env!("OUT_DIR"), "/parser_tables.json"));
 
-#[cfg(not(has_embedded_tables))]
-const EMBEDDED_TABLES_JSON: &str = "";
-
 // ── CLI definition ──────────────────────────────────────────────────────
 
 #[derive(Parser, Debug)]

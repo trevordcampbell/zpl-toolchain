@@ -1,3 +1,5 @@
+//! Printer profile definitions and validation for the ZPL toolchain.
+
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 

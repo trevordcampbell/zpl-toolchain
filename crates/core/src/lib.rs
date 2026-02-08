@@ -1,7 +1,7 @@
 //! ZPL toolchain core library.
 //!
 //! Provides parsing, validation, and emission of ZPL (Zebra Programming
-//! Language) label code. The main entry points are [`parse_str`] for parsing,
+//! Language) label code.  The main entry points are [`parse_str`] for parsing,
 //! [`validate_with_profile`] for validation, and [`emit_zpl`] for formatted
 //! output.
 

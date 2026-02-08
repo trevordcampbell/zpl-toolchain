@@ -1,7 +1,8 @@
+//! ZPL CLI — parse, lint, format, and validate Zebra Programming Language files.
+
 mod render;
 
 use std::fs;
-
 use std::process;
 
 use anyhow::{Context, Result};

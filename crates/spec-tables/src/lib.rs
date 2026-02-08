@@ -1,9 +1,9 @@
 //! ZPL command specification tables.
 //!
 //! Defines the data structures for ZPL command metadata, including command
-//! entries, argument schemas, constraints, and an opcode trie for fast
-//! command recognition. These tables are deserialized from the generated
-//! JSON spec and consumed by the parser and validator.
+//! entries, argument schemas, constraints, and an opcode trie for fast command
+//! recognition.  These tables are deserialized from the generated JSON spec
+//! and consumed by the parser and validator.
 
 #![warn(missing_docs)]
 

@@ -1,8 +1,8 @@
 //! Diagnostics for the ZPL toolchain.
 //!
 //! Provides [`Diagnostic`], [`Severity`], [`Span`], and [`LineIndex`] types
-//! used to report errors, warnings, and informational messages from the
-//! parser and validator. Diagnostic codes are defined in the [`codes`] module.
+//! used to report errors, warnings, and informational messages from the parser
+//! and validator. Diagnostic codes are defined in the [`codes`] module.
 
 #![warn(missing_docs)]
 

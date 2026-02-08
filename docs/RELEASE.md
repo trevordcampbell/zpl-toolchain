@@ -18,7 +18,7 @@ Releases are fully automated via [release-plz](https://release-plz.ieni.dev/) an
 
 ### Manual fallback
 
-For first-time publishing or emergencies, use `scripts/publish.sh`:
+For emergencies or manual one-off publishes, use `scripts/publish.sh`:
 
 ```bash
 ./scripts/publish.sh crates           # dry-run crates to crates.io
@@ -79,6 +79,11 @@ release-plz handles ordering automatically. For manual publishing, follow this o
 
 Binding crates (`bindings-common`, `wasm`, `python`, `ffi`) have `publish = false` —
 they are distributed through npm, PyPI, and binary downloads instead.
+
+> **Version syncing**: release-plz only bumps `Cargo.toml` versions. After creating
+> the Release PR, a workflow step automatically syncs `package.json` (npm) and
+> `pyproject.toml` (PyPI) versions to match, so all ecosystems stay in lockstep
+> and the repo always reflects the true version at every commit.
 
 ## Required GitHub secrets
 

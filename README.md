@@ -35,6 +35,32 @@ graph TD
     FFI --> DOTNET[".NET"]
 ```
 
+## Installation
+
+### CLI
+
+```bash
+cargo install zpl_toolchain_cli
+```
+
+### Rust library
+
+```bash
+cargo add zpl_toolchain_core
+```
+
+### TypeScript / JavaScript (WASM)
+
+```bash
+npm install @zpl-toolchain/core
+```
+
+### Python
+
+```bash
+pip install zpl-toolchain
+```
+
 ## Getting started
 
 ### 1. Build parser tables
@@ -159,7 +185,7 @@ zpl-toolchain/
 | [Diagnostic Codes](docs/DIAGNOSTIC_CODES.md) | All 42 diagnostic codes explained |
 | [Barcode Data Rules](docs/BARCODE_DATA_RULES.md) | Barcode field data validation |
 | [State Map](docs/STATE_MAP.md) | Cross-command state tracking |
-| [Release Process](docs/RELEASE.md) | Versioning, checklist, publishing order |
+| [Release Process](docs/RELEASE.md) | Automated release workflow and publishing |
 | [ADR Index](docs/adr/INDEX.md) | Architecture Decision Records |
 | [Backlog](docs/BACKLOG.md) | Future work and task tracking |
 

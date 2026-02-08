@@ -30,14 +30,59 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: true
+          token: ${{ secrets.RELEASE_PLZ_TOKEN }}
 
       - uses: ./.github/actions/setup-rust
 
-      - uses: release-plz/action@v0.5
+      - name: Run release-plz release-pr
+        id: release-pr
+        uses: release-plz/action@v0.5
         with:
           command: release-pr
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
+
+      # Sync non-Cargo package versions (npm, PyPI) into the release PR
+      # so the repo always reflects the true version at every commit.
+      - name: Sync npm + PyPI versions in release PR
+        if: steps.release-pr.outputs.pr != ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
+          PR_JSON: ${{ steps.release-pr.outputs.pr }}
+        run: |
+          set -e
+
+          PR_NUMBER=$(echo "$PR_JSON" | jq -r '.number')
+          VERSION=$(echo "$PR_JSON" | jq -r \
+            '.releases[] | select(.package_name == "zpl_toolchain_cli") | .version')
+
+          if [[ -z "$VERSION" || "$VERSION" == "null" ]]; then
+            echo "No CLI version in release PR — skipping version sync"
+            exit 0
+          fi
+
+          echo "Syncing non-Cargo packages to v$VERSION (PR #$PR_NUMBER)"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          gh pr checkout "$PR_NUMBER"
+
+          # npm: package.json
+          (cd packages/ts/core && npm version "$VERSION" --no-git-tag-version)
+
+          # PyPI: pyproject.toml
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" crates/python/pyproject.toml
+
+          if git diff --quiet; then
+            echo "Versions already in sync"
+          else
+            git add packages/ts/core/package.json crates/python/pyproject.toml
+            git commit -m "chore: sync npm/PyPI versions to $VERSION"
+            git push
+            echo "Committed version sync to PR #$PR_NUMBER"
+          fi
 
   # ── Publish crates + create tag / GH Release ─────────────────────────
   release:

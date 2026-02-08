@@ -13,8 +13,8 @@ Releases are fully automated via [release-plz](https://release-plz.ieni.dev/) an
    - Publishes crates to crates.io (dependency-ordered)
    - Creates a git tag (`v0.x.y`)
    - Creates a GitHub Release with changelog notes
-   - Triggers npm, PyPI, and binary build jobs
-5. Done — all registries updated, artifacts uploaded
+   - Triggers npm, PyPI, binary build, and Go module tagging jobs
+5. Done — all registries updated, artifacts uploaded, Go tag pushed
 
 ### Manual fallback
 
@@ -111,7 +111,7 @@ Skip any hook when needed: `git commit --no-verify` or `git push --no-verify`.
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `ci.yml` | Push / PR | Build, test, clippy, fmt |
-| `release-plz.yml` | Push to main | Release PR + automated publish |
+| `release-plz.yml` | Push to main | Release PR + automated publish (crates.io, npm, PyPI, Go tag) |
 | `release.yml` | Tag push `v*` | Manual fallback: build binaries + GitHub Release |
 
 ## Configuration files

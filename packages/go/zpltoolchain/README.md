@@ -2,6 +2,12 @@
 
 Go wrapper for the ZPL toolchain via the C FFI shared library (`libzpl_toolchain_ffi`).
 
+## Install
+
+```bash
+go get github.com/trevordcampbell/zpl-toolchain/packages/go/zpltoolchain
+```
+
 ## Prerequisites
 
 Build the C FFI shared library first:
@@ -20,7 +26,7 @@ package main
 
 import (
     "fmt"
-    "github.com/zpl-toolchain/zpl-toolchain/packages/go/zpltoolchain"
+    "github.com/trevordcampbell/zpl-toolchain/packages/go/zpltoolchain"
 )
 
 func main() {

@@ -1,0 +1,18 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~KB"],
+      "printerGates": ["battery"],
+      "name": "Kill Battery (Battery Discharge Mode)",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [
+        { "kind": "note", "message": "Discharge Mode can be terminated by sending a printing format or pressing a control panel key. If the charger is plugged in, the battery is automatically recharged once discharge completes. Green power LED flashes in groups of three during discharge." }
+      ],
+      "docs": "Places the printer in battery discharge mode, allowing the battery to be fully drained without printing. Used to maintain rechargeable battery performance in portable printers."
+    }
+  ]
+}

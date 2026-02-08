@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^JT"],
+      "name": "Head Test Interval",
+      "plane": "device",
+      "scope": "session",
+      "arity": 4,
+      "signature": { "params": ["n","a","b","c"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "test_interval", "key": "n", "type": "int", "range": [0, 9999], "optional": true, "default": 0,
+          "doc": "Number of labels printed between head tests. Values: 0 to 9999. 0 = off. Values greater than 9999 are ignored." },
+        { "name": "manual_range", "key": "a", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Manually select range of elements to test. Y = yes, N = no." },
+        { "name": "first_element", "key": "b", "type": "int", "range": [0, 9999], "optional": true, "default": 0,
+          "doc": "First element to check when manual_range is Y. Values: 0 to 9999." },
+        { "name": "last_element", "key": "c", "type": "int", "range": [0, 9999], "optional": true, "default": 9999,
+          "doc": "Last element to check when manual_range is Y. Values: 0 to 9999. If greater than print width, test stops at selected print width." }
+      ],
+      "effects": { "sets": ["headTest.interval", "headTest.manualRange", "headTest.firstElement", "headTest.lastElement"] },
+      "constraints": [],
+      "docs": "Changes the printhead test interval. Supports testing a range of print elements. The printer automatically selects the test range by tracking which elements have been used since the previous test."
+    }
+  ]
+}

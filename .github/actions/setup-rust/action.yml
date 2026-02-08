@@ -1,0 +1,40 @@
+name: Setup Rust & Build Tables
+description: Install Rust toolchain, cache dependencies, and build parser tables
+
+inputs:
+  cache-key:
+    description: Shared cache key suffix
+    required: false
+    default: ''
+  components:
+    description: Additional rustup components (comma-separated)
+    required: false
+    default: ''
+  targets:
+    description: Additional rustup targets (comma-separated)
+    required: false
+    default: ''
+  build-tables:
+    description: Whether to build parser tables
+    required: false
+    default: 'true'
+
+runs:
+  using: composite
+  steps:
+    - uses: dtolnay/rust-toolchain@master
+      with:
+        toolchain: 1.93.0
+        components: ${{ inputs.components }}
+        targets: ${{ inputs.targets }}
+
+    - uses: Swatinem/rust-cache@v2
+      with:
+        shared-key: ${{ inputs.cache-key }}
+
+    - name: Build parser tables
+      if: inputs.build-tables == 'true'
+      shell: bash
+      run: |
+        cargo build -p zpl_toolchain_spec_compiler --locked
+        cargo run -p zpl_toolchain_spec_compiler --locked -- build --spec-dir spec --out-dir generated

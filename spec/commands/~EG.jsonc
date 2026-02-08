@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~EG"],
+      "name": "Erase Download Graphics",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Erases all downloaded graphic images from the printer. See ^ID for selective deletion of stored objects."
+    }
+  ]
+}

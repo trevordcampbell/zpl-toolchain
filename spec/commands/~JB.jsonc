@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JB"],
+      "name": "Reset Optional Memory",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Resets battery-powered optional memory (B: card). Must be sent if the battery supplying power to the memory card is replaced. Can also be used to reinitialize the B: memory card (card must not be write protected)."
+    }
+  ]
+}

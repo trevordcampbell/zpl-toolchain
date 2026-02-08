@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JC"],
+      "name": "Set Media Sensor Calibration",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Forces a label length measurement and adjusts media and ribbon sensor values. In Continuous Mode, only the media and ribbon sensors are calibrated. Ignored on HC100 printers."
+    }
+  ]
+}

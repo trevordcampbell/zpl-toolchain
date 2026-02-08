@@ -1,0 +1,26 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^WA"],
+      "name": "Set Antenna Parameters",
+      "plane": "device",
+      "scope": "session",
+      "arity": 2,
+      "signature": { "params": ["a","b"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "receive_antenna", "key": "a", "type": "enum",
+          "enum": ["D","L","R"],
+          "optional": true, "default": "D",
+          "doc": "Receive antenna. D = diversity, L = left, R = right." },
+        { "name": "transmit_antenna", "key": "b", "type": "enum",
+          "enum": ["D","L","R"],
+          "optional": true, "default": "D",
+          "doc": "Transmit antenna. D = diversity, L = left, R = right." }
+      ],
+      "constraints": [],
+      "docs": "Sets the values for the receive and transmit antenna."
+    }
+  ]
+}

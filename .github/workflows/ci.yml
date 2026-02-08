@@ -1,0 +1,174 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel in-flight CI runs for the same branch/PR.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+  RUSTFLAGS: -D warnings
+
+jobs:
+  # ── Core: build, lint, test across OS matrix ──────────────────────────
+  build:
+    name: Build & Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          components: rustfmt, clippy
+          cache-key: ci-${{ matrix.os }}
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Build workspace
+        run: cargo build --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+
+      - name: Clippy
+        run: cargo clippy --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python -- -D warnings
+
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
+
+      - name: Test
+        run: cargo nextest run --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+
+  # ── Spec-compiler: validate spec files ────────────────────────────────
+  spec-check:
+    name: Spec Validation & Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: ci-spec-check
+          build-tables: 'false'
+
+      - name: Build spec-compiler
+        run: cargo build -p zpl_toolchain_spec_compiler --locked
+
+      - name: Validate spec files (check command)
+        run: cargo run -p zpl_toolchain_spec_compiler --locked -- check --spec-dir spec
+
+      - name: Build tables + coverage
+        run: cargo run -p zpl_toolchain_spec_compiler --locked -- build --spec-dir spec --out-dir generated
+
+      - name: Report coverage
+        run: |
+          if [ -f generated/coverage.json ]; then
+            cargo run -p zpl_toolchain_cli -- coverage --coverage generated/coverage.json
+          else
+            echo "::warning::coverage.json not generated"
+          fi
+
+  # ── WASM build + size check ───────────────────────────────────────────
+  wasm:
+    name: WASM Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          targets: wasm32-unknown-unknown
+          cache-key: ci-wasm
+
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@wasm-pack
+
+      - name: Build WASM
+        run: wasm-pack build crates/wasm --target bundler
+
+      - name: Check WASM size
+        run: |
+          WASM_FILE=$(find crates/wasm/pkg -name '*.wasm' -type f | head -1)
+          if [ -n "$WASM_FILE" ]; then
+            SIZE=$(wc -c < "$WASM_FILE")
+            GZIP_SIZE=$(gzip -c "$WASM_FILE" | wc -c)
+            echo "### WASM Size Report" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Metric | Size |" >> "$GITHUB_STEP_SUMMARY"
+            echo "|--------|------|" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Raw | $(($SIZE / 1024)) KB |" >> "$GITHUB_STEP_SUMMARY"
+            echo "| Gzipped | $(($GZIP_SIZE / 1024)) KB |" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$GZIP_SIZE" -gt 512000 ]; then
+              echo "::warning::WASM gzipped size exceeds 500KB ($GZIP_SIZE bytes)"
+            fi
+          fi
+
+  # ── Python wheel build ────────────────────────────────────────────────
+  python:
+    name: Python Wheel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: ci-python
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Build Python wheel
+        run: maturin build -m crates/python/Cargo.toml
+
+  # ── C FFI shared library build ────────────────────────────────────────
+  ffi:
+    name: C FFI (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: ci-ffi-${{ matrix.os }}
+
+      - name: Build C FFI (release)
+        run: cargo build -p zpl_toolchain_ffi --release
+
+      - name: Verify shared library (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          LIB=$(find target/release -name 'libzpl_toolchain_ffi.so' -o -name 'libzpl_toolchain_ffi.dylib' | head -1)
+          if [ -n "$LIB" ]; then
+            echo "FFI library built: $LIB"
+            ls -lh "$LIB"
+          else
+            echo "::error::FFI shared library not found"
+            exit 1
+          fi
+
+      - name: Verify shared library (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $lib = Get-ChildItem -Path target/release -Filter "zpl_toolchain_ffi.dll" -Recurse | Select-Object -First 1
+          if ($lib) {
+            Write-Host "FFI library built: $($lib.FullName)"
+            Write-Host "Size: $([math]::Round($lib.Length / 1KB)) KB"
+          } else {
+            Write-Error "FFI shared library not found"
+            exit 1
+          }

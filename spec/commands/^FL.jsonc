@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^FL"],
+      "name": "Font Linking",
+      "plane": "device",
+      "scope": "session",
+      "arity": 3,
+      "signature": { "params": ["ext", "base", "link"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "extension_font", "key": "ext", "type": "string",
+          "doc": "Fully-qualified filename of the extension font (e.g. E:SWISS721.TTF). Supported extensions: .TTF and .TTE." },
+        { "name": "base_font", "key": "base", "type": "string",
+          "doc": "Filename of the base font(s). Can be .FNT, .TTF, or .TTE. Wildcards supported (e.g. *.TTF)." },
+        { "name": "link_action", "key": "link", "type": "enum",
+          "enum": ["0", "1"],
+          "doc": "Link action. 0 = unlink extension from base, 1 = link extension with base." }
+      ],
+      "effects": { "sets": ["font.linking"] },
+      "constraints": [
+        { "kind": "note", "message": "A font can have up to five fonts linked to it. Use ^JUS to permanently save. Linking remains until broken or printer power off." }
+      ],
+      "docs": "Links TrueType fonts together so that if the base font lacks a glyph, the printer looks to linked fonts for the character."
+    }
+  ]
+}

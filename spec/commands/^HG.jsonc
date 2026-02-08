@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^HG"],
+      "name": "Host Graphic",
+      "plane": "device",
+      "scope": "document",
+      "arity": 3,
+      "signature": { "params": ["d","o","x"], "joiner": ":", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Device location of object. Values: R:, E:, B:, and A:. Default: search priority." },
+        { "name": "name", "key": "o", "type": "string", "optional": true,
+          "doc": "Object name. 1 to 8 alphanumeric characters. Default: UNKNOWN." },
+        { "name": "extension", "key": "x", "type": "string", "optional": true, "default": "GRF",
+          "doc": "Extension. Fixed value: .GRF." }
+      ],
+      "constraints": [],
+      "docs": "Uploads graphic data from the printer to the host computer. The graphic image can be stored for future use or downloaded to any Zebra printer."
+    }
+  ]
+}

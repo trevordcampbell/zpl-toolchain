@@ -1,0 +1,17 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~HB"],
+      "name": "Battery Status",
+      "plane": "device",
+      "scope": "document",
+      "arity": 0,
+      "constraints": [
+        { "kind": "note", "message": "Only responds to mobile printers. Returns <STX>hh.hh,bb.bb,bt<ETX><CR><LF> where hh.hh = head voltage, bb.bb = battery voltage, bt = battery temperature in Celsius." }
+      ],
+      "docs": "Returns battery status information including head voltage, battery voltage, and battery temperature to the host."
+    }
+  ]
+}

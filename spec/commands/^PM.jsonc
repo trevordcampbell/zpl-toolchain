@@ -1,0 +1,22 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^PM"],
+      "name": "Printing Mirror Image of Label",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "mirror", "key": "a", "type": "enum", "enum": ["N", "Y"],
+          "optional": true, "default": "N",
+          "doc": "N = normal printing, Y = mirror image (flips left to right)." }
+      ],
+      "effects": { "sets": ["print.mirror"] },
+      "constraints": [],
+      "docs": "Prints the entire printable area of the label as a mirror image, flipping left to right. Remains active until ^PMN is received or printer is powered off."
+    }
+  ]
+}

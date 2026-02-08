@@ -1,0 +1,48 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^WE"],
+      "name": "Set WEP Mode",
+      "plane": "device",
+      "scope": "session",
+      "arity": 8,
+      "signature": { "params": ["a","b","c","d","e","f","g","h"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "encryption_mode", "key": "a", "type": "enum",
+          "enum": ["OFF","40","128"],
+          "optional": true, "default": "OFF",
+          "doc": "OFF = disabled, 40 = 40-bit encryption, 128 = 128-bit encryption." },
+        { "name": "encryption_index", "key": "b", "type": "enum",
+          "enum": ["1","2","3","4"],
+          "optional": true, "default": "1",
+          "doc": "Which encryption key to use. 1-4." },
+        { "name": "authentication_type", "key": "c", "type": "enum",
+          "enum": ["O","S"],
+          "optional": true, "default": "O",
+          "doc": "O = Open System, S = Shared Key. Shared Key resets to O if Encryption Mode is OFF." },
+        { "name": "key_storage", "key": "d", "type": "enum",
+          "enum": ["H","S"],
+          "optional": true, "default": "H",
+          "doc": "H = Hex key storage, S = String key storage." },
+        { "name": "key_1", "key": "e", "type": "string",
+          "optional": true,
+          "doc": "Encryption key 1. For 40-bit: 5 hex pairs or 10 alphanumeric chars. For 128-bit: 13 hex pairs or 26 alphanumeric chars. Do not add leading 0x for hex storage." },
+        { "name": "key_2", "key": "f", "type": "string",
+          "optional": true,
+          "doc": "Encryption key 2. Same format as key_1." },
+        { "name": "key_3", "key": "g", "type": "string",
+          "optional": true,
+          "doc": "Encryption key 3. Same format as key_1." },
+        { "name": "key_4", "key": "h", "type": "string",
+          "optional": true,
+          "doc": "Encryption key 4. Same format as key_1." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Provided only for backward-compatibility with printers using firmware prior to V50.15.x or X60.15.x. Use ^WX for newer firmware. Not valid for Link-OS v6 or later. Be careful to include the exact number of commas required when setting encryption keys." }
+      ],
+      "docs": "Enables Wired Equivalent Privacy (WEP) mode and sets WEP encryption values for wireless security."
+    }
+  ]
+}

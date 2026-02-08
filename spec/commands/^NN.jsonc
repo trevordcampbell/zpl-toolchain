@@ -1,0 +1,36 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^NN"],
+      "name": "Set SNMP",
+      "plane": "device",
+      "scope": "session",
+      "arity": 6,
+      "signature": { "params": ["a","b","c","d","e","f"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "system_name", "key": "a", "type": "string",
+          "optional": true,
+          "doc": "System name (same as printer name). Up to 17 alphanumeric characters." },
+        { "name": "system_contact", "key": "b", "type": "string",
+          "optional": true,
+          "doc": "Contact information such as a name or phrase. Up to 50 alphanumeric characters." },
+        { "name": "system_location", "key": "c", "type": "string",
+          "optional": true,
+          "doc": "Printer's model information. Up to 50 alphanumeric characters." },
+        { "name": "get_community", "key": "d", "type": "string",
+          "optional": true, "default": "public",
+          "doc": "Get community name. Up to 19 alphanumeric characters." },
+        { "name": "set_community", "key": "e", "type": "string",
+          "optional": true, "default": "public",
+          "doc": "Set community name. Up to 19 alphanumeric characters." },
+        { "name": "trap_community", "key": "f", "type": "string",
+          "optional": true, "default": "public",
+          "doc": "Trap community name. Up to 20 alphanumeric characters." }
+      ],
+      "constraints": [],
+      "docs": "Sets the Simple Network Management Protocol (SNMP) parameters."
+    }
+  ]
+}

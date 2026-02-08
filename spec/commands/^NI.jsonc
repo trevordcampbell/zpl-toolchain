@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^NI"],
+      "name": "Network ID Number",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "network_id", "key": "a", "type": "string",
+          "optional": true, "default": "000",
+          "doc": "Network ID number assigned, must be a three-digit entry. Values: 001 to 999. Default: 000 (none)." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "The last network ID number set is the one recognized by the system. Used only with RS-485 printer communications." }
+      ],
+      "docs": "Assigns a network ID number to the printer for use in a network."
+    }
+  ]
+}

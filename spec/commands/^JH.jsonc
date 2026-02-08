@@ -1,0 +1,40 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^JH"],
+      "printerGates": ["lcd"],
+      "name": "Early Warning Settings",
+      "plane": "device",
+      "scope": "session",
+      "arity": 10,
+      "signature": { "params": ["a","b","c","d","e","f","g","h","i","j"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "early_warning_media", "key": "a", "type": "enum", "enum": ["E","D"], "optional": true, "default": "D",
+          "doc": "Early warning for media/supplies. E = enable, D = disable." },
+        { "name": "labels_per_roll", "key": "b", "type": "int", "range": [100, 9999], "optional": true, "default": 900,
+          "doc": "Labels per roll. Values: 100 to 9999." },
+        { "name": "media_replaced", "key": "c", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Media replaced flag. Y = yes, N = no." },
+        { "name": "ribbon_length", "key": "d", "type": "string", "optional": true, "default": "7",
+          "doc": "Ribbon length setting. N = 0M, 0 = 100M, 1 = 150M, 2 = 200M, 3 = 250M, 4 = 300M, 5 = 350M, 6 = 400M, 7 = 450M, 10-16 for extended lengths. Default: 1 for 96XiIIIPlus, 7 for all others." },
+        { "name": "ribbon_replaced", "key": "e", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Ribbon replaced flag. Y = yes, N = no." },
+        { "name": "early_warning_maintenance", "key": "f", "type": "enum", "enum": ["E","D"], "optional": true, "default": "D",
+          "doc": "Early warning for maintenance. E = enabled, D = disabled." },
+        { "name": "head_cleaning_interval", "key": "g", "type": "string", "optional": true, "default": "7",
+          "doc": "Head cleaning interval. 0 = 100M through 16 = 900M. Default: 1 for 96XiIIIPlus, 7 for all others." },
+        { "name": "head_clean", "key": "h", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Head clean flag. Y = yes, N = no." },
+        { "name": "head_life_threshold", "key": "i", "type": "int", "range": [0, 3500000], "optional": true, "default": 1000000,
+          "doc": "Head life threshold in inches. 0 = off, 100-3500000 = threshold." },
+        { "name": "head_replaced", "key": "j", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Head replaced flag. Y = yes, N = no." }
+      ],
+      "effects": { "sets": ["earlyWarning.media", "earlyWarning.ribbon", "earlyWarning.maintenance", "earlyWarning.headLife"] },
+      "constraints": [],
+      "docs": "Configures early warning messages on the LCD for media, ribbon, maintenance, and head life. Save changes permanently with ^JUS."
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^MT"],
+      "name": "Media Type",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "media_type", "key": "a", "type": "enum", "enum": ["T", "D"],
+          "optional": true, "default": "T",
+          "doc": "T = thermal transfer media (uses ribbon), D = direct thermal media (no ribbon)." }
+      ],
+      "effects": { "sets": ["media.type"] },
+      "constraints": [],
+      "docs": "Selects the type of media being used: thermal transfer (ribbon) or direct thermal (no ribbon)."
+    }
+  ]
+}

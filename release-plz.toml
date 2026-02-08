@@ -1,0 +1,57 @@
+# release-plz configuration
+# https://release-plz.dev/docs/config
+#
+# All crates share the same version and release together.
+# The CLI crate is the "tag owner" — its version determines the project-wide
+# git tag (v0.x.0). Other crates get version bumps but no individual tags.
+
+[workspace]
+# Disable git tags and GitHub Releases for all packages by default.
+# Only the CLI crate (below) creates the project-wide tag.
+git_tag_enable = false
+git_release_enable = false
+
+# Don't create per-crate changelogs — the CLI crate writes to the repo-root
+# CHANGELOG.md (see below).
+changelog_update = false
+
+# Allow publishing even when generated files are present.
+publish_allow_dirty = true
+
+# Only publish when the release PR is merged, not on every push to main.
+# This gives CI a chance to validate the PR before anything is published.
+release_always = false
+
+# ── CLI crate: the project-wide tag + changelog owner ────────────────────────
+
+[[package]]
+name = "zpl_toolchain_cli"
+# Use a clean project-wide tag like v0.2.0 (not zpl_toolchain_cli-v0.2.0).
+git_tag_name = "v{{ version }}"
+git_tag_enable = true
+git_release_enable = true
+
+# Write a single unified changelog at the repo root.
+changelog_update = true
+changelog_path = "../../CHANGELOG.md"
+
+# Include commits from all published crates in the changelog,
+# so changes to core/diagnostics/etc. aren't invisible.
+changelog_include = [
+    "zpl_toolchain_diagnostics",
+    "zpl_toolchain_spec_tables",
+    "zpl_toolchain_profile",
+    "zpl_toolchain_core",
+    "zpl_toolchain_spec_compiler",
+]
+
+# ── Crates published to crates.io (inherit workspace defaults) ───────────────
+# These are published automatically by release-plz in dependency order.
+# No per-package config needed — they inherit workspace defaults.
+
+# ── Crates NOT published (publish = false in Cargo.toml) ─────────────────────
+# release-plz automatically skips crates with `publish = false`:
+#   - zpl_toolchain_bindings_common
+#   - zpl_toolchain_wasm
+#   - zpl_toolchain_python
+#   - zpl_toolchain_ffi

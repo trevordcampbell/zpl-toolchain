@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^XA"],
+      "name": "Start Format",
+      "plane": "format",
+      "scope": "document",
+      "arity": 0,
+      "effects": { "sets": ["label.open"] },
+      "docs": "Start a new label format (label open). Must be the first command in a label format. Every label must begin with ^XA and end with ^XZ."
+    }
+  ]
+}

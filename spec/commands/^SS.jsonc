@@ -1,0 +1,39 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^SS"],
+      "name": "Set Media Sensors",
+      "plane": "device",
+      "scope": "session",
+      "arity": 9,
+      "signature": { "params": ["w","m","r","l","m2","r2","a","b","c"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "web_sensitivity", "key": "w", "type": "int", "range": [0, 100], "optional": true,
+          "doc": "Web sensor value (3-digit). Default: value from media sensor profile or configuration label." },
+        { "name": "media_sensitivity", "key": "m", "type": "int", "range": [0, 100], "optional": true,
+          "doc": "Media sensor value (3-digit). Default: value from media sensor profile or configuration label." },
+        { "name": "ribbon_sensitivity", "key": "r", "type": "int", "range": [0, 100], "optional": true,
+          "doc": "Ribbon sensor value (3-digit). Default: value from media sensor profile or configuration label." },
+        { "name": "label_length", "key": "l", "type": "int", "unit": "dots", "range": [1, 32000], "optional": true,
+          "doc": "Label length in dots (4-digit). Default: value calculated in calibration." },
+        { "name": "media_led_intensity", "key": "m2", "type": "int", "range": [0, 255], "optional": true,
+          "doc": "Intensity of media LED (3-digit). Default: value calculated in calibration. No effect on Stripe S-300/S-500." },
+        { "name": "ribbon_led_intensity", "key": "r2", "type": "int", "range": [0, 255], "optional": true,
+          "doc": "Intensity of ribbon LED (3-digit). Default: value calculated in calibration. No effect on Stripe S-300/S-500." },
+        { "name": "mark_sensing", "key": "a", "type": "int", "range": [0, 100], "optional": true,
+          "doc": "Mark sensing value (3-digit). Default: value calculated in calibration." },
+        { "name": "mark_media_sensing", "key": "b", "type": "int", "range": [0, 100], "optional": true,
+          "doc": "Mark media sensing value (3-digit). Default: value calculated in calibration." },
+        { "name": "mark_led_sensing", "key": "c", "type": "int", "range": [0, 255], "optional": true,
+          "doc": "Mark LED sensing value (3-digit). Default: value calculated in calibration." }
+      ],
+      "effects": { "sets": ["sensor.web", "sensor.media", "sensor.ribbon", "sensor.labelLength", "sensor.mediaLed", "sensor.ribbonLed", "sensor.mark", "sensor.markMedia", "sensor.markLed"] },
+      "constraints": [
+        { "kind": "note", "message": "This command is ignored on the HC100 printer. Maximum values for parameters depend on printer platform." }
+      ],
+      "docs": "Changes the values for media, web, ribbon, and label length sensors set during the media calibration process."
+    }
+  ]
+}

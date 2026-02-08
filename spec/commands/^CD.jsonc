@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^CD", "~CD"],
+      "name": "Change Delimiter Character",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "new_delimiter_char", "key": "a", "type": "char",
+          "doc": "New delimiter character used to separate parameter values in ZPL commands. Any ASCII character is accepted. If no parameter is entered, the next character received becomes the new delimiter. Default delimiter is comma (,)." }
+      ],
+      "effects": { "sets": ["parser.delimiter"] },
+      "constraints": [
+        { "kind": "note", "message": "Takes immediate effect. Use ^JUS to persist across power cycles." }
+      ],
+      "docs": "Changes the parameter delimiter character from the default comma (,) to any other ASCII character. Affects all subsequent commands that use parameter separation."
+    }
+  ]
+}

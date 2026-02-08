@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~NT"],
+      "name": "Set Currently Connected Printer Transparent",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Sets the currently connected network printer to be transparent. With Z Series printers, functions the same as ~NR. Used only with RS-485 printer communications."
+    }
+  ]
+}

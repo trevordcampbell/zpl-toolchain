@@ -1,0 +1,30 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^GB"],
+      "name": "Graphic Box",
+      "plane": "format",
+      "scope": "field",
+      "arity": 5,
+      "signature": { "params": ["w","h","t","c","r"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "width", "key": "w", "type": "int", "unit": "dots", "range": [1, 32000], "optional": true, "default": 1,
+          "doc": "Box width in dots." },
+        { "name": "height", "key": "h", "type": "int", "unit": "dots", "range": [1, 32000], "optional": true, "default": 1,
+          "doc": "Box height in dots." },
+        { "name": "thickness", "key": "t", "type": "int", "unit": "dots", "range": [1, 32000], "optional": true, "default": 1,
+          "doc": "Border thickness in dots." },
+        { "name": "color", "key": "c", "type": "enum", "enum": ["B","W"], "optional": true, "default": "B",
+          "doc": "Line color. B=black, W=white." },
+        { "name": "corner_rounding", "key": "r", "type": "int", "optional": true, "default": 0, "range": [0, 8],
+          "doc": "Degree of corner rounding. 0=no rounding (square corners) to 8=heaviest rounding." }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FS", "message": "^GB should appear before its ^FS", "severity": "info" }
+      ],
+      "docs": "Draw a graphic box/line with width, height, border thickness, color, and corner rounding (0=none to 8=heaviest)."
+    }
+  ]
+}

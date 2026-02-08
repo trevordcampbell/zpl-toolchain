@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JA"],
+      "name": "Cancel All",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Cancels all format commands in the buffer and any batches currently printing. The printer stops after the current label finishes. All internal buffers are cleared and the DATA LED turns off."
+    }
+  ]
+}

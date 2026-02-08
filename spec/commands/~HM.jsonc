@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~HM"],
+      "name": "Host RAM Status",
+      "plane": "device",
+      "scope": "document",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Returns memory status to the host including total RAM installed, maximum RAM available to the user, and currently available RAM (all in kilobytes)."
+    }
+  ]
+}

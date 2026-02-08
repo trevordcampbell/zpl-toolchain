@@ -1,0 +1,30 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^B8"],
+      "name": "EAN-8 Bar Code",
+      "plane": "format",
+      "scope": "field",
+      "arity": 4,
+      "signature": { "params": ["o","h","f","g"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
+        { "name": "height", "key": "h", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+          "doc": "Height of the barcode in dots" },
+        { "name": "print_interpretation_line", "key": "f", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "Y",
+          "doc": "Whether to print the human-readable interpretation line below the barcode" },
+        { "name": "print_interpretation_line_above", "key": "g", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Whether to print the interpretation line above the barcode" }
+      ],
+      "constraints": [
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^B8 to set module width", "severity": "warn" },
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^B8 should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print an EAN-8 barcode, the shortened version of EAN-13.",
+      "fieldDataRules": { "characterSet": "0-9", "exactLength": 7, "notes": "7 data digits; 8th check digit auto-calculated" }
+    }
+  ]
+}

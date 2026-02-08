@@ -1,0 +1,32 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^B3"],
+      "name": "Code 39 Bar Code",
+      "plane": "format",
+      "scope": "field",
+      "arity": 5,
+      "signature": { "params": ["o","e","h","f","g"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
+        { "name": "mod43_check_digit", "key": "e", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Whether to calculate and append a Mod-43 check digit" },
+        { "name": "height", "key": "h", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+          "doc": "Height of the barcode in dots" },
+        { "name": "print_interpretation_line", "key": "f", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "Y",
+          "doc": "Whether to print the human-readable interpretation line below the barcode" },
+        { "name": "print_interpretation_line_above", "key": "g", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Whether to print the interpretation line above the barcode" }
+      ],
+      "constraints": [
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^B3 to set module width", "severity": "warn" },
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^B3 should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print a Code 39 barcode with options for Mod-43 check digit, height, and interpretation line.",
+      "fieldDataRules": { "characterSet": "A-Z0-9 \\-.$/+%", "notes": "Standard charset; extended mode supports full ASCII via paired chars" }
+    }
+  ]
+}

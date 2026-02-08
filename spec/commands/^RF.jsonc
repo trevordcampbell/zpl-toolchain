@@ -1,0 +1,40 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^RF"],
+      "printerGates": ["rfid"],
+      "name": "Read or Write RFID Format",
+      "plane": "format",
+      "scope": "field",
+      "arity": 5,
+      "signature": { "params": ["o","f","b","n","m"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "operation", "key": "o", "type": "enum",
+          "enum": ["W","L","R","P","S"],
+          "optional": true, "default": "W",
+          "doc": "W = write (encode), L = write with LOCK (if supported; Gen 2 does not use this), R = read, P = read password (Gen 2 only, not all printers), S = specify access password." },
+        { "name": "format", "key": "f", "type": "enum",
+          "enum": ["A","H","E"],
+          "optional": true, "default": "H",
+          "doc": "A = ASCII, H = Hexadecimal, E = EPC (requires proper ^RB setup)." },
+        { "name": "starting_block", "key": "b", "type": "string",
+          "optional": true, "default": "0",
+          "doc": "For Gen 2: starting 16-bit block number (0 to n), or P to indicate password data follows in ^FD. For other tag types: starting block number (0 to n). When Gen 2 memory bank is E or A, value is always 2." },
+        { "name": "byte_count", "key": "n", "type": "int",
+          "range": [1, 512],
+          "optional": true, "default": 1,
+          "doc": "Number of bytes to read or write. For Gen 2 with E or A memory bank, this is not required." },
+        { "name": "memory_bank", "key": "m", "type": "enum",
+          "enum": ["E","A","0","1","2","3"],
+          "optional": true, "default": "E",
+          "doc": "Gen 2 memory bank. E = EPC 96-bit, A = EPC with auto-adjust PC bits, 0 = Reserved, 1 = EPC, 2 = TID, 3 = User." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "When reading a tag, use a field variable (^FN) to print tag data on the label or return data to the host. Data for write operations is provided via ^FD." }
+      ],
+      "docs": "Reads or writes (encodes) an RFID tag, or specifies the access password. Data is provided via ^FD command."
+    }
+  ]
+}

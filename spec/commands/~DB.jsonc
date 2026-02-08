@@ -1,0 +1,37 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~DB"],
+      "name": "Download Bitmap Font",
+      "plane": "device",
+      "scope": "session",
+      "arity": 9,
+      "raw_payload": true,
+      "signature": { "params": ["d","o","x","a","h","w","b","s","n"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Drive to store font. R:, E:, B:, A:." },
+        { "name": "name", "key": "o", "type": "string", "optional": true,
+          "doc": "Name of font. 1 to 8 alphanumeric characters. Default: UNKNOWN." },
+        { "name": "extension", "key": "x", "type": "string", "optional": true, "default": "FNT",
+          "doc": "Extension. Fixed: .FNT." },
+        { "name": "orientation", "key": "a", "type": "string", "optional": true, "default": "N",
+          "doc": "Orientation of native font. Fixed value: normal (N)." },
+        { "name": "max_height", "key": "h", "type": "int", "range": [1, 32000], "unit": "dots",
+          "doc": "Maximum height of cell in dots. Values: 1 to 32000." },
+        { "name": "max_width", "key": "w", "type": "int", "range": [1, 32000], "unit": "dots",
+          "doc": "Maximum width of cell in dots. Values: 1 to 32000." },
+        { "name": "baseline", "key": "b", "type": "int", "range": [1, 32000], "unit": "dots",
+          "doc": "Dots from top of cell to character baseline. Values: 1 to 32000." },
+        { "name": "space_width", "key": "s", "type": "int", "range": [1, 32000], "unit": "dots",
+          "doc": "Width of space or non-existent characters in dots. Values: 1 to 32000." },
+        { "name": "num_chars", "key": "n", "type": "int", "range": [1, 256],
+          "doc": "Number of characters in font. Values: 1 to 256. Must match characters being downloaded." }
+      ],
+      "constraints": [],
+      "docs": "Downloads a bitmap font to the printer defining native cell size, baseline, space size, and character data. Consists of a ZPL II command defining the font followed by structured data for each character."
+    }
+  ]
+}

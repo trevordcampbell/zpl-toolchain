@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^FS"],
+      "name": "Field Separator",
+      "plane": "format",
+      "scope": "field",
+      "closes_field": true,
+      "arity": 0,
+      "docs": "Field separator: ends the current field and denotes the end of one complete field definition."
+    }
+  ]
+}

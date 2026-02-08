@@ -1,0 +1,20 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^FX"],
+      "name": "Comment",
+      "plane": "format",
+      "scope": "field",
+      "arity": 1,
+      "signature": { "params": ["c"], "joiner": "", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "comment", "key": "c", "type": "string", "optional": true,
+          "doc": "Non-printing comment text. Everything after ^FX up to the next caret (^) or tilde (~) prefix is treated as a comment and ignored by the printer." }
+      ],
+      "constraints": [],
+      "docs": "Non-printing comment. Any data after ^FX is treated as a comment and not processed until the next caret (^) or tilde (~) command prefix is encountered. Avoid using ^ or ~ within the comment text."
+    }
+  ]
+}

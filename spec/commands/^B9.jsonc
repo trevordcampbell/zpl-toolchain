@@ -1,0 +1,32 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^B9"],
+      "name": "UPC-E Bar Code",
+      "plane": "format",
+      "scope": "field",
+      "arity": 5,
+      "signature": { "params": ["o","h","f","g","e"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
+        { "name": "height", "key": "h", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+          "doc": "Height of the barcode in dots" },
+        { "name": "print_interpretation_line", "key": "f", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "Y",
+          "doc": "Whether to print the human-readable interpretation line below the barcode" },
+        { "name": "print_interpretation_line_above", "key": "g", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Whether to print the interpretation line above the barcode" },
+        { "name": "print_check_digit", "key": "e", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "Y",
+          "doc": "Whether to print the check digit in the interpretation line" }
+      ],
+      "constraints": [
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^B9 to set module width", "severity": "warn" },
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^B9 should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print a UPC-E barcode, a zero-suppressed variation of UPC-A.",
+      "fieldDataRules": { "characterSet": "0-9", "exactLength": 10, "notes": "10 digits (5 manufacturer + 5 product)" }
+    }
+  ]
+}

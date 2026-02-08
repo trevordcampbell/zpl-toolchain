@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^NC"],
+      "name": "Select Primary Network Device",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "primary", "key": "a", "type": "enum",
+          "enum": ["1","2"],
+          "optional": true, "default": "1",
+          "doc": "1 = wired primary, 2 = wireless primary. Must be an accepted value or it is ignored." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Supported on Xi4, RXi4, ZM400/ZM600, RZ400/RZ600 printers which support simultaneous installation of internal, external, and wireless print servers." }
+      ],
+      "docs": "Selects the wired or wireless print server as the primary network device."
+    }
+  ]
+}

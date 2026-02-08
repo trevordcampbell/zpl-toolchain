@@ -1,0 +1,33 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^PQ"],
+      "name": "Print Quantity",
+      "plane": "format",
+      "scope": "document",
+      "arity": 5,
+      "signature": { "params": ["q", "p", "r", "o", "e"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "quantity", "key": "q", "type": "int", "range": [1, 99999999],
+          "optional": true, "default": 1,
+          "doc": "Total quantity of labels to print." },
+        { "name": "pause_and_cut_value", "key": "p", "type": "int", "range": [0, 99999999],
+          "optional": true, "default": 0,
+          "doc": "Number of labels between pauses. 0 = no pause." },
+        { "name": "replicates", "key": "r", "type": "int", "range": [0, 99999999],
+          "optional": true, "default": 0,
+          "doc": "Number of replicates of each serial number. 0 = no replicates." },
+        { "name": "override_pause", "key": "o", "type": "enum", "enum": ["N", "Y"],
+          "optional": true, "default": "N",
+          "doc": "Override pause count. Y = cut but do not pause; N = pause after every group." },
+        { "name": "cut_on_error", "key": "e", "type": "enum", "enum": ["N", "Y"],
+          "optional": true, "default": "Y",
+          "doc": "Cut on error label (RFID void). Y = cut after any voided RFID label; N = cut only if cut would normally occur." }
+      ],
+      "constraints": [],
+      "docs": "Controls number of labels to print, pause/cut interval between sets, serial number replicates, override pause, and cut-on-error behavior."
+    }
+  ]
+}

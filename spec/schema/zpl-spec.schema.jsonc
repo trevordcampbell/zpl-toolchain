@@ -1,0 +1,418 @@
+{
+  // ──────────────────────────────────────────────────────────────────────────────
+  // Schema metadata
+  // ──────────────────────────────────────────────────────────────────────────────
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://zpltoolchain.com/schema/zpl-spec.schema.jsonc",
+  "title": "ZPL Command Registry (commented JSONC)",
+  // NOTE: This file is JSONC; the spec-compiler strips comments before validation.
+
+  "type": "object",
+  "properties": {
+    // Content version of this registry (not the schema version)
+    "version": { "type": "string", "description": "Semver of this spec data set" },
+
+    // Schema version bump for the new signature/codes/composites + effects/doc/minLength/maxLength
+    "schemaVersion": { "type": "string", "const": "1.1.1" },
+
+    // Optional extra metadata for docs/provenance
+    "meta": { "type": "object", "additionalProperties": true },
+
+    // The full list of ZPL/host commands
+    "commands": {
+      "type": "array",
+      "description": "All ZPL/host commands in this registry",
+      "items": { "$ref": "#/$defs/command" }
+    }
+  },
+  "required": ["commands", "schemaVersion"],
+  "additionalProperties": false,
+
+  // Allow vendor/experimental fields anywhere
+  "patternProperties": { "^x-": {} },
+
+  "$defs": {
+    // ────────────────────────────────────────────────────────────────────────────
+    // Signature & composites (since 1.1.0)
+    // ────────────────────────────────────────────────────────────────────────────
+    "signature": {
+      "type": "object",
+      "properties": {
+        // Ordered short keys or composite names that appear after the opcode
+        // Example: ["a","b","c"] for ^JJa,b,c  — or ["d:o.x","mx","my"] for ^XG
+        "params": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 0
+        },
+        // How params are joined (ZPL default is ",")
+        "joiner": { "type": "string", "default": "," },
+        // ZPL format has no space after opcode (keep true for correctness)
+        "noSpaceAfterOpcode": { "type": "boolean", "default": true },
+        // If true, allow trailing empty params to preserve position (common in ZPL)
+        "allowEmptyTrailing": { "type": "boolean", "default": true },
+        // If present, the param at paramIndex is split into multiple parts by character count
+        "splitRule": {
+          "type": "object",
+          "properties": {
+            "paramIndex": { "type": "integer", "description": "Which param to split (0-based)" },
+            "charCounts": { "type": "array", "items": { "type": "integer" }, "description": "Character counts per split part" }
+          },
+          "additionalProperties": false,
+          "description": "If present, the param at paramIndex is split into multiple parts by character count"
+        }
+      },
+      "required": ["params"],
+      "additionalProperties": false
+    },
+
+    "composite": {
+      "type": "object",
+      "properties": {
+        // Name used inside signature.params, e.g., "d:o.x"
+        "name": { "type": "string", "minLength": 1 },
+        // Template that references underlying args by key, e.g., "{d}:{o}.{x}"
+        "template": { "type": "string", "minLength": 1 },
+        // Which args (by key) are composed here (helps docs & validation)
+        "exposesArgs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "doc": { "type": "string" }
+      },
+      "required": ["name", "template", "exposesArgs"],
+      "additionalProperties": false
+    },
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // Command
+    // ────────────────────────────────────────────────────────────────────────────
+    "command": {
+      "type": "object",
+      "properties": {
+        // NEW: list of opcodes that invoke this logical command (first = canonical)
+        "codes": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[\\^~][A-Z0-9]{1,3}$" },
+          "minItems": 1
+        },
+
+        // BACK-COMPAT (deprecated): single code + aliases
+        // If present, the compiler will normalize to `codes: [code, ...aliases]`.
+        "code": { "type": "string", "pattern": "^[\\^~][A-Z0-9]{1,3}$" },
+        "aliases": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[\\^~][A-Z0-9]{1,3}$" }
+        },
+
+        "name": { "type": "string" },
+        "category": { "type": "string" },                 // text, barcode, graphics, media, format, device
+        "plane": {
+          "enum": ["format", "device", "host"],
+          "description": "format (label content), device (settings), or host (status)"
+        },
+        "scope": {
+          "enum": ["document", "field", "job", "label", "session"],
+          "default": "field",
+          "description": "Effect lifetime; e.g., field-scoped like ^A, or document (^PW)"
+        },
+
+        // Structured side-effect hints (object format only).
+        "effects": {
+          "type": "object",
+          "properties": {
+            "sets": { "type": "array", "items": { "type": "string" }, "description": "State keys this command sets" }
+          },
+          "additionalProperties": false,
+          "description": "Declares which cross-command state this command sets"
+        },
+
+        // Validation rules for field data content when this barcode command is active
+        "fieldDataRules": {
+          "type": "object",
+          "properties": {
+            "characterSet": { "type": "string", "description": "Regex character class for allowed characters (e.g., '0-9', 'A-Z0-9')" },
+            "minLength": { "type": "integer", "description": "Minimum data length" },
+            "maxLength": { "type": "integer", "description": "Maximum data length" },
+            "exactLength": { "type": "integer", "description": "Shorthand for minLength == maxLength" },
+            "lengthParity": { "type": "string", "enum": ["even", "odd"], "description": "Required parity of data length" },
+            "notes": { "type": "string", "description": "Human-readable notes about the data format" }
+          },
+          "additionalProperties": false,
+          "description": "Validation rules for field data content when this barcode command is active"
+        },
+
+        "since": { "type": "string" },
+        "deprecated": { "type": "boolean", "default": false },
+        "deprecatedSince": { "type": "string" },
+        "stability": { "enum": ["stable", "experimental", "deprecated"], "default": "stable" },
+
+        // Arguments in Zebra's positional order
+        "arity": { "type": "integer", "minimum": 0 },
+        "args": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/argUnion" },
+          "description": "Positional arguments in Zebra’s published order"
+        },
+
+        // Command-level defaults (freeform bag; compiler understands common patterns)
+        "defaults": { "type": "object", "additionalProperties": true },
+
+        // Command-level unit context; args may override
+        "units": { "type": "string" },
+
+        // Validation/lint constraints
+        "constraints": { "type": "array", "items": { "$ref": "#/$defs/constraint" } },
+
+        // Capability gates matched by printer profiles
+        "printerGates": { "type": "array", "items": { "type": "string" } },
+
+        // Executable/doc examples
+        "examples": { "type": "array", "items": { "$ref": "#/$defs/example" } },
+
+        "docs": { "type": "string" },
+        "extras": { "type": "object", "additionalProperties": true },
+
+        // NEW: canonical parameterization for building the "Format:" string
+        "signature": { "$ref": "#/$defs/signature" },
+
+        // If true, this command starts field data mode (content collected until ^FS)
+        "field_data": { "type": "boolean", "description": "If true, this command starts field data mode (content collected until ^FS)" },
+
+        // If true, this command has a raw binary/hex payload after its header parameters
+        "raw_payload": { "type": "boolean", "description": "If true, this command has a raw binary/hex payload after its header parameters" },
+
+        // Structural role flags — drive validator field-tracking logic
+        "opens_field": { "type": "boolean", "description": "If true, this command opens a field block (e.g., ^FO, ^FT)" },
+        "closes_field": { "type": "boolean", "description": "If true, this command closes a field block (e.g., ^FS)" },
+        "hex_escape_modifier": { "type": "boolean", "description": "If true, this command enables hex escape mode in the current field (e.g., ^FH)" },
+        "field_number": { "type": "boolean", "description": "If true, this command assigns a field number (e.g., ^FN)" },
+        "serialization": { "type": "boolean", "description": "If true, this command is a serialization command (e.g., ^SN, ^SF)" },
+        "requires_field": { "type": "boolean", "description": "If true, this command requires an open field to be valid" },
+
+        // NEW: per-opcode overrides when twins differ slightly (rare)
+        "signatureOverrides": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/signature" }
+        },
+
+        // NEW: path-like composites (e.g., d:o.x for ^XG, or d:f.x for ^A@)
+        "composites": { "type": "array", "items": { "$ref": "#/$defs/composite" } }
+      },
+
+      // At least one of {codes} or {code} must be provided
+      "anyOf": [
+        { "required": ["codes"] },
+        { "required": ["code"] }
+      ],
+
+      // Keep existing requirement for arity
+      "required": ["arity"],
+      "additionalProperties": false
+    },
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // Arg or Union of Args
+    // ────────────────────────────────────────────────────────────────────────────
+    "argUnion": {
+      "description": "Either a single arg or a union of mutually exclusive arg shapes",
+      "oneOf": [
+        { "$ref": "#/$defs/arg" },
+        {
+          "type": "object",
+          "properties": {
+            "oneOf": {
+              "type": "array",
+              "minItems": 2,
+              "items": { "$ref": "#/$defs/arg" }
+            }
+          },
+          "required": ["oneOf"],
+          "additionalProperties": false
+        }
+      ]
+    },
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // Arg
+    // ────────────────────────────────────────────────────────────────────────────
+    "arg": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },                     // Long name (e.g., "height")
+        "key": { "type": "string" },                      // Short positional key (e.g., "h")
+
+        // Primitive type
+        "type": { "enum": ["int", "float", "enum", "bool", "string", "resourceRef", "char"] },
+
+        // Unit/range for numeric args
+        "unit": { "type": "string" },
+        "range": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "type": "number" }
+        },
+
+        // String-arg constraints (NEW)
+        "minLength": { "type": "integer", "minimum": 0 },
+        "maxLength": { "type": "integer", "minimum": 0 },
+
+        // Inline arg help text (NEW)
+        "doc": { "type": "string" },
+
+        // Enum values can be strings or objects with per-value gates
+        "enum": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              {
+                "type": "object",
+                "properties": {
+                  "value": { "type": "string" },
+                  "printerGates": { "type": "array", "items": { "type": "string" } },
+                  "extras": { "type": "object", "additionalProperties": true }
+                },
+                "required": ["value"],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+
+        // Presence semantics (tri-state-ish)
+        "optional": { "type": "boolean", "default": false },
+        "presence": {
+          "enum": ["unset", "empty", "value", "valueOrDefault", "emptyMeansUseDefault"],
+          "description": "Clarifies how empty args are interpreted by firmware"
+        },
+
+        // Defaults: literal or dependency-based
+        "default": {},
+        "defaultByDpi": {
+          "type": "object",
+          "additionalProperties": {},
+          "description": "DPI-dependent default values: keys are DPI strings (e.g., '203', '300'), values are the defaults at that DPI"
+        },
+        "defaultFrom": { "type": "string", "description": "Dependency command or state (e.g., ^FW, ^CF)" },
+
+        // Conditional numeric rules (handled by validator)
+        "rangeWhen": { "type": "array", "items": { "$ref": "#/$defs/conditionalRange" } },
+
+        // Rounding policy (global or conditional)
+        "roundingPolicy": { "$ref": "#/$defs/roundingPolicy" },
+        "roundingPolicyWhen": { "type": "array", "items": { "$ref": "#/$defs/conditionalRounding" } },
+
+        // Resource ref specialization
+        "resource": { "enum": ["graphic", "font", "any"] },
+
+        // Profile-driven constraint: value must satisfy op against the profile field
+        "profileConstraint": {
+          "type": "object",
+          "properties": {
+            "field": { "type": "string", "description": "Dotted path into the Profile struct (e.g., 'page.width_dots')" },
+            "op": { "type": "string", "enum": ["lte", "gte", "lt", "gt", "eq"], "description": "Comparison operator" }
+          },
+          "required": ["field", "op"],
+          "additionalProperties": false,
+          "description": "Profile-driven constraint: value must satisfy op against the profile field"
+        },
+
+        // Extra gates & metadata
+        "printerGates": { "type": "array", "items": { "type": "string" } },
+        "extras": { "type": "object", "additionalProperties": true }
+      },
+      "required": ["name", "type"],
+      "additionalProperties": false
+    },
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // Conditional range / rounding
+    // ────────────────────────────────────────────────────────────────────────────
+    "conditionalRange": {
+      "type": "object",
+      "properties": {
+        "when": { "type": "string", "description": "DSL predicate label (e.g., 'fontIsBitmap')" },
+        "range": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": { "type": "number" }
+        }
+      },
+      "required": ["when", "range"],
+      "additionalProperties": false
+    },
+
+    "roundingPolicy": {
+      "type": "object",
+      "properties": {
+        "unit": { "type": "string" },
+        "mode": {
+          "enum": [
+            "nearest",
+            "floor",
+            "ceil",
+            "ties-to-even",
+            "toMultiple",
+            "toNearestMultipleOfBaseHeight",
+            "toNearestMultipleOfBaseWidth"
+          ]
+        },
+        "multiple": { "type": "number" }
+      },
+      "required": ["mode"],
+      "additionalProperties": false
+    },
+
+    "conditionalRounding": {
+      "type": "object",
+      "properties": {
+        "when": { "type": "string" },
+        "mode": { "type": "string" },
+        "multiple": { "type": "number" }
+      },
+      "required": ["when", "mode"],
+      "additionalProperties": false
+    },
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // Constraint (validation/lint)
+    // ────────────────────────────────────────────────────────────────────────────
+    "constraint": {
+      "type": "object",
+      "properties": {
+        "kind": { "enum": ["order", "incompatible", "requires", "emptyData", "range", "note", "custom"] },
+        "expr": { "type": "string", "description": "Small DSL condition; optional for kind=note/custom" },
+        "message": { "type": "string" },
+        "severity": { "enum": ["error", "warn", "info"], "default": "warn" },
+
+        // For sandboxed WASM rulelets
+        "wasmRuleletId": { "type": "string" },
+
+        "extras": { "type": "object", "additionalProperties": true }
+      },
+      "required": ["kind", "message"],
+      "additionalProperties": false
+    },
+
+    // ────────────────────────────────────────────────────────────────────────────
+    // Example (docs + tests + snippets)
+    // ────────────────────────────────────────────────────────────────────────────
+    "example": {
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "zpl": { "type": "string" },
+        "pngHash": { "type": "string", "description": "Optional BLAKE3 of rendered PNG" },
+        "notes": { "type": "string" },
+        "since": { "type": "string" },
+        "profiles": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["zpl"],
+      "additionalProperties": false
+    }
+  }
+}

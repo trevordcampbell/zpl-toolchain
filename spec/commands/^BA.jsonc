@@ -1,0 +1,32 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^BA"],
+      "name": "Code 93 Bar Code",
+      "plane": "format",
+      "scope": "field",
+      "arity": 5,
+      "signature": { "params": ["o","h","f","g","e"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Rotation of the barcode (N=normal, R=90°CW, I=180°, B=270°CW)" },
+        { "name": "height", "key": "h", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+          "doc": "Height of the barcode in dots" },
+        { "name": "print_interpretation_line", "key": "f", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "Y",
+          "doc": "Whether to print the human-readable interpretation line below the barcode" },
+        { "name": "print_interpretation_line_above", "key": "g", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Whether to print the interpretation line above the barcode" },
+        { "name": "print_check_digit", "key": "e", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Whether to print the check digit in the interpretation line" }
+      ],
+      "constraints": [
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BA to set module width", "severity": "warn" },
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BA should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print a Code 93 barcode, a variable-length continuous symbology using the full 128-character ASCII set.",
+      "fieldDataRules": { "notes": "Full 128-character ASCII set. Native set: 0-9, A-Z, - . $ / + % and space. Control characters encoded via paired substitutes (& ' ( ) map to Ctrl $/%/+/). Two check digits (C and K) auto-calculated" }
+    }
+  ]
+}

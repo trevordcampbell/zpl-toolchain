@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^MI"],
+      "name": "Set Maintenance Information Message",
+      "plane": "device",
+      "scope": "session",
+      "arity": 2,
+      "signature": { "params": ["type", "message"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "type", "key": "type", "type": "enum",
+          "enum": ["R", "C"],
+          "optional": true, "default": "R",
+          "doc": "Type of alert. R = head replacement, C = head cleaning." },
+        { "name": "message", "key": "message", "type": "string",
+          "optional": true,
+          "doc": "Message that prints on the label when a maintenance alert occurs. Maximum 63 characters. Commas are not allowed. Default: 'please replace printhead' (R) or 'please clean printhead' (C)." }
+      ],
+      "effects": { "sets": ["maintenance.infoMessage"] },
+      "constraints": [
+        { "kind": "note", "message": "Available only for firmware V60.15.x, V50.15.x, or later. Printing of the message is controlled by ^MA. All characters following the comma and preceding the next ~ or ^ define the message string." }
+      ],
+      "docs": "Controls the content of maintenance alert messages that remind the operator to clean or replace the printhead."
+    }
+  ]
+}

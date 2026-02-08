@@ -1,0 +1,40 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^WR"],
+      "name": "Set Transmit Rate",
+      "plane": "device",
+      "scope": "session",
+      "arity": 5,
+      "signature": { "params": ["a","b","c","d","e"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "rate_1mbps", "key": "a", "type": "enum",
+          "enum": ["Y","N"],
+          "optional": true,
+          "doc": "Sets the 1 Mb/s transmit rate. Y = On, N = Off." },
+        { "name": "rate_2mbps", "key": "b", "type": "enum",
+          "enum": ["Y","N"],
+          "optional": true,
+          "doc": "Sets the 2 Mb/s transmit rate. Y = On, N = Off." },
+        { "name": "rate_5_5mbps", "key": "c", "type": "enum",
+          "enum": ["Y","N"],
+          "optional": true,
+          "doc": "Sets the 5.5 Mb/s transmit rate. Y = On, N = Off." },
+        { "name": "rate_11mbps", "key": "d", "type": "enum",
+          "enum": ["Y","N"],
+          "optional": true,
+          "doc": "Sets the 11 Mb/s transmit rate. Y = On, N = Off." },
+        { "name": "transmit_power", "key": "e", "type": "enum",
+          "enum": ["1","5","20","30","50","100"],
+          "optional": true,
+          "doc": "Transmit power level. Values: 1, 5, 20, 30, 50, 100." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "This command is not valid for Link-OS printers and is only supported in selected other models. Used for 802.11b wireless print servers." }
+      ],
+      "docs": "Changes the transmission rate and power for 802.11b wireless print servers."
+    }
+  ]
+}

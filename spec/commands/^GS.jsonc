@@ -1,0 +1,26 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^GS"],
+      "name": "Graphic Symbol",
+      "plane": "format",
+      "scope": "field",
+      "arity": 3,
+      "signature": { "params": ["o","h","w"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "N = normal, R = rotated 90 degrees clockwise, I = inverted 180 degrees, B = bottom-up 270 degrees." },
+        { "name": "height", "key": "h", "type": "int", "unit": "dots", "range": [0, 32000], "optional": true, "defaultFrom": "^CF",
+          "doc": "Character height proportional to width. Default: last ^CF value." },
+        { "name": "width", "key": "w", "type": "int", "unit": "dots", "range": [0, 32000], "optional": true, "defaultFrom": "^CF",
+          "doc": "Character width proportional to height. Default: last ^CF value." }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FS", "message": "^GS should appear before its ^FS", "severity": "info" }
+      ],
+      "docs": "Enables generation of registered trademark, copyright symbol, and other symbols. Use with ^FD and character A-E to select the desired symbol."
+    }
+  ]
+}

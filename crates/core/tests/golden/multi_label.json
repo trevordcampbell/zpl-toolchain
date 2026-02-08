@@ -1,0 +1,182 @@
+{
+  "ast": {
+    "labels": [
+      {
+        "nodes": [
+          {
+            "args": [],
+            "code": "^XA",
+            "kind": "Command",
+            "span": {
+              "end": 3,
+              "start": 0
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "x",
+                "presence": "value",
+                "value": "10"
+              },
+              {
+                "key": "y",
+                "presence": "value",
+                "value": "10"
+              },
+              {
+                "key": "z",
+                "presence": "empty"
+              }
+            ],
+            "code": "^FO",
+            "kind": "Command",
+            "span": {
+              "end": 11,
+              "start": 3
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "data",
+                "presence": "value",
+                "value": "Label 1"
+              }
+            ],
+            "code": "^FD",
+            "kind": "Command",
+            "span": {
+              "end": 21,
+              "start": 11
+            }
+          },
+          {
+            "args": [],
+            "code": "^FS",
+            "kind": "Command",
+            "span": {
+              "end": 24,
+              "start": 21
+            }
+          },
+          {
+            "args": [],
+            "code": "^XZ",
+            "kind": "Command",
+            "span": {
+              "end": 28,
+              "start": 24
+            }
+          }
+        ]
+      },
+      {
+        "nodes": [
+          {
+            "args": [],
+            "code": "^XA",
+            "kind": "Command",
+            "span": {
+              "end": 31,
+              "start": 28
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "x",
+                "presence": "value",
+                "value": "20"
+              },
+              {
+                "key": "y",
+                "presence": "value",
+                "value": "20"
+              },
+              {
+                "key": "z",
+                "presence": "empty"
+              }
+            ],
+            "code": "^FO",
+            "kind": "Command",
+            "span": {
+              "end": 39,
+              "start": 31
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "data",
+                "presence": "value",
+                "value": "Label 2"
+              }
+            ],
+            "code": "^FD",
+            "kind": "Command",
+            "span": {
+              "end": 49,
+              "start": 39
+            }
+          },
+          {
+            "args": [],
+            "code": "^FS",
+            "kind": "Command",
+            "span": {
+              "end": 52,
+              "start": 49
+            }
+          },
+          {
+            "args": [],
+            "code": "^XZ",
+            "kind": "Command",
+            "span": {
+              "end": 56,
+              "start": 52
+            }
+          }
+        ]
+      },
+      {
+        "nodes": [
+          {
+            "args": [],
+            "code": "^XA",
+            "kind": "Command",
+            "span": {
+              "end": 59,
+              "start": 56
+            }
+          },
+          {
+            "args": [],
+            "code": "^XZ",
+            "kind": "Command",
+            "span": {
+              "end": 62,
+              "start": 59
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "label_count": 3,
+  "ok": true,
+  "parser_diagnostics": [],
+  "validator_issues": [
+    {
+      "id": "ZPL2202",
+      "message": "Empty label (no commands between ^XA and ^XZ)",
+      "severity": "info",
+      "span": {
+        "end": 59,
+        "start": 56
+      }
+    }
+  ]
+}

@@ -1,0 +1,385 @@
+{
+  // Diagnostic codes spec — machine-readable catalog of all ZPL toolchain diagnostics.
+  // Each entry declares the context keys that its structured `context` field may carry.
+  "version": "1.1.0",
+  "diagnostics": [
+    {
+      "id": "ZPL1101",
+      "constName": "ARITY",
+      "severity": "error",
+      "category": "arity",
+      "summary": "Too many arguments",
+      "description": "Too many arguments provided compared to the command's arity.",
+      "contextKeys": ["command", "arity", "actual"]
+    },
+    {
+      "id": "ZPL1103",
+      "constName": "INVALID_ENUM",
+      "severity": "error",
+      "category": "value-validation",
+      "summary": "Invalid enumerated value",
+      "description": "Argument value is not one of the allowed enumerated values.",
+      "contextKeys": ["command", "arg", "value"]
+    },
+    {
+      "id": "ZPL1104",
+      "constName": "EMPTY_FIELD_DATA",
+      "severity": "error",
+      "category": "value-validation",
+      "summary": "Empty field data",
+      "description": "Field data (^FD/^FV) is present but empty; often unintended.",
+      "contextKeys": ["command"]
+    },
+    {
+      "id": "ZPL1105",
+      "constName": "STRING_TOO_SHORT",
+      "severity": "error",
+      "category": "value-validation",
+      "summary": "String too short",
+      "description": "String is shorter than the minimum length allowed.",
+      "contextKeys": ["command", "arg", "value", "min_length", "actual_length"]
+    },
+    {
+      "id": "ZPL1106",
+      "constName": "STRING_TOO_LONG",
+      "severity": "error",
+      "category": "value-validation",
+      "summary": "String too long",
+      "description": "String exceeds the maximum length allowed.",
+      "contextKeys": ["command", "arg", "value", "max_length", "actual_length"]
+    },
+    {
+      "id": "ZPL1107",
+      "constName": "EXPECTED_INTEGER",
+      "severity": "error",
+      "category": "value-validation",
+      "summary": "Expected integer",
+      "description": "Argument expected an integer value but received a non-integer string.",
+      "contextKeys": ["command", "arg", "value"]
+    },
+    {
+      "id": "ZPL1108",
+      "constName": "EXPECTED_NUMERIC",
+      "severity": "error",
+      "category": "value-validation",
+      "summary": "Expected numeric",
+      "description": "Argument expected a numeric value but received a non-numeric string.",
+      "contextKeys": ["command", "arg", "value"]
+    },
+    {
+      "id": "ZPL1109",
+      "constName": "EXPECTED_CHAR",
+      "severity": "error",
+      "category": "value-validation",
+      "summary": "Expected single character",
+      "description": "Argument expected a single character but received a multi-character or empty string.",
+      "contextKeys": ["command", "arg", "value"]
+    },
+    {
+      "id": "ZPL1201",
+      "constName": "OUT_OF_RANGE",
+      "severity": "error",
+      "category": "range",
+      "summary": "Value outside range",
+      "description": "Value is outside the allowed numeric range for this argument.",
+      "contextKeys": ["command", "arg", "value", "min", "max"]
+    },
+    {
+      "id": "ZPL1202",
+      "constName": "ROUNDING_VIOLATION",
+      "severity": "warn",
+      "category": "rounding",
+      "summary": "Rounding policy violation",
+      "description": "Value does not conform to the rounding policy (e.g., not a multiple).",
+      "contextKeys": ["command", "arg", "value", "multiple"]
+    },
+    {
+      "id": "ZPL1401",
+      "constName": "PROFILE_CONSTRAINT",
+      "severity": "error",
+      "category": "profile-constraints",
+      "summary": "Profile constraint violation",
+      "description": "Value violates a profile constraint (e.g., exceeds page width).",
+      "contextKeys": ["command", "arg", "field", "op", "limit", "actual"]
+    },
+    {
+      "id": "ZPL1402",
+      "constName": "PRINTER_GATE",
+      "severity": "error",
+      "category": "profile-constraints",
+      "summary": "Printer gate violation",
+      "description": "A command, argument, or enum value requires a printer capability (gate) that is not declared in the loaded profile. Check the profile's feature set or choose a different command/value supported by your printer.",
+      "contextKeys": ["command", "gate", "level", "profile", "arg", "value"]
+    },
+    {
+      "id": "ZPL1403",
+      "constName": "MEDIA_MODE_UNSUPPORTED",
+      "severity": "warn",
+      "category": "profile-constraints",
+      "summary": "Media mode unsupported",
+      "description": "A command selects a media mode, tracking method, or print type that is not listed in the loaded profile's media capabilities.",
+      "contextKeys": ["command", "kind", "value", "supported", "profile_method", "profile"]
+    },
+    {
+      "id": "ZPL1501",
+      "constName": "REQUIRED_MISSING",
+      "severity": "error",
+      "category": "presence",
+      "summary": "Required argument missing",
+      "description": "A required argument is missing or unset.",
+      "contextKeys": ["command", "arg"]
+    },
+    {
+      "id": "ZPL1502",
+      "constName": "REQUIRED_EMPTY",
+      "severity": "warn",
+      "category": "presence",
+      "summary": "Empty required value",
+      "description": "An argument is empty but required to have a value.",
+      "contextKeys": ["command", "arg"]
+    },
+    {
+      "id": "ZPL2101",
+      "constName": "REQUIRED_COMMAND",
+      "severity": "warn",
+      "category": "cross-command-constraints",
+      "summary": "Required command missing",
+      "description": "A required command was not found in the label where expected.",
+      "contextKeys": ["command", "target", "kind"]
+    },
+    {
+      "id": "ZPL2102",
+      "constName": "INCOMPATIBLE_COMMAND",
+      "severity": "warn",
+      "category": "cross-command-constraints",
+      "summary": "Incompatible commands",
+      "description": "This command is incompatible with another present in the label.",
+      "contextKeys": ["command", "target", "kind"]
+    },
+    {
+      "id": "ZPL2103",
+      "constName": "ORDER_BEFORE",
+      "severity": "warn",
+      "category": "cross-command-constraints",
+      "summary": "Ordering violation (before)",
+      "description": "Command ordering rule violated: this command should appear before the referenced one.",
+      "contextKeys": ["command", "target", "kind"]
+    },
+    {
+      "id": "ZPL2104",
+      "constName": "ORDER_AFTER",
+      "severity": "warn",
+      "category": "cross-command-constraints",
+      "summary": "Ordering violation (after)",
+      "description": "Command ordering rule violated: this command should appear after the referenced one.",
+      "contextKeys": ["command", "target", "kind"]
+    },
+    {
+      "id": "ZPL2201",
+      "constName": "FIELD_DATA_WITHOUT_ORIGIN",
+      "severity": "warn",
+      "category": "structural-validation",
+      "summary": "Field data without origin",
+      "description": "Field data command (^FD/^FV) without a preceding field origin (^FO/^FT).",
+      "contextKeys": ["command"]
+    },
+    {
+      "id": "ZPL2202",
+      "constName": "EMPTY_LABEL",
+      "severity": "info",
+      "category": "structural-validation",
+      "summary": "Empty label",
+      "description": "Empty label with no commands between ^XA and ^XZ.",
+      "contextKeys": []
+    },
+    {
+      "id": "ZPL2203",
+      "constName": "FIELD_NOT_CLOSED",
+      "severity": "warn",
+      "category": "structural-validation",
+      "summary": "Field origin before previous closed",
+      "description": "Field origin (^FO/^FT) opens a new field before the previous field was closed with ^FS.",
+      "contextKeys": ["command"]
+    },
+    {
+      "id": "ZPL2204",
+      "constName": "ORPHANED_FIELD_SEPARATOR",
+      "severity": "warn",
+      "category": "structural-validation",
+      "summary": "Field separator without origin",
+      "description": "Field separator (^FS) without a preceding field origin (^FO/^FT).",
+      "contextKeys": ["command"]
+    },
+    {
+      "id": "ZPL2205",
+      "constName": "HOST_COMMAND_IN_LABEL",
+      "severity": "warn",
+      "category": "structural-validation",
+      "summary": "Host command in label",
+      "description": "Host or device command appearing inside a label (between ^XA and ^XZ).",
+      "contextKeys": ["command", "plane"]
+    },
+    {
+      "id": "ZPL2301",
+      "constName": "DUPLICATE_FIELD_NUMBER",
+      "severity": "warn",
+      "category": "semantic-validation",
+      "summary": "Duplicate field number",
+      "description": "Duplicate field number (^FN) — same number used multiple times in a label.",
+      "contextKeys": ["command", "field_number"]
+    },
+    {
+      "id": "ZPL2302",
+      "constName": "POSITION_OUT_OF_BOUNDS",
+      "severity": "warn",
+      "category": "semantic-validation",
+      "summary": "Position exceeds dimensions",
+      "description": "Field position (^FO/^FT) exceeds label dimensions set by ^PW/^LL or profile.",
+      "contextKeys": ["command", "axis", "value", "limit"]
+    },
+    {
+      "id": "ZPL2303",
+      "constName": "UNKNOWN_FONT",
+      "severity": "warn",
+      "category": "semantic-validation",
+      "summary": "Font not loaded",
+      "description": "Font referenced by ^A is not a built-in font (A-Z, 0-9) and has not been loaded via ^CW.",
+      "contextKeys": ["command", "font"]
+    },
+    {
+      "id": "ZPL2304",
+      "constName": "INVALID_HEX_ESCAPE",
+      "severity": "error",
+      "category": "semantic-validation",
+      "summary": "Invalid hex escape sequence",
+      "description": "Invalid hex escape sequence in field data when ^FH is active. Indicator character defaults to '_' but can be changed via ^FH argument.",
+      "contextKeys": ["command", "indicator"]
+    },
+    {
+      "id": "ZPL2305",
+      "constName": "REDUNDANT_STATE",
+      "severity": "info",
+      "category": "semantic-validation",
+      "summary": "State override unused",
+      "description": "State-setting command overrides a previous one without any consumer using the earlier value.",
+      "contextKeys": ["command"]
+    },
+    {
+      "id": "ZPL2306",
+      "constName": "SERIALIZATION_WITHOUT_FIELD_NUMBER",
+      "severity": "warn",
+      "category": "semantic-validation",
+      "summary": "Serialization without field number",
+      "description": "Serialization command (^SN/^SF) used in a field without a ^FN field number assignment.",
+      "contextKeys": ["command"]
+    },
+    {
+      "id": "ZPL2307",
+      "constName": "GF_DATA_LENGTH_MISMATCH",
+      "severity": "error",
+      "category": "semantic-validation",
+      "summary": "Graphic data length mismatch",
+      "description": "^GF graphic data length does not match declared binary_byte_count for the given compression format.",
+      "contextKeys": ["command", "format", "declared", "actual", "expected"]
+    },
+    {
+      "id": "ZPL2401",
+      "constName": "BARCODE_INVALID_CHAR",
+      "severity": "error",
+      "category": "barcode-validation",
+      "summary": "Invalid barcode data character",
+      "description": "Field data contains characters not allowed by the active barcode's character set.",
+      "contextKeys": ["command", "character", "position", "allowedSet"]
+    },
+    {
+      "id": "ZPL2402",
+      "constName": "BARCODE_DATA_LENGTH",
+      "severity": "warn",
+      "category": "barcode-validation",
+      "summary": "Barcode data length violation",
+      "description": "Field data length violates the active barcode's length requirements.",
+      "contextKeys": ["command", "actual", "expected", "min", "max", "parity"]
+    },
+    {
+      "id": "ZPL3001",
+      "constName": "NOTE",
+      "severity": "info",
+      "category": "notes",
+      "summary": "Informational note",
+      "description": "Informational note about command usage or behavior.",
+      "contextKeys": ["command"]
+    },
+    {
+      "id": "ZPL.PARSER.0001",
+      "constName": "PARSER_NO_LABELS",
+      "severity": "info",
+      "category": "parser",
+      "summary": "No labels detected",
+      "description": "No labels detected in the input.",
+      "contextKeys": []
+    },
+    {
+      "id": "ZPL.PARSER.1001",
+      "constName": "PARSER_INVALID_COMMAND",
+      "severity": "error",
+      "category": "parser",
+      "summary": "Invalid or missing command code",
+      "description": "Invalid or missing command code after leader (^ or ~).",
+      "contextKeys": ["command"]
+    },
+    {
+      "id": "ZPL.PARSER.1002",
+      "constName": "PARSER_UNKNOWN_COMMAND",
+      "severity": "warn",
+      "category": "parser",
+      "summary": "Unknown command code",
+      "description": "Unknown command code (not in the command spec tables).",
+      "contextKeys": ["command"]
+    },
+    {
+      "id": "ZPL.PARSER.1102",
+      "constName": "PARSER_MISSING_TERMINATOR",
+      "severity": "error",
+      "category": "parser",
+      "summary": "Missing label terminator",
+      "description": "Missing label terminator (^XZ).",
+      "contextKeys": ["expected"]
+    },
+    {
+      "id": "ZPL.PARSER.1202",
+      "constName": "PARSER_MISSING_FIELD_SEPARATOR",
+      "severity": "error",
+      "category": "parser",
+      "summary": "Missing field separator",
+      "description": "Missing field separator (^FS) before label end or end of input.",
+      "contextKeys": ["expected", "command"]
+    },
+    {
+      "id": "ZPL.PARSER.1203",
+      "constName": "PARSER_FIELD_DATA_INTERRUPTED",
+      "severity": "warn",
+      "category": "parser",
+      "summary": "Field data interrupted",
+      "description": "Field data interrupted by another command before ^FS.",
+      "contextKeys": ["command"]
+    },
+    {
+      "id": "ZPL.PARSER.1301",
+      "constName": "PARSER_STRAY_CONTENT",
+      "severity": "warn",
+      "category": "parser",
+      "summary": "Stray content",
+      "description": "Stray content (text or punctuation) found outside of a command context.",
+      "contextKeys": []
+    },
+    {
+      "id": "ZPL.PARSER.1302",
+      "constName": "PARSER_NON_ASCII_ARG",
+      "severity": "error",
+      "category": "parser",
+      "summary": "Non-ASCII argument",
+      "description": "Prefix/delimiter change commands (^CC, ^CT, ^CD) require an ASCII character argument. Non-ASCII characters cannot be used as command prefixes or delimiters because the lexer operates on single bytes.",
+      "contextKeys": ["command"]
+    }
+  ]
+}

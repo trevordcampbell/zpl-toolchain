@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JR"],
+      "name": "Power On Reset",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Resets all internal software, performs a power-on self-test (POST), clears the buffer and DRAM, and resets communication parameters and default values. Same as a manual power-on reset."
+    }
+  ]
+}

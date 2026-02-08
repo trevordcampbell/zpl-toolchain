@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~HI"],
+      "name": "Host Identification",
+      "plane": "device",
+      "scope": "document",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Returns printer identification information to the host including model, software version, dots-per-millimeter setting, memory size, and detected options."
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^RB"],
+      "printerGates": ["rfid"],
+      "name": "Define EPC Data Structure",
+      "plane": "format",
+      "scope": "document",
+      "arity": 17,
+      "signature": { "params": ["n","p0","p1","p2","p3","p4","p5","p6","p7","p8","p9","p10","p11","p12","p13","p14","p15"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "total_bits", "key": "n", "type": "int",
+          "range": [1, 496],
+          "optional": true, "default": 96,
+          "doc": "Total bit size of the partitions." },
+        { "name": "p0", "key": "p0", "type": "int", "range": [1, 64], "optional": true, "default": 1, "doc": "Partition 0 size in bits." },
+        { "name": "p1", "key": "p1", "type": "int", "range": [1, 64], "optional": true, "doc": "Partition 1 size in bits." },
+        { "name": "p2", "key": "p2", "type": "int", "range": [1, 64], "optional": true, "doc": "Partition 2 size in bits." },
+        { "name": "p3", "key": "p3", "type": "int", "range": [1, 64], "optional": true, "doc": "Partition 3 size in bits." },
+        { "name": "p4", "key": "p4", "type": "int", "range": [1, 64], "optional": true, "doc": "Partition 4 size in bits." },
+        { "name": "p5", "key": "p5", "type": "int", "range": [1, 64], "optional": true, "doc": "Partition 5 size in bits." },
+        { "name": "p6", "key": "p6", "type": "int", "range": [1, 64], "optional": true, "doc": "Partition 6 size in bits." },
+        { "name": "p7", "key": "p7", "type": "int", "range": [1, 64], "optional": true, "doc": "Partition 7 size in bits." },
+        { "name": "p8", "key": "p8", "type": "int", "range": [1, 64], "optional": true, "doc": "Partition 8 size in bits." },
+        { "name": "p9", "key": "p9", "type": "int", "range": [1, 64], "optional": true, "doc": "Partition 9 size in bits." },
+        { "name": "p10", "key": "p10", "type": "int", "range": [1, 64], "optional": true, "doc": "Partition 10 size in bits." },
+        { "name": "p11", "key": "p11", "type": "int", "range": [1, 64], "optional": true, "doc": "Partition 11 size in bits." },
+        { "name": "p12", "key": "p12", "type": "int", "range": [1, 64], "optional": true, "doc": "Partition 12 size in bits." },
+        { "name": "p13", "key": "p13", "type": "int", "range": [1, 64], "optional": true, "doc": "Partition 13 size in bits." },
+        { "name": "p14", "key": "p14", "type": "int", "range": [1, 64], "optional": true, "doc": "Partition 14 size in bits." },
+        { "name": "p15", "key": "p15", "type": "int", "range": [1, 64], "optional": true, "doc": "Partition 15 size in bits." }
+      ],
+      "effects": { "sets": ["rfid.epcStructure"] },
+      "constraints": [
+        { "kind": "note", "message": "Partition sizes must add up to the total bit size (n). The largest individual partition size is 64 bits. All parameters are persistent and used in subsequent formats if not provided." }
+      ],
+      "docs": "Defines the structure of EPC data for reading from or writing to an RFID tag, specifying partitions and their bit sizes."
+    }
+  ]
+}

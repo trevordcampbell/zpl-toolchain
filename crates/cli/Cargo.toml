@@ -1,0 +1,23 @@
+[package]
+name = "zpl_toolchain_cli"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Command-line interface for parsing, validating, and formatting ZPL II label code"
+keywords = ["zpl", "zebra", "label", "cli"]
+categories = ["command-line-utilities", "text-processing"]
+
+[dependencies]
+anyhow = { workspace = true }
+ariadne = "0.6"
+clap = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+zpl_toolchain_core = { path = "../core", version = "0.1.0" }
+zpl_toolchain_profile = { path = "../profile", version = "0.1.0" }
+zpl_toolchain_diagnostics = { path = "../diagnostics", version = "0.1.0" }
+
+[[bin]]
+name = "zpl"
+path = "src/main.rs"

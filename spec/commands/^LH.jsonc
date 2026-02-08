@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^LH"],
+      "name": "Label Home",
+      "plane": "format",
+      "scope": "document",
+      "arity": 2,
+      "signature": { "params": ["x","y"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "x", "key": "x", "type": "int", "range": [0, 32000], "unit": "dots", "optional": true, "default": 0,
+          "doc": "X-axis position of the label home in dots." },
+        { "name": "y", "key": "y", "type": "int", "range": [0, 32000], "unit": "dots", "optional": true, "default": 0,
+          "doc": "Y-axis position of the label home in dots." }
+      ],
+      "effects": { "sets": ["label.home.x", "label.home.y"] },
+      "constraints": [],
+      "docs": "Set label home (origin) offset in dots."
+    }
+  ]
+}

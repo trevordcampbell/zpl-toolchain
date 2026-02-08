@@ -1,0 +1,21 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JS"],
+      "name": "Change Backfeed Sequence",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["b"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "backfeed_order", "key": "b", "type": "string", "optional": true, "default": "N",
+          "doc": "Backfeed order relative to printing. A = 100% backfeed after printing/cutting, B = 0% after printing (100% before next label), N = normal (90% after label printed), O = off (no backfeed), 10-90 = percentage value (must be multiple of 10)." }
+      ],
+      "effects": { "sets": ["print.backfeedSequence"] },
+      "constraints": [],
+      "docs": "Controls the backfeed sequence for printers with or without cutters. Allows programming the rest point of continuous media cut edge or immediate backfeed after peel-off. Stays in effect until power off or new ~JS command."
+    }
+  ]
+}

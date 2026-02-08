@@ -1,0 +1,32 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^JJ"],
+      "printerGates": ["applicator"],
+      "name": "Set Auxiliary Port",
+      "plane": "device",
+      "scope": "session",
+      "arity": 6,
+      "signature": { "params": ["a","b","c","d","e","f"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "operational_mode", "key": "a", "type": "enum", "enum": ["0","1","2"], "optional": true, "default": "0",
+          "doc": "Operational mode. 0 = off, 1 = reprint on error, 2 = maximum throughput." },
+        { "name": "application_mode", "key": "b", "type": "enum", "enum": ["0","1","2","3","4"], "optional": true, "default": "0",
+          "doc": "Application mode. 0 = off, 1-4 = various End Print signal configurations." },
+        { "name": "start_signal_print", "key": "c", "type": "enum", "enum": ["p","l"], "optional": true, "default": "p",
+          "doc": "Start signal print mode. p = Pulse Mode, l = Level Mode." },
+        { "name": "label_error_mode", "key": "d", "type": "enum", "enum": ["e","f"], "optional": true, "default": "f",
+          "doc": "Label error mode. e = error mode (pause and display error), f = Feed Mode (blank label on web miss)." },
+        { "name": "reprint_mode", "key": "e", "type": "enum", "enum": ["e","d"], "optional": true, "default": "d",
+          "doc": "Reprint mode. e = enabled, d = disabled." },
+        { "name": "ribbon_low_mode", "key": "f", "type": "enum", "enum": ["e","d"], "optional": true, "default": "e",
+          "doc": "Ribbon low mode. e = enabled (warning when ribbon low), d = disabled." }
+      ],
+      "effects": { "sets": ["auxiliaryPort.operationalMode", "auxiliaryPort.applicationMode", "auxiliaryPort.startSignalPrint", "auxiliaryPort.labelErrorMode", "auxiliaryPort.reprintMode", "auxiliaryPort.ribbonLowMode"] },
+      "constraints": [],
+      "docs": "Controls an online verifier or applicator device through the auxiliary port. Configures operational mode, application signals, error handling, and ribbon monitoring."
+    }
+  ]
+}

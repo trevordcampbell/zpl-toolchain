@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^TO"],
+      "name": "Transfer Object",
+      "plane": "device",
+      "scope": "session",
+      "arity": 2,
+      "signature": { "params": ["source", "destination"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "source", "key": "source", "type": "string",
+          "doc": "Source object in the format d:o.x where d=device (R:, E:, B:, A:), o=object name (up to 8 chars, * wildcard supported), x=extension (* wildcard supported). If drive not specified, all objects are transferred." },
+        { "name": "destination", "key": "destination", "type": "string",
+          "doc": "Destination in the format d:o.x where d=device (R:, E:, B:, A: — must be specified), o=destination name (up to 8 chars, defaults to source name), x=extension (defaults to source extension). Wildcards supported." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Source and destination devices must be different and valid. At least one source parameter and one destination parameter must be specified. Zebra files (Z:*.*) cannot be transferred. If destination lacks space, the command is canceled." }
+      ],
+      "docs": "Copies an object or group of objects from one storage device to another. Supports wildcards (*) for object names and extensions for batch transfers."
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^CW"],
+      "name": "Font Identifier",
+      "plane": "device",
+      "scope": "session",
+      "arity": 4,
+      "signature": { "params": ["a", "d", "o", "x"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "font_letter", "key": "a", "type": "char",
+          "doc": "Single alphanumeric character (A-Z, 0-9) to assign to the font. If the same as a built-in font letter, the downloaded font replaces the built-in until power-off." },
+        { "name": "drive", "key": "d", "type": "string",
+          "optional": true, "default": "R:",
+          "doc": "Device location where the font is stored. Accepted values: R:, E:, B:, A:." },
+        { "name": "font_name", "key": "o", "type": "string",
+          "optional": true, "default": "UNKNOWN",
+          "doc": "Name of the downloaded font file (1-8 alphanumeric characters)." },
+        { "name": "extension", "key": "x", "type": "string",
+          "optional": true, "default": "FNT",
+          "doc": "Font file extension (typically FNT or TTF)." }
+      ],
+      "effects": { "sets": ["font.identifierMap"] },
+      "constraints": [
+        { "kind": "note", "message": "If the assigned letter matches a built-in font, the downloaded font is used in its place until power-off. If different, it acts as an additional font. Persists until power-off or reassigned." }
+      ],
+      "docs": "Assigns a single alphanumeric character identifier to a downloaded font stored in printer memory. This allows the font to be referenced by ^A using the assigned letter."
+    }
+  ]
+}

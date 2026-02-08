@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^KN"],
+      "name": "Define Printer Name",
+      "plane": "device",
+      "scope": "session",
+      "arity": 2,
+      "signature": { "params": ["a","b"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "printer_name", "key": "a", "type": "string",
+          "optional": true,
+          "doc": "Printer name, up to 16 alphanumeric characters. If a MAC address is present and no name is specified, defaults to ZBRxxx where xxx is derived from the MAC address. If more than 16 characters are entered, only the first 16 are used." },
+        { "name": "printer_description", "key": "b", "type": "string",
+          "optional": true,
+          "doc": "Printer description, up to 35 alphanumeric characters. If not entered, the current stored value is erased. If more than 35 characters are entered, only the first 35 are used. Displayed on the printer's web page in parentheses." }
+      ],
+      "effects": { "sets": ["network.printerName", "network.printerDescription"] },
+      "constraints": [
+        { "kind": "note", "message": "If ^KN is issued without parameters, the printer name and description are set to blank strings. Use ^JUS to save settings." }
+      ],
+      "docs": "Sets the printer's network name and description, displayed on configuration labels and the printer's web page."
+    }
+  ]
+}

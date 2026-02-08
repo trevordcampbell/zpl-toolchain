@@ -1,0 +1,42 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^KV"],
+      "printerGates": ["kiosk"],
+      "name": "Kiosk Values",
+      "plane": "device",
+      "scope": "session",
+      "arity": 5,
+      "signature": { "params": ["a","b","c","d","e"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "cut_amount", "key": "a", "type": "int",
+          "range": [0, 60],
+          "optional": true, "default": 0,
+          "doc": "Kiosk cut amount. 0 = normal cut, 10-60 = partial cut (mm of media left uncut). Ignored if missing or invalid." },
+        { "name": "cut_margin", "key": "b", "type": "int",
+          "range": [2, 9], "unit": "mm",
+          "optional": true, "default": 9,
+          "doc": "Kiosk cut margin in mm of distance. Ignored if missing or invalid." },
+        { "name": "present_type", "key": "c", "type": "enum",
+          "enum": ["0","1","2"],
+          "optional": true, "default": "0",
+          "doc": "0 = eject page when new page is printed, 1 = retract page when new page is printed, 2 = do nothing when new page is printed. Ignored if missing or invalid." },
+        { "name": "present_timeout", "key": "d", "type": "int",
+          "range": [0, 300], "unit": "seconds",
+          "optional": true, "default": 0,
+          "doc": "If label is not taken, retract label when timeout expires (seconds). 0 = no timeout. Ignored if missing or invalid." },
+        { "name": "loop_length", "key": "e", "type": "int",
+          "range": [0, 1023], "unit": "mm",
+          "optional": true, "default": 400,
+          "doc": "Presenter loop length. 0 = paper fed straight through, 3-1023 = loop length in mm. Clamped to loop_length_max SGD value if exceeded. Ignored if missing or invalid." }
+      ],
+      "effects": { "sets": ["kiosk.cutAmount", "kiosk.cutMargin", "kiosk.presentType", "kiosk.presentTimeout", "kiosk.loopLength"] },
+      "constraints": [
+        { "kind": "note", "message": "Supported only on KR403 printers. Sets parameters for Kiosk mode (^MMK)." }
+      ],
+      "docs": "Sets kiosk mode parameters including cut amount, cut margin, present type, present timeout, and presenter loop length."
+    }
+  ]
+}

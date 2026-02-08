@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^LT"],
+      "name": "Label Top",
+      "plane": "format",
+      "scope": "document",
+      "arity": 1,
+      "signature": { "params": ["x"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "label_top", "key": "x", "type": "int", "range": [-120, 120], "unit": "dots",
+          "optional": true, "default": 0,
+          "doc": "Label top offset in dot rows. Negative moves toward top of label, positive moves away. Range: HC100: 0-120, 600dpi: -240 to 240, all others: -120 to 120." }
+      ],
+      "effects": { "sets": ["label.top"] },
+      "constraints": [
+        { "kind": "note", "message": "Range varies by printer: HC100 0-120, XiIIIPlus 600dpi -240 to 240, all others -120 to 120. Value shown on front panel is double the ZPL value." }
+      ],
+      "docs": "Moves the entire label format up or down relative to the top edge of the label for fine-tuning position without changing other parameters."
+    }
+  ]
+}

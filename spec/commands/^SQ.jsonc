@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^SQ"],
+      "name": "Halt ZebraNet Alert",
+      "plane": "device",
+      "scope": "session",
+      "arity": 3,
+      "signature": { "params": ["a", "b", "c"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "condition_type", "key": "a", "type": "enum",
+          "enum": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "Q", "R", "S", "T", "U", "V", "W", "*"],
+          "doc": "Condition type. A=paper out, B=ribbon out, C=printhead over-temp, D=printhead under-temp, E=head open, F=power supply over-temp, G=ribbon-in warning, H=rewind full, I=cut error, J=printer paused, K=PQ job completed, L=label ready, M=head element out, N=ZBI runtime error, O=ZBI forced error, Q=clean printhead, R=media low, S=ribbon low, T=replace head, U=battery low, V=RFID error, W=all errors (RFID), *=all errors (non-RFID)." },
+        { "name": "destination", "key": "b", "type": "enum",
+          "enum": ["A", "B", "C", "D", "E", "F", "*"],
+          "doc": "Destination. A=serial port, B=parallel port, C=e-mail address, D=TCP/IP, E=UDP/IP, F=SNMP trap, *=all destinations." },
+        { "name": "halt_messages", "key": "c", "type": "enum",
+          "enum": ["Y", "N"],
+          "optional": true, "default": "Y",
+          "doc": "Y = halt messages, N = start messages." }
+      ],
+      "effects": { "sets": ["alerts.zebraNet"] },
+      "constraints": [],
+      "docs": "Stops or starts the ZebraNet Alert option for a specific condition type and destination."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^CC", "~CC"],
+      "name": "Change Caret Command Prefix",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["x"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "new_prefix_char", "key": "x", "type": "char",
+          "doc": "New caret character to use as the format command prefix. Any ASCII character is accepted. If no parameter is entered, the next character received becomes the new prefix. Default prefix is ^." }
+      ],
+      "effects": { "sets": ["parser.caretPrefix"] },
+      "constraints": [
+        { "kind": "note", "message": "Takes immediate effect. All subsequent format commands must use the new prefix character. Use ^JUS to persist across power cycles." }
+      ],
+      "docs": "Changes the format command prefix character from the default caret (^) to any other ASCII character. Takes immediate effect for all subsequent commands."
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^JI"],
+      "printerGates": ["zbi"],
+      "name": "Start ZBI (Zebra BASIC Interpreter)",
+      "plane": "device",
+      "scope": "session",
+      "arity": 6,
+      "signature": { "params": ["d","o","x","b","c","m"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"],
+          "doc": "Location of program to run after initialization. R:, E:, B:, A:. Must be specified." },
+        { "name": "name", "key": "o", "type": "string",
+          "doc": "Name of program to run after initialization. Must be specified." },
+        { "name": "extension", "key": "x", "type": "enum", "enum": ["BAS","BAE"],
+          "doc": "Extension of program. .BAS or .BAE (.BAE only in firmware V60.16.0Z or later)." },
+        { "name": "console", "key": "b", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "Y",
+          "doc": "Console control. Y = console on, N = console off." },
+        { "name": "echo", "key": "c", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "Y",
+          "doc": "Echoing control. Y = echo on, N = echo off." },
+        { "name": "memory_allocation", "key": "m", "type": "string", "optional": true, "default": "50K",
+          "doc": "Memory allocation for ZBI. 20K to 1024K. Only on firmware V60.12.0.x or earlier." }
+      ],
+      "constraints": [],
+      "docs": "Initializes the Zebra BASIC Interpreter (ZBI). Only one ZBI interpreter can be active at a time. Deactivate with ZPL at the ZBI prompt or ~JQ."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^SE"],
+      "name": "Select Encoding Table",
+      "plane": "device",
+      "scope": "session",
+      "arity": 3,
+      "signature": { "params": ["d","o","x"], "joiner": ":", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Location of encoding table. Values: R:, E:, B:, and A:." },
+        { "name": "name", "key": "o", "type": "string",
+          "doc": "Name of encoding table. 1 to 8 alphanumeric characters." },
+        { "name": "extension", "key": "x", "type": "string", "optional": true, "default": "DAT",
+          "doc": "Extension. Fixed value: .DAT." }
+      ],
+      "effects": { "sets": ["encoding.table"] },
+      "constraints": [],
+      "docs": "Selects the desired ZPL or ZPL II encoding table. Encoding tables are provided with the font card or downloaded in flash with the font."
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^FR"],
+      "name": "Field Reverse Print",
+      "plane": "format",
+      "scope": "field",
+      "requires_field": true,
+      "arity": 0,
+      "effects": { "sets": ["field.reverse"] },
+      "constraints": [],
+      "docs": "Allows a field to appear as white over black or black over white. The color of the output is the reverse of its background. Applies to only one field and must be specified each time. For label-wide reverse, use ^LR."
+    }
+  ]
+}

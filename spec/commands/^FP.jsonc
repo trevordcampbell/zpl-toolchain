@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^FP"],
+      "name": "Field Parameter",
+      "plane": "format",
+      "scope": "field",
+      "arity": 2,
+      "signature": { "params": ["d", "g"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "direction", "key": "d", "type": "enum", "enum": ["H", "V", "R"],
+          "optional": true, "default": "H",
+          "doc": "Direction of text. H=horizontal, V=vertical, R=reverse. Controls the reading direction of the field data." },
+        { "name": "additional_inter_character_gap", "key": "g", "type": "int", "range": [0, 9999], "unit": "dots",
+          "optional": true, "default": 0,
+          "doc": "Additional inter-character gap in dots added between characters." }
+      ],
+      "constraints": [],
+      "docs": "Sets the field direction and additional inter-character gap for text fields."
+    }
+  ]
+}

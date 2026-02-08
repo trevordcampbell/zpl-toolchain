@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^KP"],
+      "printerGates": ["lcd"],
+      "name": "Define Password",
+      "plane": "device",
+      "scope": "session",
+      "arity": 2,
+      "signature": { "params": ["a","b"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "password", "key": "a", "type": "string",
+          "doc": "Mandatory four-digit password. Values: 0000 to 9999. Default: 1234 (for most printers; EMEA printers purchased after August 2025 have no default and must be set before use)." },
+        { "name": "password_level", "key": "b", "type": "enum",
+          "enum": ["1","2","3","4"],
+          "optional": true, "default": "3",
+          "doc": "Password level (applicable to the S4M printer only). Values: 1, 2, 3, 4." }
+      ],
+      "effects": { "sets": ["security.password", "security.passwordLevel"] },
+      "constraints": [
+        { "kind": "note", "message": "This command does not work when the printer is in Protected Mode. With Protected Mode, use JSON-formatted Protect commands with the SGD display.password.current instead." }
+      ],
+      "docs": "Defines the password required to access the control panel switches and LCD Setup Mode."
+    }
+  ]
+}

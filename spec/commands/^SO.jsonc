@@ -1,0 +1,47 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^SO"],
+      "name": "Set Offset (for Real-Time Clock)",
+      "plane": "format",
+      "scope": "document",
+      "arity": 7,
+      "signature": { "params": ["a", "b", "c", "d", "e", "f", "g"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "clock_set", "key": "a", "type": "enum",
+          "enum": ["2", "3"],
+          "doc": "Clock set. 2 = secondary, 3 = third." },
+        { "name": "months_offset", "key": "b", "type": "int",
+          "range": [-32000, 32000],
+          "optional": true, "default": 0,
+          "doc": "Months offset from the primary Real-Time Clock." },
+        { "name": "days_offset", "key": "c", "type": "int",
+          "range": [-32000, 32000],
+          "optional": true, "default": 0,
+          "doc": "Days offset from the primary Real-Time Clock." },
+        { "name": "years_offset", "key": "d", "type": "int",
+          "range": [-32000, 32000],
+          "optional": true, "default": 0,
+          "doc": "Years offset from the primary Real-Time Clock." },
+        { "name": "hours_offset", "key": "e", "type": "int",
+          "range": [-32000, 32000],
+          "optional": true, "default": 0,
+          "doc": "Hours offset from the primary Real-Time Clock." },
+        { "name": "minutes_offset", "key": "f", "type": "int",
+          "range": [-32000, 32000],
+          "optional": true, "default": 0,
+          "doc": "Minutes offset from the primary Real-Time Clock." },
+        { "name": "seconds_offset", "key": "g", "type": "int",
+          "range": [-32000, 32000],
+          "optional": true, "default": 0,
+          "doc": "Seconds offset from the primary Real-Time Clock." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "For each label only one ^SO2 command can be used. If more than one offset is required, ^SO3 must be used. The clock_set value must be specified." }
+      ],
+      "docs": "Sets the secondary or tertiary offset from the primary Real-Time Clock, allowing different date/time values to appear on the same label."
+    }
+  ]
+}

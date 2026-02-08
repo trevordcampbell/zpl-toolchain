@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JG"],
+      "name": "Graphing Sensor Calibration",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Prints a graph (media sensor profile) of the sensor values. On HC100 printers, prints a sensor profile label without performing calibration."
+    }
+  ]
+}

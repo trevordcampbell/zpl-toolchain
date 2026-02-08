@@ -1,0 +1,17 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^PH", "~PH"],
+      "name": "Slew to Home Position",
+      "plane": "device",
+      "scope": "document",
+      "arity": 0,
+      "constraints": [
+        { "kind": "note", "message": "~PH feeds one label after the format currently being printed is done or when the printer is in pause. ^PH feeds one blank label after the current format prints." }
+      ],
+      "docs": "Feeds one blank label to advance the media to the home position."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^MU"],
+      "name": "Set Units of Measurement",
+      "plane": "format",
+      "scope": "session",
+      "arity": 3,
+      "signature": { "params": ["a", "b", "c"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "units", "key": "a", "type": "enum", "enum": ["D", "I", "M"],
+          "optional": true, "default": "D",
+          "doc": "Unit of measurement. D = dots, I = inches, M = millimeters." },
+        { "name": "format_base_dpi", "key": "b", "type": "enum", "enum": ["150", "200", "300", "600"],
+          "optional": true,
+          "doc": "Format base in dots per inch for DPI conversion. Must be specified or the parameter is ignored." },
+        { "name": "desired_dpi", "key": "c", "type": "enum", "enum": ["150", "200", "300", "600"],
+          "optional": true,
+          "doc": "Desired dots-per-inch conversion target. Must be specified or the parameter is ignored." }
+      ],
+      "effects": { "sets": ["format.units", "format.dpiConversion"] },
+      "constraints": [
+        { "kind": "note", "message": "Should appear at the beginning of the label format. Works field-by-field. To reset conversion, enter matching values for b and c." }
+      ],
+      "docs": "Sets the units of measurement (dots, inches, mm) and allows DPI conversion for cross-resolution label compatibility."
+    }
+  ]
+}

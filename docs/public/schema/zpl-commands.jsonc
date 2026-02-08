@@ -1,0 +1,63 @@
+{
+  // Canonical ZPL II commands (codes only). Generated/curated from docs/research/ListOfZPLIICommands.md
+  // This file is JSONC (comments allowed). Sections are for human readability only.
+  "codes": [
+    // Format/document structure
+    "^XA", "^XZ", "^LH", "^PW", "^LL", "^DF", "^XF",
+
+    // Field placement & termination
+    "^FO", "^FT", "^FS", "^FD",
+
+    // Text & font
+    "^A", "^A@", "^CF", "^FW", "^FB", "^FR", "^FV", "^FX",
+
+    // Graphics primitives & data
+    "^GB", "^GC", "^GE", "^GD", "^GF", "^GS",
+
+    // Barcodes (linear & 2D)
+    "^BY", "^BC", "^B3", "^B0", "^B1", "^B2", "^B4", "^B5", "^B7", "^B8", "^B9", "^BA", "^BB", "^BD",
+    "^BE", "^BF", "^BI", "^BJ", "^BK", "^BL", "^BM", "^BO", "^BP", "^BQ", "^BR", "^BS", "^BT", "^BU", "^BX", "^BZ",
+
+    // Prefixes, delimiters, code pages & mapping
+    "^CC", "~CC", "^CD", "~CD", "^CI", "^CM", "^CN", "^CO", "^CP", "^CT", "~CT", "^CV", "^CW",
+
+    // Device file operations
+    "~DB", "~DE", "~DG", "~DN", "~DS", "~DT", "~DU", "~DY", "~EG",
+
+    // Field data helpers
+    "^FC", "^FE", "^FH", "^FL", "^FM", "^FN", "^FP",
+
+    // Host diagnostics & reports
+    "~HB", "~HD", "^HF", "^HG", "^HH", "~HI", "~HM", "~HQ", "~HS", "^HT", "~HU", "^HV", "^HW", "^HY", "^HZ",
+
+    // Image/file ops
+    "^ID", "^IL", "^IM", "^IS",
+
+    // Job/format control
+    "~JA", "^JB", "~JB", "~JC", "~JD", "~JE", "~JF", "~JG", "^JH", "^JI", "~JI", "^JJ", "~JL", "^JM", "~JN", "~JO", "~JP", "~JQ", "~JR", "^JS", "~JS", "^JT", "^JU", "^JW", "~JX", "^JZ",
+
+    // Keyboard & input
+    "~KB", "^KD", "^KL", "^KN", "^KP", "^KV",
+
+    // Label positioning
+    "^LF", "^LR", "^LS", "^LT",
+
+    // Media & print settings
+    "^MA", "^MC", "^MD", "^MF", "^MI", "^ML", "^MM", "^MN", "^MP", "^MT", "^MU", "^MW",
+
+    // Printing control & speed
+    "^PA", "^PF", "^PH", "~PH", "~PL", "^PM", "~PM", "^PN", "^PO", "^PP", "~PP", "^PQ", "~PR", "^PR", "~PS",
+
+    // Settings & options
+    "~RO", "^SC", "~SD", "^SE", "^SF", "^SI", "^SL", "^SN", "^SO", "^SP", "^SQ", "^SR", "^SS", "^ST", "^SX", "^SZ",
+
+    // Misc & test
+    "~TA", "^TB", "^TO", "~WC", "^WD", "~WQ", "^XB", "^XG", "^XS", "^ZZ",
+
+    // Networking
+    "^KC", "^NB", "^NC", "~NC", "^ND", "^NI", "^NN", "^NP", "~NR", "^NS", "^NT", "~NT", "^NW", "^WA", "^WE", "^WL", "~WL", "^WP", "^WR", "~WR", "^WS", "^WX",
+
+    // RFID
+    "^HL", "~HL", "^HR", "^RB", "^RF", "^RL", "^RS", "^RU", "^RW"
+  ]
+}

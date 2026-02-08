@@ -1,0 +1,39 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^HR"],
+      "printerGates": ["rfid"],
+      "name": "Calibrate RFID Tag Position",
+      "plane": "device",
+      "scope": "document",
+      "arity": 9,
+      "signature": { "params": ["a","b","c","d","e","f","g","h","i"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "start_string", "key": "a", "type": "string", "optional": true, "default": "start",
+          "doc": "User text to appear before the results table. Max 65 characters." },
+        { "name": "end_string", "key": "b", "type": "string", "optional": true, "default": "end",
+          "doc": "User text to appear after the results table. Max 65 characters." },
+        { "name": "start_position", "key": "c", "type": "string", "optional": true,
+          "doc": "Start position of calibration range. Values: F0 to Fxxx (forward mm) or B0 to B30 (backward mm). Default varies by printer model." },
+        { "name": "end_position", "key": "d", "type": "string", "optional": true,
+          "doc": "End position of calibration range. Values: F0 to Fxxx, B0 to B30, or A (automatic). Default: A for Link-OS printers, label length for others." },
+        { "name": "detection_mode", "key": "e", "type": "enum", "enum": ["A","M"], "optional": true, "default": "A",
+          "doc": "Antenna and read/write power level detection. A = automatic, M = manual (use current settings)." },
+        { "name": "power_range_start", "key": "f", "type": "int", "range": [0, 30], "optional": true, "default": 0,
+          "doc": "Start of read/write power range." },
+        { "name": "power_range_end", "key": "g", "type": "int", "range": [0, 30], "optional": true,
+          "doc": "End of read/write power range. Default: maximum power based on regional compliance." },
+        { "name": "antenna_range_start", "key": "h", "type": "string", "optional": true, "default": "A1",
+          "doc": "Start of antenna range. Values depend on printer model (e.g., A1 to B4, A1 to E4). Default: A1." },
+        { "name": "antenna_range_end", "key": "i", "type": "string", "optional": true,
+          "doc": "End of antenna range. Values depend on printer model. Default: printer model dependent." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Tag calibration can take up to 5 minutes. Load RFID media, calibrate printer, close printhead, and feed at least one label before running. Results are returned to the host computer." }
+      ],
+      "docs": "Initiates RFID tag calibration to determine optimal programming position, antenna element, and read/write power levels for the RFID media being used."
+    }
+  ]
+}

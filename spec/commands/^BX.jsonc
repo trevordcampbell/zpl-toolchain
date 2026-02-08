@@ -1,0 +1,37 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^BX"],
+      "name": "Data Matrix Bar Code",
+      "plane": "format",
+      "scope": "field",
+      "arity": 8,
+      "signature": { "params": ["o","h","s","c","r","f","g","a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
+        { "name": "height", "key": "h", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+          "doc": "Individual symbol element height/width in dots" },
+        { "name": "quality", "key": "s", "type": "enum", "enum": ["0", "50", "80", "100", "140", "200"], "optional": true, "default": "0",
+          "doc": "Error correction quality level (0=ECC-000 to 200=ECC-200; 200 is recommended)" },
+        { "name": "columns", "key": "c", "type": "int", "range": [9, 49], "optional": true,
+          "doc": "Number of columns in the Data Matrix (odd values 9-49)" },
+        { "name": "rows", "key": "r", "type": "int", "range": [9, 49], "optional": true,
+          "doc": "Number of rows in the Data Matrix (odd values 9-49)" },
+        { "name": "format_id", "key": "f", "type": "int", "range": [1, 6], "optional": true, "default": 6,
+          "doc": "Format identifier (1-5=field data specific formats, 6=auto-detect from ^FD data)" },
+        { "name": "escape_character", "key": "g", "type": "char", "optional": true, "default": "~",
+          "doc": "Escape character for embedding special codes in field data" },
+        { "name": "aspect_ratio", "key": "a", "type": "enum", "enum": ["1", "2"], "optional": true, "default": "1",
+          "doc": "Symbol aspect ratio (1=square, 2=rectangular)" }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BX should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print a Data Matrix symbol (height, quality, rows/cols, format, and more).",
+      "fieldDataRules": { "maxLength": 3072, "notes": "Quality 0-140: max 596 chars; character set by format ID (f): 1=numeric+space, 2=uppercase+space, 3=alphanumeric+punctuation, 4=alphanumeric+space, 5=full 7-bit ASCII, 6=full 8-bit ISO (default). Quality 200 (ECC 200): max 3072 bytes; escape sequences via ~ or _ (param g) for control chars and FNC codes" }
+    }
+  ]
+}

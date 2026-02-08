@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~DN"],
+      "name": "Abort Download Graphic",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Aborts Graphics Mode and resumes normal printer operation. Use to clear an active ~DG command after aborting transmission from the host device."
+    }
+  ]
+}

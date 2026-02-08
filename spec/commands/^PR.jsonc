@@ -1,0 +1,30 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^PR"],
+      "name": "Print Rate",
+      "plane": "device",
+      "scope": "session",
+      "arity": 3,
+      "signature": { "params": ["p", "s", "b"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "print_speed", "key": "p", "type": "string",
+          "optional": true, "default": "A",
+          "doc": "Print speed. Values: 1-14 or A/B/C/D/E (letter aliases for 2/3/4/6/8 ips). Default: A (2 ips). Actual speed capped by printer capability." },
+        { "name": "slew_speed", "key": "s", "type": "string",
+          "optional": true, "default": "D",
+          "doc": "Slew speed (blank label feed). Values: 2-14 or A/B/C/D/E. Default: D (6 ips)." },
+        { "name": "backfeed_speed", "key": "b", "type": "string",
+          "optional": true, "default": "A",
+          "doc": "Backfeed speed. Values: 2-14 or A/B/C/D/E. Default: A (2 ips)." }
+      ],
+      "effects": { "sets": ["print.speed", "print.slewSpeed", "print.backfeedSpeed"] },
+      "constraints": [
+        { "kind": "note", "message": "Speed values are capped by the printer's maximum capability. Letter aliases: A=2, B=3, C=4, D=6, E=8 ips." }
+      ],
+      "docs": "Sets print, slew, and backfeed speeds. Setting persists until reissued or printer is powered off."
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^TB"],
+      "name": "Text Block",
+      "plane": "format",
+      "scope": "field",
+      "arity": 3,
+      "signature": { "params": ["a","b","c"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "a", "type": "enum", "enum": ["N","R","I","B"], "optional": true,
+          "doc": "Block rotation. N = normal, R = rotate 90 degrees clockwise, I = invert 180 degrees, B = read from bottom up 270 degrees. Default: whatever was specified by the last ^A (which has the default of ^FW)." },
+        { "name": "width", "key": "b", "type": "int", "unit": "dots", "range": [1, 32000], "optional": true, "default": 1,
+          "doc": "Block width in dots. Range: 1 to the width of the label." },
+        { "name": "height", "key": "c", "type": "int", "unit": "dots", "range": [1, 32000], "optional": true, "default": 1,
+          "doc": "Block height in dots. Range: 1 to the length of the label. Text exceeding block height is truncated." }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FS", "message": "^TB should appear before its ^FS", "severity": "info" },
+        { "kind": "note", "message": "^TB is the preferred command for printing fields or blocks of text instead of ^FB. Supports complex text layout features. Justification comes from ^FO, ^FT, or ^FN. Data between < and > is processed as escape sequences. Available in firmware V60.14.x, V50.14.x, or later." }
+      ],
+      "docs": "Prints a text block with defined width and height. Features automatic word-wrap. If text exceeds block height, it is truncated. Supports complex text layout features. Preferred over ^FB."
+    }
+  ]
+}

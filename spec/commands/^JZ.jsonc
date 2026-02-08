@@ -1,0 +1,21 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^JZ"],
+      "name": "Reprint After Error",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "reprint", "key": "a", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "Y",
+          "doc": "Y = reprint after error, N = do not reprint. Reprints a partially printed label caused by Ribbon Out, Media Out, or Head Open error condition." }
+      ],
+      "effects": { "sets": ["print.reprintAfterError"] },
+      "constraints": [],
+      "docs": "Controls whether a partially printed label caused by a Ribbon Out, Media Out, or Head Open error is reprinted when the error condition is corrected. Remains active until another ^JZ command is sent or the printer is turned off."
+    }
+  ]
+}

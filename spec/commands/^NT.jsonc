@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^NT"],
+      "name": "Set SMTP",
+      "plane": "device",
+      "scope": "session",
+      "arity": 2,
+      "signature": { "params": ["a","b"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "smtp_server", "key": "a", "type": "string",
+          "optional": true,
+          "doc": "SMTP server address in xxx.xxx.xxx.xxx format." },
+        { "name": "domain", "key": "b", "type": "string",
+          "optional": true,
+          "doc": "Print server domain name. One or more labels separated by a period, e.g. zebra.com." }
+      ],
+      "constraints": [],
+      "docs": "Sets the Simple Mail Transfer Protocol (SMTP) parameters for e-mail alert settings."
+    }
+  ]
+}

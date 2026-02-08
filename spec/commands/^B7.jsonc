@@ -1,0 +1,34 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^B7"],
+      "name": "PDF417 Bar Code",
+      "plane": "format",
+      "scope": "field",
+      "arity": 6,
+      "signature": { "params": ["o","h","s","c","r","t"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
+        { "name": "row_height", "key": "h", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+          "doc": "Height of each individual row in dots" },
+        { "name": "security_level", "key": "s", "type": "int", "range": [0, 8], "optional": true, "default": 0,
+          "doc": "Error correction level (0-8); higher values add more redundancy" },
+        { "name": "data_columns", "key": "c", "type": "int", "range": [1, 30], "optional": true,
+          "doc": "Number of data columns in the symbol (1-30)" },
+        { "name": "rows", "key": "r", "type": "int", "range": [3, 90], "optional": true,
+          "doc": "Number of rows in the symbol (3-90)" },
+        { "name": "truncate", "key": "t", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Whether to print a truncated (compact) PDF417 symbol" }
+      ],
+      "constraints": [
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^B7 to set module width", "severity": "warn" },
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^B7 should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print a PDF417 two-dimensional stacked barcode capable of encoding over 1000 characters.",
+      "fieldDataRules": { "maxLength": 3072, "notes": "Full ASCII set except ZPL control characters; \\& encodes CR/LF, \\\\ encodes backslash (requires ^CI13); use ^FH for hex-encoded binary data; serialization not supported" }
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^NB"],
+      "name": "Network Boot Search",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "check", "key": "a", "type": "enum",
+          "enum": ["C","S"],
+          "optional": true, "default": "S",
+          "doc": "C = check for wired print server at boot time, S = skip check." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "This command is ignored on Xi4, RXi4, ZM400, ZM600, RZ400, and RZ600 printers. Only one print server can be installed in the S4M at one time." }
+      ],
+      "docs": "Tells the printer whether to search for a wired print server at bootup."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^GD"],
+      "name": "Graphic Diagonal Line",
+      "plane": "format",
+      "scope": "field",
+      "arity": 5,
+      "signature": { "params": ["w","h","t","c","o"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "width", "key": "w", "type": "int", "unit": "dots", "range": [3, 32000], "optional": true, "default": 3,
+          "doc": "Bounding box width for the diagonal line in dots." },
+        { "name": "height", "key": "h", "type": "int", "unit": "dots", "range": [3, 32000], "optional": true, "default": 3,
+          "doc": "Bounding box height for the diagonal line in dots." },
+        { "name": "thickness", "key": "t", "type": "int", "unit": "dots", "range": [1, 32000], "optional": true, "default": 1,
+          "doc": "Line thickness in dots." },
+        { "name": "color", "key": "c", "type": "enum", "enum": ["B","W"], "optional": true, "default": "B",
+          "doc": "Line color. B=black, W=white." },
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["R","L"], "optional": true, "default": "R",
+          "doc": "R = right-leaning diagonal (/), L = left-leaning diagonal (\\)." }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FS", "message": "^GD should appear before its ^FS", "severity": "info" }
+      ],
+      "docs": "Produces a straight diagonal line on a label within a bounding box defined by width and height. Can be used with other graphic commands to create complex figures."
+    }
+  ]
+}

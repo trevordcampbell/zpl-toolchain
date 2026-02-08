@@ -1,0 +1,26 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^IM"],
+      "name": "Image Move",
+      "plane": "format",
+      "scope": "field",
+      "arity": 3,
+      "signature": { "params": ["d","o","x"], "joiner": ":", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Location of stored object. Values: R:, E:, B:, and A:. Default: search priority." },
+        { "name": "name", "key": "o", "type": "string", "optional": true,
+          "doc": "Object name. 1 to 8 alphanumeric characters. Default: UNKNOWN." },
+        { "name": "extension", "key": "x", "type": "enum", "enum": ["GRF","PNG"], "optional": true, "default": "GRF",
+          "doc": "Extension. Fixed value: .GRF or .PNG." }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FS", "message": "^IM should appear before its ^FS", "severity": "info" }
+      ],
+      "docs": "Performs a direct move of an image from storage area into the bitmap. Identical to ^XG but without magnification parameters. Can be positioned anywhere on the label using ^FO."
+    }
+  ]
+}

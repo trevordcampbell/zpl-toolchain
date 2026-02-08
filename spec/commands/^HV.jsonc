@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^HV"],
+      "name": "Host Verification",
+      "plane": "format",
+      "scope": "field",
+      "arity": 5,
+      "signature": { "params": ["num","n","h","t","a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "field_number", "key": "num", "type": "int", "range": [0, 9999], "optional": true, "default": 0,
+          "doc": "Field number specified with ^FN or ^RF command." },
+        { "name": "bytes_to_return", "key": "n", "type": "int", "range": [1, 256], "optional": true, "default": 64,
+          "doc": "Number of bytes to be returned to the host." },
+        { "name": "header", "key": "h", "type": "string", "optional": true,
+          "doc": "Header to be returned with the data. 0 to 3072 bytes. Field Hex (^FH) capable." },
+        { "name": "termination", "key": "t", "type": "string", "optional": true,
+          "doc": "Termination string. 0 to 3072 characters. Field Hex (^FH) capable." },
+        { "name": "applies_to", "key": "a", "type": "enum", "enum": ["F","L"], "optional": true, "default": "F",
+          "doc": "F = one response per format, L = one response per label printed. Relevant when ^PQ > 1 or void labels occur." }
+      ],
+      "constraints": [],
+      "docs": "Returns data from specified fields, along with an optional ASCII header, to the host computer. Used with fields assigned a number via ^FN or ^RF commands."
+    }
+  ]
+}

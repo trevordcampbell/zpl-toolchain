@@ -1,0 +1,29 @@
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "zpl-toolchain"
+version = "0.1.0"
+description = "ZPL II toolchain — parse, validate, and format Zebra Programming Language files"
+license = { text = "MIT OR Apache-2.0" }
+requires-python = ">=3.9"
+keywords = ["zpl", "zebra", "label", "printer", "parser"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Compilers",
+    "Topic :: Text Processing",
+    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
+]
+
+[project.urls]
+Homepage = "https://github.com/trevordcampbell/zpl-toolchain"
+Repository = "https://github.com/trevordcampbell/zpl-toolchain"
+Issues = "https://github.com/trevordcampbell/zpl-toolchain/issues"
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "zpl_toolchain"

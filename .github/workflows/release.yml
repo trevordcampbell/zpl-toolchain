@@ -1,0 +1,159 @@
+name: Release (manual)
+
+# Manual fallback: triggered by pushing a v* tag directly.
+# Day-to-day releases go through release-plz.yml (automated via Release PRs).
+# Use this when you need to manually cut a release without release-plz,
+# e.g.:  git tag v0.3.0 && git push origin v0.3.0
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  # ── Smoke test before building release artifacts ────────────────────
+  test:
+    name: Pre-release Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: release-test
+
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
+
+      - name: Test
+        run: cargo nextest run --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+
+      - name: Clippy
+        run: cargo clippy --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python -- -D warnings
+
+  # ── Build CLI binaries for each platform ──────────────────────────────
+  build-cli:
+    name: Build CLI (${{ matrix.target }})
+    needs: [test]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            archive: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            archive: tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive: zip
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          targets: ${{ matrix.target }}
+          cache-key: release-cli-${{ matrix.target }}
+
+      - name: Build CLI (release)
+        run: cargo build -p zpl_toolchain_cli --release --locked --target ${{ matrix.target }}
+
+      - name: Package (Unix)
+        if: matrix.archive == 'tar.gz'
+        run: |
+          BINARY=target/${{ matrix.target }}/release/zpl
+          ARCHIVE=zpl-${{ matrix.target }}.tar.gz
+          tar czf "$ARCHIVE" -C "$(dirname "$BINARY")" "$(basename "$BINARY")"
+          sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
+          echo "ARCHIVE=$ARCHIVE" >> "$GITHUB_ENV"
+
+      - name: Package (Windows)
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          $binary = "target/${{ matrix.target }}/release/zpl.exe"
+          $archive = "zpl-${{ matrix.target }}.zip"
+          Compress-Archive -Path $binary -DestinationPath $archive
+          $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower()
+          "$hash  $archive" | Out-File -FilePath "$archive.sha256" -Encoding utf8
+          "ARCHIVE=$archive" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ matrix.target }}
+          path: |
+            zpl-${{ matrix.target }}.*
+
+  # ── Build C FFI for each platform ─────────────────────────────────────
+  build-ffi:
+    name: Build FFI (${{ matrix.target }})
+    needs: [test]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            lib_glob: libzpl_toolchain_ffi.so
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            lib_glob: libzpl_toolchain_ffi.dylib
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            lib_glob: zpl_toolchain_ffi.dll
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          targets: ${{ matrix.target }}
+          cache-key: release-ffi-${{ matrix.target }}
+
+      - name: Build FFI (release)
+        run: cargo build -p zpl_toolchain_ffi --release --locked --target ${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffi-${{ matrix.target }}
+          path: |
+            target/${{ matrix.target }}/release/${{ matrix.lib_glob }}
+
+  # ── Create GitHub Release ─────────────────────────────────────────────
+  release:
+    name: Create Release
+    needs: [build-cli, build-ffi]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Extract changelog for this release
+        id: changelog
+        run: |
+          # Extract the section for the current tag version from CHANGELOG.md
+          TAG="${GITHUB_REF_NAME#v}"
+          awk -v ver="$TAG" '
+            /^## \[/ { if (found) exit; if (index($0, "[" ver "]")) found=1; next }
+            found { print }
+          ' CHANGELOG.md > release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release_notes.md
+          files: |
+            artifacts/**/*

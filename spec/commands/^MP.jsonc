@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^MP"],
+      "name": "Mode Protection",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "mode", "key": "a", "type": "enum",
+          "enum": ["D", "P", "C", "E", "S", "W", "F", "X", "M"],
+          "doc": "Mode to protect. D = disable Darkness Mode, P = disable Position Mode, C = disable Calibration Mode, E = enable all modes, S = disable all mode saves, W = disable Pause, F = disable Feed, X = disable Cancel, M = disable menu changes." }
+      ],
+      "effects": { "sets": ["controlPanel.modeProtection"] },
+      "constraints": [
+        { "kind": "note", "message": "Each mode must be disabled with an individual ^MP command. A value must be entered or the command is ignored." }
+      ],
+      "docs": "Disables various mode functions on the control panel. Once disabled, the settings for that mode function can no longer be changed and the associated LED does not light."
+    }
+  ]
+}

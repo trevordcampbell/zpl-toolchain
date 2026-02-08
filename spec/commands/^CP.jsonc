@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^CP"],
+      "name": "Remove Label",
+      "plane": "device",
+      "scope": "document",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "kiosk_present_mode", "key": "a", "type": "enum",
+          "enum": ["0", "1", "2"],
+          "doc": "Kiosk present mode. 0 = eject presented page, 1 = retract presented page, 2 = take the action defined by the c parameter of ^KV command." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Supported on KR403 only. The command is ignored if parameters are missing or invalid." }
+      ],
+      "docs": "Causes the printer to move a printed label out of the presenter area by ejecting, retracting, or taking the action defined by ^KV."
+    }
+  ]
+}

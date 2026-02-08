@@ -1,0 +1,26 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^GC"],
+      "name": "Graphic Circle",
+      "plane": "format",
+      "scope": "field",
+      "arity": 3,
+      "signature": { "params": ["d","t","c"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "diameter", "key": "d", "type": "int", "unit": "dots", "range": [3, 4095], "optional": true, "default": 3,
+          "doc": "Circle diameter in dots." },
+        { "name": "thickness", "key": "t", "type": "int", "unit": "dots", "range": [2, 4095], "optional": true, "default": 1,
+          "doc": "Border thickness in dots. Extends inward from the outer diameter." },
+        { "name": "color", "key": "c", "type": "enum", "enum": ["B","W"], "optional": true, "default": "B",
+          "doc": "Line color. B=black, W=white." }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FS", "message": "^GC should appear before its ^FS", "severity": "info" }
+      ],
+      "docs": "Produces a circle on the printed label. Parameters specify diameter, border thickness (extends inward), and line color."
+    }
+  ]
+}

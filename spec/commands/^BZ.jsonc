@@ -1,0 +1,32 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^BZ"],
+      "name": "POSTAL Bar Code",
+      "plane": "format",
+      "scope": "field",
+      "arity": 5,
+      "signature": { "params": ["o","h","f","g","t"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
+        { "name": "height", "key": "h", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+          "doc": "Height of the barcode in dots" },
+        { "name": "print_interpretation_line", "key": "f", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Whether to print the human-readable interpretation line below the barcode" },
+        { "name": "print_interpretation_line_above", "key": "g", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Whether to print the interpretation line above the barcode" },
+        { "name": "postal_code_type", "key": "t", "type": "enum", "enum": ["0","1","2","3"], "optional": true, "default": "0",
+          "doc": "Postal code format (0=Postnet, 1=Planet Code, 2=reserved, 3=USPS Intelligent Mail)" }
+      ],
+      "constraints": [
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BZ to set module width", "severity": "warn" },
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BZ should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print a POSTAL barcode (Postnet, Planet, or USPS Intelligent Mail) for automated mail handling.",
+      "fieldDataRules": { "characterSet": "0-9", "maxLength": 31, "notes": "Numeric digits only. Length depends on postal type (t param): Postnet (t=0): 5, 9, or 11 digits; Planet Code (t=1): 11 or 13 digits; USPS Intelligent Mail (t=3): 20, 25, 29, or 31 digits. Check digit auto-calculated where applicable" }
+    }
+  ]
+}

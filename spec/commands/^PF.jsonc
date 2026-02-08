@@ -1,0 +1,20 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^PF"],
+      "name": "Slew Given Number of Dot Rows",
+      "plane": "format",
+      "scope": "document",
+      "arity": 1,
+      "signature": { "params": ["n"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "dot_rows", "key": "n", "type": "int", "range": [0, 32000], "unit": "dots",
+          "doc": "Number of dot rows to slew from the bottom of the label. A value must be entered or the command is ignored." }
+      ],
+      "constraints": [],
+      "docs": "Causes the printer to slew (move at high speed without printing) a specified number of dot rows from the bottom of the label, allowing faster printing when the bottom portion is blank."
+    }
+  ]
+}

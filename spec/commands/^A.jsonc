@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "name": "Font Selection",
+      "plane": "format",
+      "scope": "field",
+      "codes": ["^A"],
+      "arity": 4,
+      "signature": { "params": ["f","o","h","w"], "joiner": ",", "allowEmptyTrailing": true, "splitRule": { "paramIndex": 0, "charCounts": [1, 1] } },
+      "args": [
+        { "name": "font", "key": "f", "type": "string", "optional": true, "defaultFrom": "^CF",
+          "doc": "Font name or letter (A-Z, 0-9) identifying the desired font." },
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Field orientation. N=normal, R=rotated 90° CW, I=inverted 180°, B=bottom-up 270°." },
+        { "name": "height", "key": "h", "type": "int", "range": [10,32000], "unit": "dots", "optional": true, "defaultFrom": "^CF",
+          "doc": "Character height in dots." },
+        { "name": "width", "key": "w", "type": "int", "range": [10,32000], "unit": "dots", "optional": true, "defaultFrom": "^CF",
+          "doc": "Character width in dots." }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FS", "message": "^A should appear before its field terminator ^FS", "severity": "info" },
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^A should appear before field data (^FD/^FV)", "severity": "warn" }
+      ],
+      "docs": "Select device font, orientation, and font size (dots)."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~NR"],
+      "name": "Set All Network Printers Transparent",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Sets all printers in the network to be transparent, regardless of ID or current mode. Used only with RS-485 printer communications."
+    }
+  ]
+}

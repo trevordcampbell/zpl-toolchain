@@ -1,0 +1,34 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^BM"],
+      "name": "MSI Bar Code",
+      "plane": "format",
+      "scope": "field",
+      "arity": 6,
+      "signature": { "params": ["o","e","h","f","g","e2"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
+        { "name": "check_digit_selection", "key": "e", "type": "enum", "enum": ["A","B","C","D"], "optional": true, "default": "B",
+          "doc": "Check digit algorithm (A=no check digit, B=Mod 10, C=2 Mod 10, D=Mod 11 and Mod 10)" },
+        { "name": "height", "key": "h", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+          "doc": "Height of the barcode in dots" },
+        { "name": "print_interpretation_line", "key": "f", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "Y",
+          "doc": "Whether to print the human-readable interpretation line below the barcode" },
+        { "name": "print_interpretation_line_above", "key": "g", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Whether to print the interpretation line above the barcode" },
+        { "name": "insert_check_digit_in_interpretation", "key": "e2", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Whether to include the check digit in the interpretation line" }
+      ],
+      "constraints": [
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BM to set module width", "severity": "warn" },
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BM should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print an MSI barcode, a pulse-width modulated continuous non-self-checking symbology.",
+      "fieldDataRules": { "characterSet": "0-9", "minLength": 1, "maxLength": 14, "notes": "Numeric only; max 14 digits when check digit e=B/C/D, max 13 when e=A (no check digit)" }
+    }
+  ]
+}

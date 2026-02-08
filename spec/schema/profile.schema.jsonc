@@ -1,0 +1,105 @@
+// Profile Schema v1.1.0
+// Defines the shape of printer profile files used by the ZPL toolchain.
+// The spec-compiler validates that all profileConstraint.field references
+// in command specs resolve to fields defined in this schema.
+{
+  "schemaVersion": "1.1.0",
+  "fields": [
+    // ── Identity ────────────────────────────────────────────────────────
+    {
+      "path": "id",
+      "type": "string",
+      "required": true,
+      "doc": "Unique profile identifier (e.g., 'zebra-generic-203')"
+    },
+    {
+      "path": "schema_version",
+      "type": "string",
+      "required": true,
+      "doc": "Profile schema version for forward compatibility"
+    },
+
+    // ── Resolution ──────────────────────────────────────────────────────
+    {
+      "path": "dpi",
+      "type": "int",
+      "required": true,
+      "range": [100, 600],
+      "doc": "Print resolution in dots per inch"
+    },
+
+    // ── Page dimensions ─────────────────────────────────────────────────
+    {
+      "path": "page.width_dots",
+      "type": "int",
+      "required": false,
+      "range": [1, 65535],
+      "doc": "Maximum printhead width in dots"
+    },
+    {
+      "path": "page.height_dots",
+      "type": "int",
+      "required": false,
+      "range": [1, 32000],
+      "doc": "Maximum label length in dots (memory-dependent)"
+    },
+
+    // ── Speed / darkness ranges ─────────────────────────────────────────
+    {
+      "path": "speed_range.min",
+      "type": "int",
+      "required": false,
+      "range": [1, 14],
+      "doc": "Minimum print speed in inches per second"
+    },
+    {
+      "path": "speed_range.max",
+      "type": "int",
+      "required": false,
+      "range": [1, 14],
+      "doc": "Maximum print speed in inches per second"
+    },
+    {
+      "path": "darkness_range.min",
+      "type": "int",
+      "required": false,
+      "range": [0, 30],
+      "doc": "Minimum darkness setting"
+    },
+    {
+      "path": "darkness_range.max",
+      "type": "int",
+      "required": false,
+      "range": [0, 30],
+      "doc": "Maximum darkness setting"
+    },
+
+    // ── Memory ──────────────────────────────────────────────────────────
+    {
+      "path": "memory.ram_kb",
+      "type": "int",
+      "required": false,
+      "doc": "Available RAM in kilobytes"
+    },
+    {
+      "path": "memory.flash_kb",
+      "type": "int",
+      "required": false,
+      "doc": "Available flash storage in kilobytes"
+    }
+
+    // ── Hardware features (boolean gates — not used by profileConstraint,
+    //    but documented here for completeness) ───────────────────────────
+    // features.cutter, features.peel, features.rewinder, features.applicator,
+    // features.rfid, features.rtc, features.battery, features.zbi,
+    // features.lcd, features.kiosk
+    // These are resolved by resolve_gate(), not resolve_profile_field().
+
+    // ── Media capabilities (string/array — not numeric) ─────────────────
+    // media.print_method, media.supported_modes, media.supported_tracking
+    // These are not used by profileConstraint (non-numeric).
+
+    // ── Firmware ─────────────────────────────────────────────────────────
+    // memory.firmware_version — string, not numeric.
+  ]
+}

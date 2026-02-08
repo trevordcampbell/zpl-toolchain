@@ -1,0 +1,31 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^CI"],
+      "name": "Change International Font/Encoding",
+      "plane": "format",
+      "scope": "session",
+      "arity": 3,
+      "signature": { "params": ["a", "s1", "d1"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "character_set", "key": "a", "type": "int", "range": [0, 36],
+          "default": 0, "optional": true,
+          "doc": "Desired character set / code page. 0-12 = Zebra CP850 variants, 13 = Zebra CP850, 14 = double-byte Asian, 15 = Shift-JIS, 16 = EUC-JP/CN, 17 = deprecated UCS-2 BE, 24 = single-byte Asian, 26 = multibyte Asian, 27 = Zebra CP1252, 28 = UTF-8, 29 = UTF-16 BE, 30 = UTF-16 LE, 31 = CP1250, 33 = CP1251, 34 = CP1253, 35 = CP1254, 36 = CP1255. Values 18-23, 25, 32 are reserved." },
+        { "name": "source", "key": "s1", "type": "int", "range": [0, 255],
+          "optional": true,
+          "doc": "Source character position (output image) for remapping. Only valid when a = 0-13." },
+        { "name": "destination", "key": "d1", "type": "int", "range": [0, 255],
+          "optional": true,
+          "doc": "Destination character position (input) for remapping. Only valid when a = 0-13." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Up to 256 source/destination remapping pairs can follow (s1,d1,s2,d2,...). Remapping is only valid when a = 0-13. The spec models only the first 3 parameters (a, s1, d1); additional pairs are accepted by the parser but not individually validated. Full variable-length pair validation is a known limitation." },
+        { "kind": "note", "message": "Values 18-23, 25, and 32 are reserved. Values 28-30 require firmware V60.14.x/V50.14.x or later. Values 31-36 require firmware x.16.x or later." }
+      ],
+      "effects": { "sets": ["encoding.characterSet"] },
+      "docs": "Select international character set (code page) and optionally remap individual characters."
+    }
+  ]
+}

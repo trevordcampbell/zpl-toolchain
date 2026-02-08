@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^XF"],
+      "name": "Recall Format",
+      "plane": "format",
+      "scope": "document",
+      "arity": 3,
+      "signature": { "params": ["d","o","x"], "joiner": ":", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Source device of stored format. Search priority: R:, E:, B:, A:." },
+        { "name": "name", "key": "o", "type": "string", "optional": true,
+          "doc": "Name of stored format. 1 to 8 alphanumeric characters. Default: UNKNOWN." },
+        { "name": "extension", "key": "x", "type": "string", "optional": true, "default": "ZPL",
+          "doc": "Extension. Fixed value: .ZPL." }
+      ],
+      "constraints": [],
+      "docs": "Recalls a stored format to be merged with variable data. Multiple ^XF commands can appear in one format. When recalling, the calling format must contain ^FN commands to merge data properly."
+    }
+  ]
+}

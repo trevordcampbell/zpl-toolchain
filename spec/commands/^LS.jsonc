@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^LS"],
+      "name": "Label Shift",
+      "plane": "format",
+      "scope": "document",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "shift", "key": "a", "type": "int", "range": [-9999, 9999], "unit": "dots",
+          "optional": true, "default": 0,
+          "doc": "Shift left value in dots. Positive values shift field positions to the left." }
+      ],
+      "effects": { "sets": ["label.shift"] },
+      "constraints": [
+        { "kind": "note", "message": "Must come before the first ^FS command for compatibility. Setting is retained until printer is turned off or a new ^LS command is sent." }
+      ],
+      "docs": "Shifts all field positions to the left for compatibility with Z-130/Z-220 printer formats. Retained until power-off or new ^LS command."
+    }
+  ]
+}

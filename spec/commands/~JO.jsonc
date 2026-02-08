@@ -1,0 +1,16 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JO"],
+      "name": "Head Test Non-Fatal",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "effects": { "sets": ["headTest.mode"] },
+      "constraints": [],
+      "docs": "Configures the printer to run the head test with non-fatal error reporting. An error is displayed and printing stops on failure, but user can press PAUSE to bypass. This is the default head test condition."
+    }
+  ]
+}

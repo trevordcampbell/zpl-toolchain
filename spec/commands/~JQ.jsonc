@@ -1,0 +1,16 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JQ"],
+      "printerGates": ["zbi"],
+      "name": "Terminate Zebra BASIC Interpreter",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Terminates an active ZBI (Zebra BASIC Interpreter) session. Entering ZPL at the command prompt also terminates a ZBI session."
+    }
+  ]
+}

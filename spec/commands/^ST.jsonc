@@ -1,0 +1,48 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^ST"],
+      "printerGates": ["rtc"],
+      "name": "Set Date and Time (for Real-Time Clock)",
+      "plane": "device",
+      "scope": "session",
+      "arity": 7,
+      "signature": { "params": ["a", "b", "c", "d", "e", "f", "g"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "month", "key": "a", "type": "int",
+          "range": [1, 12],
+          "optional": true,
+          "doc": "Month (01 to 12). Default: current month." },
+        { "name": "day", "key": "b", "type": "int",
+          "range": [1, 31],
+          "optional": true,
+          "doc": "Day (01 to 31). Default: current day." },
+        { "name": "year", "key": "c", "type": "int",
+          "range": [1998, 2097],
+          "optional": true,
+          "doc": "Year (1998 to 2097). Default: current year." },
+        { "name": "hour", "key": "d", "type": "int",
+          "range": [0, 23],
+          "optional": true,
+          "doc": "Hour (00 to 23). Default: current hour." },
+        { "name": "minute", "key": "e", "type": "int",
+          "range": [0, 59],
+          "optional": true,
+          "doc": "Minute (00 to 59). Default: current minute." },
+        { "name": "second", "key": "f", "type": "int",
+          "range": [0, 59],
+          "optional": true,
+          "doc": "Second (00 to 59). Default: current second." },
+        { "name": "format", "key": "g", "type": "enum",
+          "enum": ["A", "P", "M"],
+          "optional": true, "default": "M",
+          "doc": "Time format. A = a.m., P = p.m., M = 24-hour military." }
+      ],
+      "effects": { "sets": ["rtc.dateTime"] },
+      "constraints": [],
+      "docs": "Sets the date and time of the Real-Time Clock."
+    }
+  ]
+}

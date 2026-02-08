@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~PL"],
+      "name": "Present Length Addition",
+      "plane": "device",
+      "scope": "document",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "additional_length", "key": "a", "type": "int", "range": [0, 255], "unit": "mm",
+          "optional": true, "default": 0,
+          "doc": "Additional millimeters of media to eject during a present cycle. Added to the standard 50 mm clearance. Command is ignored if parameter is missing or invalid." }
+      ],
+      "effects": { "sets": ["presenter.additionalLength"] },
+      "constraints": [
+        { "kind": "note", "message": "Supported only on KR403 printers. Total eject during ^PN = 50 mm + ~PL value + ^PN value." }
+      ],
+      "docs": "Sets additional media eject length added to the standard 50 mm clearance during a presenter cycle."
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JF"],
+      "printerGates": ["battery"],
+      "name": "Set Battery Condition",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["p"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "pause_on_low_voltage", "key": "p", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "Y",
+          "doc": "Pause on low voltage. Y = pause on low voltage, N = do not pause. N is suggested when using the Car Battery Adapter." }
+      ],
+      "effects": { "sets": ["battery.pauseOnLow"] },
+      "constraints": [],
+      "docs": "Controls printer behavior when battery voltage drops below critical levels on PA/PT400 printers. When enabled, printing pauses at low voltage; when disabled, printing continues with risk of data loss."
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JE"],
+      "name": "Disable Diagnostics",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "effects": { "sets": ["diagnostics.enabled"] },
+      "constraints": [],
+      "docs": "Cancels Diagnostic Mode and returns the printer to normal label printing."
+    }
+  ]
+}

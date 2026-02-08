@@ -1,0 +1,30 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^WL"],
+      "name": "Set LEAP Parameters",
+      "plane": "device",
+      "scope": "session",
+      "arity": 3,
+      "signature": { "params": ["a","b","c"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "mode", "key": "a", "type": "enum",
+          "enum": ["OFF","ON"],
+          "optional": true, "default": "OFF",
+          "doc": "LEAP mode. OFF or ON." },
+        { "name": "user_name", "key": "b", "type": "string",
+          "optional": true, "default": "user",
+          "doc": "User name. 1 to 32 alphanumeric characters including special characters." },
+        { "name": "password", "key": "c", "type": "string",
+          "optional": true, "default": "password",
+          "doc": "Password. 1 to 32 alphanumeric characters including special characters." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Provided only for backward-compatibility with firmware prior to V50.15.x or X60.15.x. For newer firmware, use ^WX to set the security type and related parameters." }
+      ],
+      "docs": "Enables Cisco LEAP mode and sets LEAP user authentication parameters for wireless radio cards."
+    }
+  ]
+}

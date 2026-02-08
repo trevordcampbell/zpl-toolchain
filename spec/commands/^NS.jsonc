@@ -1,0 +1,52 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^NS"],
+      "name": "Change Wired Networking Settings",
+      "plane": "device",
+      "scope": "session",
+      "arity": 9,
+      "signature": { "params": ["a","b","c","d","e","f","g","h","i"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "ip_resolution", "key": "a", "type": "enum",
+          "enum": ["A","B","C","D","G","R","P"],
+          "optional": true, "default": "A",
+          "doc": "A=ALL, B=BOOTP, C=DHCP AND BOOTP, D=DHCP, G=GLEANING ONLY (not recommended with wireless), R=RARP, P=PERMANENT." },
+        { "name": "ip_address", "key": "b", "type": "string",
+          "optional": true,
+          "doc": "IP address in xxx.xxx.xxx.xxx format." },
+        { "name": "subnet_mask", "key": "c", "type": "string",
+          "optional": true,
+          "doc": "Subnet mask in xxx.xxx.xxx.xxx format." },
+        { "name": "default_gateway", "key": "d", "type": "string",
+          "optional": true,
+          "doc": "Default gateway in xxx.xxx.xxx.xxx format." },
+        { "name": "wins_server", "key": "e", "type": "string",
+          "optional": true,
+          "doc": "WINS server address in xxx.xxx.xxx.xxx format." },
+        { "name": "connection_timeout_checking", "key": "f", "type": "enum",
+          "enum": ["Y","N"],
+          "optional": true, "default": "Y",
+          "doc": "Y = Yes, N = No." },
+        { "name": "timeout_value", "key": "g", "type": "int",
+          "range": [0, 9999], "unit": "seconds",
+          "optional": true, "default": 300,
+          "doc": "Time in seconds before the connection times out." },
+        { "name": "arp_interval", "key": "h", "type": "int",
+          "range": [0, 30], "unit": "minutes",
+          "optional": true, "default": 0,
+          "doc": "ARP broadcast interval in minutes. 0 = no ARP sent." },
+        { "name": "raw_port", "key": "i", "type": "int",
+          "range": [1, 65535],
+          "optional": true, "default": 9100,
+          "doc": "Base raw port number for RAW data." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "For Xi4, RXi4, ZM400/ZM600, and RZ400/RZ600 printers, Zebra recommends using ^ND instead of ^NS." }
+      ],
+      "docs": "Changes the wired print server network settings."
+    }
+  ]
+}

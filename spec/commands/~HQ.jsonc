@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~HQ"],
+      "name": "Host Query",
+      "plane": "device",
+      "scope": "document",
+      "arity": 1,
+      "signature": { "params": ["qt"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "query_type", "key": "qt", "type": "enum",
+          "enum": ["ES","HA","JT","MA","MI","OD","PH","PP","SN","UI"],
+          "doc": "Query type. ES = printer status (error/warning flags), HA = hardware address (wired print server MAC), JT = printhead test results, MA = maintenance alert settings, MI = maintenance information, OD = odometer, PH = printhead life history, PP = Plug and Play string, SN = serial number, UI = USB product ID and BCD release version." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Response starts with STX, CR LF inserted between each line, and ends with ETX. Must be an accepted value or the command is ignored." }
+      ],
+      "docs": "Causes the printer to send queried information back to the host. Supports multiple query types for status, hardware, maintenance, and identification data."
+    }
+  ]
+}

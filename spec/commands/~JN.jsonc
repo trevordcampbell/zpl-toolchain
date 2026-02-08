@@ -1,0 +1,16 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JN"],
+      "name": "Head Test Fatal",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "effects": { "sets": ["headTest.mode"] },
+      "constraints": [],
+      "docs": "Turns on the head test option in fatal mode. Printer halts when a head test failure is encountered and remains in error mode until ~JO is sent or power is cycled."
+    }
+  ]
+}

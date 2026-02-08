@@ -1,0 +1,33 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~DY"],
+      "name": "Download Objects",
+      "plane": "device",
+      "scope": "session",
+      "arity": 7,
+      "raw_payload": true,
+      "signature": { "params": ["d","f","b","x","t","w","data"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "File location. Values: R:, E:, B:, and A:. .NRD and .PAC files reside on E: in firmware V60.15.x, V50.15.x, or later." },
+        { "name": "name", "key": "f", "type": "string", "optional": true,
+          "doc": "File name. 1 to 8 alphanumeric characters. Default: UNKNOWN." },
+        { "name": "format", "key": "b", "type": "enum", "enum": ["A","B","C","P"],
+          "doc": "Format of data downloaded. A = uncompressed (ZB64/ASCII), B = uncompressed (binary .TTE/.TTF), C = AR-compressed, P = portable network graphic (.PNG) ZB64 encoded." },
+        { "name": "extension", "key": "x", "type": "enum", "enum": ["B","E","G","P","T","X","NRD","PAC","C","F","H"],
+          "doc": "Extension of stored file. B=bitmap, E=TrueType Extension, G=raw bitmap (.GRF), P=compressed (.PNG), T=TrueType (.TTF)/OpenType (.OTF), X=Paintbrush (.PCX), NRD=Non-Readable, PAC=Protected Access Credential, C=WML, F=HTM, H=GET." },
+        { "name": "total_bytes", "key": "t", "type": "int",
+          "doc": "Total number of bytes in file. Refers to actual file size, not disk space." },
+        { "name": "bytes_per_row", "key": "w", "type": "int", "optional": true,
+          "doc": "Total number of bytes per row. Used for .GRF images; ignored for .PNG, .TTF, .TTE, .NRD, .PAC." },
+        { "name": "data", "key": "data", "type": "string",
+          "doc": "ASCII hexadecimal encoding, ZB64, or binary data depending on format parameter." }
+      ],
+      "constraints": [],
+      "docs": "Downloads graphic objects or fonts in any supported format. Preferred command to download TrueType fonts (faster than ~DU). Also supports downloading wireless certificate files."
+    }
+  ]
+}

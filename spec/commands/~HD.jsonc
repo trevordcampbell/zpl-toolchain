@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~HD"],
+      "name": "Head Diagnostic",
+      "plane": "device",
+      "scope": "document",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Echoes printer status information including power supply and head temperature diagnostics using the terminal emulator."
+    }
+  ]
+}

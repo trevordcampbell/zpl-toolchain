@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^BD"],
+      "name": "UPS MaxiCode Bar Code",
+      "plane": "format",
+      "scope": "field",
+      "arity": 3,
+      "signature": { "params": ["m","n","t"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "mode", "key": "m", "type": "int", "range": [2, 6], "optional": true, "default": 2,
+          "doc": "MaxiCode mode (2=structured carrier with numeric postal, 3=structured carrier with alphanumeric postal, 4=standard symbol, 5=full EEC, 6=reader programming)" },
+        { "name": "symbol_number", "key": "n", "type": "int", "range": [1, 8], "optional": true, "default": 1,
+          "doc": "Symbol number in a structured append sequence (1-8)" },
+        { "name": "total_symbols", "key": "t", "type": "int", "range": [1, 8], "optional": true, "default": 1,
+          "doc": "Total number of symbols in the structured append sequence (1-8)" }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BD should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print a UPS MaxiCode two-dimensional barcode symbol.",
+      "fieldDataRules": { "maxLength": 138, "notes": "Mode 2/3: ^FD <hpm><lpm> with structured postal data. Mode 2 hpm: 15 numeric digits (class+country+zip5+zip4). Mode 3 hpm: 12 alphanumeric chars (class+country+postal6). lpm uses GS/RS/EOT separators (via ^FH for hex). Mode 4/5/6: accepts any data. UPS requires uppercase" }
+    }
+  ]
+}

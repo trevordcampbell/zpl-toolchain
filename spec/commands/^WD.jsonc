@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^WD"],
+      "name": "Print Directory Label",
+      "plane": "device",
+      "scope": "session",
+      "arity": 3,
+      "signature": { "params": ["d","o","x"], "joiner": ":", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum",
+          "enum": ["R","E","B","A","Z"],
+          "optional": true, "default": "R",
+          "doc": "Source device. R:, E:, B:, A: and Z:." },
+        { "name": "name", "key": "o", "type": "string",
+          "optional": true, "default": "*",
+          "doc": "Object name. 1 to 8 alphanumeric characters. Default: * (all objects). The use of ? is also allowed." },
+        { "name": "extension", "key": "x", "type": "string",
+          "optional": true, "default": "*",
+          "doc": "Extension. Values: .FNT, .BAR, .ZPL, .GRF, .CO, .DAT, .BAS, .BAE, .STO, .PNG, *, .TTF, .TTE. Default: * (all extensions)." }
+      ],
+      "constraints": [],
+      "docs": "Prints a label listing bar codes, objects stored in DRAM, or fonts with their names, sizes, and attributes."
+    }
+  ]
+}

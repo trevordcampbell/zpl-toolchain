@@ -1,0 +1,147 @@
+{
+  "ast": {
+    "labels": [
+      {
+        "nodes": [
+          {
+            "args": [
+              {
+                "key": "a",
+                "presence": "value",
+                "value": "000"
+              }
+            ],
+            "code": "~TA",
+            "kind": "Command",
+            "span": {
+              "end": 7,
+              "start": 0
+            }
+          },
+          {
+            "args": [],
+            "code": "^XA",
+            "kind": "Command",
+            "span": {
+              "end": 10,
+              "start": 7
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "x",
+                "presence": "value",
+                "value": "10"
+              },
+              {
+                "key": "y",
+                "presence": "value",
+                "value": "10"
+              },
+              {
+                "key": "z",
+                "presence": "empty"
+              }
+            ],
+            "code": "^FO",
+            "kind": "Command",
+            "span": {
+              "end": 18,
+              "start": 10
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "data",
+                "presence": "value",
+                "value": "After tilde"
+              }
+            ],
+            "code": "^FD",
+            "kind": "Command",
+            "span": {
+              "end": 32,
+              "start": 18
+            }
+          },
+          {
+            "args": [],
+            "code": "^FS",
+            "kind": "Command",
+            "span": {
+              "end": 35,
+              "start": 32
+            }
+          },
+          {
+            "args": [],
+            "code": "^XZ",
+            "kind": "Command",
+            "span": {
+              "end": 39,
+              "start": 35
+            }
+          }
+        ]
+      },
+      {
+        "nodes": [
+          {
+            "args": [],
+            "code": "~JA",
+            "kind": "Command",
+            "span": {
+              "end": 42,
+              "start": 39
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "label_count": 2,
+  "ok": true,
+  "parser_diagnostics": [],
+  "validator_issues": [
+    {
+      "context": {
+        "command": "~TA"
+      },
+      "id": "ZPL3001",
+      "message": "For 600 dpi printers, the step size doubles. If the number of characters is less than 3, the command is ignored. If the parameter is missing or invalid, the command is ignored.",
+      "severity": "warn",
+      "span": {
+        "end": 7,
+        "start": 0
+      }
+    },
+    {
+      "context": {
+        "command": "~TA",
+        "plane": "device"
+      },
+      "id": "ZPL2205",
+      "message": "~TA is a device command and should not appear inside a label (^XA/^XZ)",
+      "severity": "warn",
+      "span": {
+        "end": 7,
+        "start": 0
+      }
+    },
+    {
+      "context": {
+        "command": "~JA",
+        "plane": "device"
+      },
+      "id": "ZPL2205",
+      "message": "~JA is a device command and should not appear inside a label (^XA/^XZ)",
+      "severity": "warn",
+      "span": {
+        "end": 42,
+        "start": 39
+      }
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^RU"],
+      "printerGates": ["rfid"],
+      "name": "Read Unique RFID Chip Serialization",
+      "plane": "format",
+      "scope": "document",
+      "arity": 2,
+      "signature": { "params": ["a","b"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "prefix", "key": "a", "type": "string",
+          "optional": true,
+          "doc": "Prefix in ASCII binary (only 1 and 0 characters accepted). Maximum 38 characters. The number of bits specifies the prefix length, placed as the MSB. Default: MCS prefix determined by MDID in TID (100=EM Micro, 101=Impinj, 110=Alien, 111=NXP)." },
+        { "name": "special_char", "key": "b", "type": "string",
+          "optional": true, "default": "#",
+          "doc": "Special character for serial number inclusion in ^FD strings. Must not conflict with Command, Control, or Delimiter characters or RTC characters. Use #S (decimal), #H (hex), #E (full EPC decimal), #F (full EPC hex), #P (preprogrammed SGTIN decimal), #Q (preprogrammed SGTIN hex)." }
+      ],
+      "constraints": [],
+      "docs": "Reads the TID (Tag ID) from the current RFID chip and formats a unique 38-bit serial number placed in the lower bits of the EPC code."
+    }
+  ]
+}

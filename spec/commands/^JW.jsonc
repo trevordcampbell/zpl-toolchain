@@ -1,0 +1,21 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^JW"],
+      "name": "Set Ribbon Tension",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["t"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "tension", "key": "t", "type": "enum", "enum": ["L","M","H"],
+          "doc": "Ribbon tension level. L = low, M = medium, H = high. A value must be specified." }
+      ],
+      "effects": { "sets": ["ribbon.tension"] },
+      "constraints": [],
+      "docs": "Sets the ribbon tension for the printer. Used only for PAX series printers."
+    }
+  ]
+}

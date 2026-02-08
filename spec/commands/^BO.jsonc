@@ -1,0 +1,35 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^BO"],
+      "name": "Aztec Bar Code Parameters",
+      "plane": "format",
+      "scope": "field",
+      "arity": 7,
+      "signature": { "params": ["a","b","c","d","e","f","g"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "a", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
+        { "name": "magnification_factor", "key": "b", "type": "int", "range": [1, 10], "optional": true, "default": 2,
+          "doc": "Size multiplier for the symbol modules (1-10)" },
+        { "name": "extended_channel_interpretation", "key": "c", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Enable Extended Channel Interpretation for binary/non-ASCII data" },
+        { "name": "error_control_and_symbol_size", "key": "d", "type": "int", "range": [0, 300], "optional": true, "default": 0,
+          "doc": "Error correction level and symbol size (0=default, 1-99=min % error correction, 101-104=compact layers, 201-232=full layers, 300=simple Aztec Rune)" },
+        { "name": "menu_symbol", "key": "e", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Whether the barcode is a menu symbol (Y) or data symbol (N)" },
+        { "name": "number_of_symbols", "key": "f", "type": "int", "range": [1, 26], "optional": true, "default": 1,
+          "doc": "Number of symbols in a structured append sequence (1-26)" },
+        { "name": "id_field", "key": "g", "type": "string", "optional": true,
+          "doc": "Optional ID field for structured append (used to identify related symbols)" }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BO should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print an Aztec barcode (alternate command) with configurable magnification, error correction, and structured append.",
+      "fieldDataRules": { "notes": "Full 8-bit binary; ECI support for non-ASCII" }
+    }
+  ]
+}

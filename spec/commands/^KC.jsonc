@@ -1,0 +1,35 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^KC"],
+      "name": "Set Client Identifier",
+      "plane": "device",
+      "scope": "session",
+      "arity": 4,
+      "signature": { "params": ["a","b","c","d"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "enable", "key": "a", "type": "enum",
+          "enum": ["0","1","2","3"],
+          "optional": true, "default": "0",
+          "doc": "0 = disable, 1 = enabled use MAC address, 2 = enabled ASCII value, 3 = enabled HEX value." },
+        { "name": "device", "key": "b", "type": "enum",
+          "enum": ["0","1","2","3"],
+          "optional": true, "default": "1",
+          "doc": "0 = all devices, 1 = wireless, 2 = external wired, 3 = internal wired." },
+        { "name": "prefix", "key": "c", "type": "string",
+          "optional": true,
+          "doc": "Optional prefix. Up to 11 ASCII characters or 22 hexadecimal values. Can be cleared by defaulting network settings." },
+        { "name": "identifier", "key": "d", "type": "string",
+          "optional": true,
+          "doc": "Client identifier. Up to 60 ASCII characters or 120 hexadecimal values. Minimum field length is 2 bytes." }
+      ],
+      "effects": { "sets": ["network.clientIdentifier"] },
+      "constraints": [
+        { "kind": "note", "message": "Applies only to Xi4, RXi4, ZM400, ZM600, RZ400, or RZ600 printers when used with the external ZebraNet 10/100 print server using firmware v1.1.5 or later." }
+      ],
+      "docs": "Allows the print server to have its own client identifier (DHCP Option 61)."
+    }
+  ]
+}

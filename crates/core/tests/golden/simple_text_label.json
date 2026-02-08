@@ -1,0 +1,110 @@
+{
+  "ast": {
+    "labels": [
+      {
+        "nodes": [
+          {
+            "args": [],
+            "code": "^XA",
+            "kind": "Command",
+            "span": {
+              "end": 4,
+              "start": 0
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "x",
+                "presence": "value",
+                "value": "50"
+              },
+              {
+                "key": "y",
+                "presence": "value",
+                "value": "50"
+              },
+              {
+                "key": "z",
+                "presence": "empty"
+              }
+            ],
+            "code": "^FO",
+            "kind": "Command",
+            "span": {
+              "end": 12,
+              "start": 4
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "f",
+                "presence": "value",
+                "value": "0"
+              },
+              {
+                "key": "o",
+                "presence": "value",
+                "value": "N"
+              },
+              {
+                "key": "h",
+                "presence": "value",
+                "value": "30"
+              },
+              {
+                "key": "w",
+                "presence": "value",
+                "value": "30"
+              }
+            ],
+            "code": "^A",
+            "kind": "Command",
+            "span": {
+              "end": 22,
+              "start": 12
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "data",
+                "presence": "value",
+                "value": "Hello World"
+              }
+            ],
+            "code": "^FD",
+            "kind": "Command",
+            "span": {
+              "end": 36,
+              "start": 22
+            }
+          },
+          {
+            "args": [],
+            "code": "^FS",
+            "kind": "Command",
+            "span": {
+              "end": 40,
+              "start": 36
+            }
+          },
+          {
+            "args": [],
+            "code": "^XZ",
+            "kind": "Command",
+            "span": {
+              "end": 43,
+              "start": 40
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "label_count": 1,
+  "ok": true,
+  "parser_diagnostics": [],
+  "validator_issues": []
+}

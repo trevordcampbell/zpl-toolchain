@@ -1,0 +1,36 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^BK"],
+      "name": "ANSI Codabar Bar Code",
+      "plane": "format",
+      "scope": "field",
+      "arity": 7,
+      "signature": { "params": ["o","e","h","f","g","k","l"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
+        { "name": "check_digit", "key": "e", "type": "enum", "enum": ["N"], "optional": true, "default": "N",
+          "doc": "Check digit selection (only N is accepted)" },
+        { "name": "height", "key": "h", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+          "doc": "Height of the barcode in dots" },
+        { "name": "print_interpretation_line", "key": "f", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "Y",
+          "doc": "Whether to print the human-readable interpretation line below the barcode" },
+        { "name": "print_interpretation_line_above", "key": "g", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Whether to print the interpretation line above the barcode" },
+        { "name": "start_character", "key": "k", "type": "enum", "enum": ["A","B","C","D"], "optional": true, "default": "A",
+          "doc": "Start character for the Codabar symbol" },
+        { "name": "stop_character", "key": "l", "type": "enum", "enum": ["A","B","C","D"], "optional": true, "default": "A",
+          "doc": "Stop character for the Codabar symbol" }
+      ],
+      "constraints": [
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BK to set module width", "severity": "warn" },
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BK should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print an ANSI Codabar barcode used in libraries, medical, and shipping applications.",
+      "fieldDataRules": { "characterSet": "0-9\\-$:/.+", "notes": "Digits 0-9 and special characters - $ : / . + (start/stop chars A-D are set via k,l parameters, not part of field data)" }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^FO"],
+      "name": "Field Origin",
+      "plane": "format",
+      "scope": "field",
+      "opens_field": true,
+      "arity": 3,
+      "signature": { "params": ["x","y","z"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "x", "key": "x", "type": "int", "unit": "dots", "range": [0, 32000], "optional": true, "default": 0,
+          "doc": "X-axis location of the field origin in dots, relative to label home (^LH)." },
+        { "name": "y", "key": "y", "type": "int", "unit": "dots", "range": [0, 32000], "optional": true, "default": 0,
+          "doc": "Y-axis location of the field origin in dots, relative to label home (^LH)." },
+        { "name": "justification", "key": "z", "type": "enum", "enum": ["0", "1", "2"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Field justification. 0=left, 1=right, 2=auto." }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FS", "message": "^FO should appear before its ^FS", "severity": "info" }
+      ],
+      "docs": "Set field origin (x,y) in dots, relative to label home (^LH). Optional z parameter sets justification (0=left, 1=right, 2=auto)."
+    }
+  ]
+}

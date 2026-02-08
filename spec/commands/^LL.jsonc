@@ -1,0 +1,26 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^LL"],
+      "name": "Label Length",
+      "plane": "device",
+      "scope": "document",
+      "arity": 2,
+      "signature": { "params": ["h", "x"], "joiner": ".", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "height", "key": "h", "type": "int", "unit": "dots", "range": [1, 32000],
+          "optional": true,
+          "doc": "Label length in dot rows. Maximum depends on installed memory.",
+          "profileConstraint": { "field": "page.height_dots", "op": "lte" } },
+        { "name": "applies_to_all_media", "key": "x", "type": "enum", "enum": ["N", "Y"],
+          "optional": true, "default": "N",
+          "doc": "N = length applies only to continuous media; Y = applies to all media including Gap and Mark." }
+      ],
+      "effects": { "sets": ["label.length"] },
+      "constraints": [],
+      "docs": "Set printable label length (height) in dots. Format: ^LLy.x where x controls whether length applies to all media types."
+    }
+  ]
+}

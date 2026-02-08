@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^PW"],
+      "name": "Print Width",
+      "plane": "device",
+      "scope": "document",
+      "arity": 1,
+      "signature": { "params": ["w"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "width", "key": "w", "type": "int", "range": [2, 65535], "unit": "dots",
+          "optional": true,
+          "doc": "Label width in dots. If value exceeds printhead width, it is clamped to the maximum.",
+          "profileConstraint": { "field": "page.width_dots", "op": "lte" } }
+      ],
+      "effects": { "sets": ["label.width"] },
+      "constraints": [],
+      "docs": "Set printable label width in dots (bounded by profile when provided). Default: last permanently saved value."
+    }
+  ]
+}

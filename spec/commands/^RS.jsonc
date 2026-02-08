@@ -1,0 +1,50 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^RS"],
+      "printerGates": ["rfid"],
+      "name": "Set Up RFID Parameters",
+      "plane": "device",
+      "scope": "session",
+      "arity": 8,
+      "signature": { "params": ["t","p","v","n","e","a","c","s"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "tag_type", "key": "t", "type": "enum",
+          "enum": ["8"],
+          "optional": true, "default": "8",
+          "doc": "8 = EPC Class 1, Generation 2 (Gen 2). Gen 2 is the only tag type supported by current RFID printers." },
+        { "name": "position", "key": "p", "type": "string",
+          "optional": true, "default": "F0",
+          "doc": "Read/write position of the tag. For Link-OS: F0 to Fxxx (forward, mm from leading edge) or B0 to B30 (backward). For older printers: absolute dot row (0 to label length) or relative F/B position." },
+        { "name": "void_length", "key": "v", "type": "string",
+          "optional": true,
+          "doc": "Length of void printout in vertical dot rows. Values: 0 to label length. Default: label length." },
+        { "name": "retries", "key": "n", "type": "int",
+          "range": [1, 10],
+          "optional": true, "default": 3,
+          "doc": "Number of labels to try encoding in case of read/encode failure." },
+        { "name": "error_handling", "key": "e", "type": "enum",
+          "enum": ["N","P","E"],
+          "optional": true, "default": "N",
+          "doc": "Action if error persists. N = no action (drop format), P = pause mode, E = error mode." },
+        { "name": "signal_mode", "key": "a", "type": "enum",
+          "enum": ["S","D"],
+          "optional": true, "default": "S",
+          "doc": "S = single signal, D = double signal. Applies only to older RFID printers with applicator board." },
+        { "name": "reserved", "key": "c", "type": "string",
+          "optional": true,
+          "doc": "Reserved, not applicable." },
+        { "name": "void_speed", "key": "s", "type": "string",
+          "optional": true,
+          "doc": "Speed at which VOID will be printed on voided labels. Values: any valid print speed. Default: printer's maximum speed. Not supported on all models." }
+      ],
+      "effects": { "sets": ["rfid.tagType", "rfid.position", "rfid.retries", "rfid.errorHandling"] },
+      "constraints": [
+        { "kind": "note", "message": "Use care when using with ^RF for reading tag data. Data read from the tag must be positioned to print above the read/write position. If a format specifies a programming position, it will be used for all labels until changed or tag calibration is run." }
+      ],
+      "docs": "Sets up RFID parameters including tag type, programming position, retry count, and error handling for RFID label encoding."
+    }
+  ]
+}

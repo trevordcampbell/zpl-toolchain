@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~WL"],
+      "name": "Print Network Configuration Label",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Generates and prints a network configuration label showing wireless and wired network settings."
+    }
+  ]
+}

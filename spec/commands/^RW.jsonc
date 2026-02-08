@@ -1,0 +1,31 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^RW"],
+      "printerGates": ["rfid"],
+      "name": "Set RF Power Levels",
+      "plane": "device",
+      "scope": "session",
+      "arity": 3,
+      "signature": { "params": ["r","w","a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "read_power", "key": "r", "type": "string",
+          "optional": true, "default": "16",
+          "doc": "Read power level. For newer firmware: 0-30. For some firmware versions: 0-30 or H (high), M (medium), L (low). For older firmware: H, M, L. Default varies by firmware version (16 or L)." },
+        { "name": "write_power", "key": "w", "type": "string",
+          "optional": true, "default": "16",
+          "doc": "Write power level. Same values as read_power. Ignored on R110Xi HF printer (uses read power for both). Default varies by firmware version (16 or L)." },
+        { "name": "antenna", "key": "a", "type": "string",
+          "optional": true,
+          "doc": "RFID antenna element selection. Values vary by printer model: ZT400/ZT600 use A1-E4, R110Xi4 uses A1-F4 (some combinations invalid), R110Xi HF uses 1 or 2, ZD500R/ZQ511/ZQ521/ZQ630 always use A1. Default varies by model." }
+      ],
+      "effects": { "sets": ["rfid.readPower", "rfid.writePower", "rfid.antenna"] },
+      "constraints": [
+        { "kind": "note", "message": "Printers automatically select the best antenna and power levels during RFID transponder calibration. For Japan, maximum RFID read and write power are limited to comply with local radio regulations; any power setting of 24 or higher results in the same output." }
+      ],
+      "docs": "Sets the RFID read and write power levels and antenna element selection when desired levels are not achieved through RFID tag calibration."
+    }
+  ]
+}

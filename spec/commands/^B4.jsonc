@@ -1,0 +1,30 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^B4"],
+      "name": "Code 49 Bar Code",
+      "plane": "format",
+      "scope": "field",
+      "arity": 4,
+      "signature": { "params": ["o","h","f","m"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
+        { "name": "height_multiplier", "key": "h", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+          "doc": "Height of each row in dots" },
+        { "name": "print_interpretation_line", "key": "f", "type": "enum", "enum": ["N","A","B"], "optional": true, "default": "N",
+          "doc": "Interpretation line printing (N=no line, A=above, B=below)" },
+        { "name": "starting_mode", "key": "m", "type": "enum", "enum": ["0","1","2","3","4","5","A"], "optional": true, "default": "A",
+          "doc": "Starting encoding mode (0-5 for specific modes, A=automatic)" }
+      ],
+      "constraints": [
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^B4 to set module width", "severity": "warn" },
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^B4 should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print a Code 49 multi-row barcode capable of encoding the full 128-character ASCII set.",
+      "fieldDataRules": { "notes": "Full 128-character ASCII set; multi-row stacked symbology" }
+    }
+  ]
+}

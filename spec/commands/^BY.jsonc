@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^BY"],
+      "name": "Bar Code Field Default",
+      "plane": "format",
+      "scope": "label",
+      "arity": 3,
+      "signature": { "params": ["w","r","h"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "module_width", "key": "w", "type": "int", "range": [1,10], "default": 2, "optional": true, "doc": "Width of the module (narrowest bar) in dots." },
+        { "name": "wide_to_narrow_ratio", "key": "r", "type": "float", "range": [2.0,3.0], "optional": true, "default": 3.0, "doc": "Ratio of wide bar to narrow bar. Acceptable values: 2.0 to 3.0 in 0.1 increments." },
+        { "name": "bar_height", "key": "h", "type": "int", "range": [1,32000], "unit": "dots", "optional": true, "default": 10, "doc": "Default bar code height in dot rows." }
+      ],
+      "effects": { "sets": ["barcode.moduleWidth", "barcode.ratio", "barcode.height"] },
+      "constraints": [
+        { "kind": "note", "message": "^BY sets defaults for subsequent barcode commands" }
+      ],
+      "docs": "Set defaults for subsequent barcode fields (module width, ratio, height)."
+    }
+  ]
+}

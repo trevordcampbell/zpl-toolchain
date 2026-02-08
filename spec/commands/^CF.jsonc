@@ -1,0 +1,25 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^CF"],
+      "name": "Change Alphanumeric Default Font",
+      "plane": "format",
+      "scope": "document",
+      "arity": 3,
+      "signature": { "params": ["f","h","w"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "font_name", "key": "f", "type": "string", "optional": true, "default": "A",
+          "doc": "Font name or letter (A-Z, 0-9) to use as the default alphanumeric font." },
+        { "name": "height", "key": "h", "type": "int", "range": [0, 32000], "unit": "dots", "optional": true, "default": 9,
+          "doc": "Default character height in dots for scalable and bitmap fonts." },
+        { "name": "width", "key": "w", "type": "int", "range": [0, 32000], "unit": "dots", "optional": true, "default": 5,
+          "doc": "Default character width in dots for scalable and bitmap fonts." }
+      ],
+      "effects": { "sets": ["font.name", "font.height", "font.width"] },
+      "constraints": [],
+      "docs": "Set default font name, height, and width for ^A commands."
+    }
+  ]
+}

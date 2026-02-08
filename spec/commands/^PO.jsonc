@@ -1,0 +1,22 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^PO"],
+      "name": "Print Orientation",
+      "plane": "device",
+      "scope": "document",
+      "arity": 1,
+      "signature": { "params": ["o"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N", "I"],
+          "optional": true, "default": "N",
+          "doc": "N = normal, I = inverted 180 degrees." }
+      ],
+      "effects": { "sets": ["print.orientation"] },
+      "constraints": [],
+      "docs": "Set overall print orientation. Inverts the label format 180 degrees when set to I."
+    }
+  ]
+}

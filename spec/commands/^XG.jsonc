@@ -1,0 +1,30 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^XG"],
+      "name": "Recall Graphic",
+      "plane": "format",
+      "scope": "field",
+      "arity": 5,
+      "signature": { "params": ["d","o","x","mx","my"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Source device of stored image. Search priority: R:, E:, B:, A:." },
+        { "name": "name", "key": "o", "type": "string", "optional": true,
+          "doc": "Name of stored image. 1 to 8 alphanumeric characters. Default: UNKNOWN." },
+        { "name": "extension", "key": "x", "type": "string", "optional": true, "default": "GRF",
+          "doc": "Extension. Fixed value: .GRF." },
+        { "name": "magnification_x", "key": "mx", "type": "int", "range": [1, 10], "optional": true, "default": 1,
+          "doc": "Magnification factor on the x-axis." },
+        { "name": "magnification_y", "key": "my", "type": "int", "range": [1, 10], "optional": true, "default": 1,
+          "doc": "Magnification factor on the y-axis." }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FS", "message": "^XG should appear before its ^FS", "severity": "info" }
+      ],
+      "docs": "Recalls one or more stored graphic images for printing. An image can be recalled and resized as many times as needed in each format. Uses magnification factors to scale the image."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~PR"],
+      "name": "Applicator Reprint",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Reprints the last label printed, similar to the applicator asserting the Reprint signal on the applicator port."
+    }
+  ]
+}

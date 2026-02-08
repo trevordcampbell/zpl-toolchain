@@ -1,0 +1,42 @@
+{
+  "ast": {
+    "labels": [
+      {
+        "nodes": [
+          {
+            "args": [],
+            "code": "^XA",
+            "kind": "Command",
+            "span": {
+              "end": 4,
+              "start": 0
+            }
+          },
+          {
+            "args": [],
+            "code": "^XZ",
+            "kind": "Command",
+            "span": {
+              "end": 7,
+              "start": 4
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "label_count": 1,
+  "ok": true,
+  "parser_diagnostics": [],
+  "validator_issues": [
+    {
+      "id": "ZPL2202",
+      "message": "Empty label (no commands between ^XA and ^XZ)",
+      "severity": "info",
+      "span": {
+        "end": 4,
+        "start": 0
+      }
+    }
+  ]
+}

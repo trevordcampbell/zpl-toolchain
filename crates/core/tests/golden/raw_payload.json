@@ -1,0 +1,122 @@
+{
+  "ast": {
+    "labels": [
+      {
+        "nodes": [
+          {
+            "args": [],
+            "code": "^XA",
+            "kind": "Command",
+            "span": {
+              "end": 4,
+              "start": 0
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "x",
+                "presence": "value",
+                "value": "0"
+              },
+              {
+                "key": "y",
+                "presence": "value",
+                "value": "0"
+              },
+              {
+                "key": "z",
+                "presence": "empty"
+              }
+            ],
+            "code": "^FO",
+            "kind": "Command",
+            "span": {
+              "end": 11,
+              "start": 4
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "a",
+                "presence": "value",
+                "value": "A"
+              },
+              {
+                "key": "b",
+                "presence": "value",
+                "value": "4"
+              },
+              {
+                "key": "c",
+                "presence": "value",
+                "value": "4"
+              },
+              {
+                "key": "d",
+                "presence": "value",
+                "value": "1"
+              },
+              {
+                "key": "data",
+                "presence": "empty"
+              }
+            ],
+            "code": "^GF",
+            "kind": "Command",
+            "span": {
+              "end": 23,
+              "start": 11
+            }
+          },
+          {
+            "command": "^GF",
+            "data": "FF00FF00\n",
+            "kind": "RawData",
+            "span": {
+              "end": 32,
+              "start": 23
+            }
+          },
+          {
+            "args": [],
+            "code": "^FS",
+            "kind": "Command",
+            "span": {
+              "end": 36,
+              "start": 32
+            }
+          },
+          {
+            "args": [],
+            "code": "^XZ",
+            "kind": "Command",
+            "span": {
+              "end": 39,
+              "start": 36
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "label_count": 1,
+  "ok": true,
+  "parser_diagnostics": [],
+  "validator_issues": [
+    {
+      "context": {
+        "arg": "4",
+        "command": "^GF"
+      },
+      "id": "ZPL1502",
+      "message": "^GF.4 is empty but required",
+      "severity": "warn",
+      "span": {
+        "end": 23,
+        "start": 11
+      }
+    }
+  ]
+}

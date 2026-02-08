@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^FT"],
+      "name": "Field Typeset",
+      "plane": "format",
+      "scope": "field",
+      "opens_field": true,
+      "arity": 3,
+      "signature": { "params": ["x","y","z"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "x", "key": "x", "type": "int", "unit": "dots", "range": [0, 32000], "optional": true,
+          "doc": "X-axis baseline position in dots. If omitted, uses position after last formatted field." },
+        { "name": "y", "key": "y", "type": "int", "unit": "dots", "range": [0, 32000], "optional": true,
+          "doc": "Y-axis baseline position in dots. If omitted, uses position after last formatted field." },
+        { "name": "justification", "key": "z", "type": "enum", "enum": ["0", "1", "2"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Field justification. 0=left, 1=right, 2=auto." }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FS", "message": "^FT should appear before its ^FS", "severity": "info" }
+      ],
+      "docs": "Set field typeset origin (x,y) using baseline positioning. If x or y is omitted, the position after the last formatted text field is used. Optional z parameter sets justification (0=left, 1=right, 2=auto)."
+    }
+  ]
+}

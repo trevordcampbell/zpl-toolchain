@@ -1,0 +1,22 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^HZ"],
+      "name": "Display Description Information",
+      "plane": "device",
+      "scope": "document",
+      "arity": 1,
+      "signature": { "params": ["b"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "info_type", "key": "b", "type": "enum", "enum": ["a","f","l","o","r"],
+          "doc": "Display description to return. a = all information, f = format settings, l = object directory listing, o = individual object data, r = printer status. If value is missing or invalid the command is ignored." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "When info_type is 'o', an extended format is used: ^HZO,d:o.x,l where d = device (R:,E:,B:,A:), o = object name (1-16 chars), x = extension (.FNT,.GRF,.PNG,.ZPL,.DAT,.ZOB,.STO), and l = long filename support (Y/N, default N)." }
+      ],
+      "docs": "Returns printer description information in XML format including format parameters, object directories, individual object data, and print status information."
+    }
+  ]
+}

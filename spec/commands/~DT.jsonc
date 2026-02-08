@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~DT"],
+      "name": "Download Bounded TrueType Font",
+      "plane": "device",
+      "scope": "session",
+      "arity": 4,
+      "raw_payload": true,
+      "signature": { "params": ["d","o","x","s"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Font location. R:, E:, B:, A:." },
+        { "name": "name", "key": "o", "type": "string", "optional": true,
+          "doc": "Font name. Any valid TrueType name up to 8 characters. Default: UNKNOWN." },
+        { "name": "extension", "key": "x", "type": "string", "optional": true, "default": "DAT",
+          "doc": "Extension. Fixed: .DAT." },
+        { "name": "font_size", "key": "s", "type": "int",
+          "doc": "Font size in bytes. Number of memory bytes required. Command is ignored if incorrect or missing." }
+      ],
+      "constraints": [],
+      "docs": "Downloads a bounded TrueType font (fewer than 256 characters) converted via ZTools. Data is a string of ASCII hexadecimal values where the total count must match the size parameter."
+    }
+  ]
+}

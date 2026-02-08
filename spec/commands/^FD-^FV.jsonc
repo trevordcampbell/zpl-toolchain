@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    { "codes": ["^FD","^FV"],
+      "name": "Field Data",
+      "plane": "format",
+      "scope": "field",
+      "arity": 1, "field_data": true,
+      "constraints": [
+        { "kind": "emptyData", "message": "empty field data", "severity": "warn" }
+      ],
+      "docs": "Begin field data; content continues until ^FS. ^FD supplies fixed data, ^FV supplies variable data that can be overridden at print time." }
+  ]
+}

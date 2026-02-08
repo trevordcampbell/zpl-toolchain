@@ -1,0 +1,22 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^NW"],
+      "name": "Set Web Authentication Timeout",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "timeout", "key": "a", "type": "int",
+          "range": [0, 255], "unit": "minutes",
+          "optional": true, "default": 5,
+          "doc": "Timeout value in minutes for an IP address to be authenticated to the printer web pages. 0 = no secure pages can be accessed without entering the printer password." }
+      ],
+      "constraints": [],
+      "docs": "Sets the timeout value for the printer home page web authentication. The printer prompts for the password after the timeout expires or the printer is reset."
+    }
+  ]
+}

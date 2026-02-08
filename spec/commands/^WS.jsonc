@@ -1,0 +1,44 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^WS"],
+      "name": "Set Wireless Radio Card Values",
+      "plane": "device",
+      "scope": "session",
+      "arity": 7,
+      "signature": { "params": ["e","o","p","h","i","j","k"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "essid", "key": "e", "type": "string",
+          "optional": true, "default": "125",
+          "doc": "ESSID value. Up to 32 characters including all ASCII and Extended ASCII characters. When left blank, the ESSID is not changed." },
+        { "name": "operating_mode", "key": "o", "type": "enum",
+          "enum": ["I","A"],
+          "optional": true, "default": "I",
+          "doc": "I = Infrastructure, A = Adhoc." },
+        { "name": "preamble", "key": "p", "type": "enum",
+          "enum": ["L","S"],
+          "optional": true, "default": "L",
+          "doc": "Wireless radio card preamble. L = long, S = short." },
+        { "name": "wireless_pulse", "key": "h", "type": "enum",
+          "enum": ["0","1"],
+          "optional": true, "default": "1",
+          "doc": "Adds a pulse to network traffic to keep the printer online. 0 = disabled, 1 = enabled. Supported in V60.15.x, V50.15.x, or later." },
+        { "name": "pulse_interval", "key": "i", "type": "int",
+          "range": [5, 300], "unit": "seconds",
+          "optional": true, "default": 15,
+          "doc": "Interval in seconds at which the wireless pulse is sent when enabled. Supported in V60.15.x, V50.15.x, or later." },
+        { "name": "channel_mask", "key": "j", "type": "string",
+          "optional": true, "default": "0x7FF",
+          "doc": "4 hexadecimal digits preceded by 0x (0x0000 to 0xFFFF). Common values: US/Canada/LatAm=0x7FF, Europe/MEA=0x1FFF, Japan=0x3FFF. Supported in X60.15.x, V50.15.x, or later." },
+        { "name": "international_mode", "key": "k", "type": "enum",
+          "enum": ["0","1"],
+          "optional": true, "default": "0",
+          "doc": "In international mode, the printer uses the channel set by the access point. 0 = Disabled, 1 = Enabled. Supported in X60.15.x, V50.15.x, or later." }
+      ],
+      "constraints": [],
+      "docs": "Sets wireless radio card values for ESSID, operating mode, preamble, pulse, channel mask, and international mode."
+    }
+  ]
+}

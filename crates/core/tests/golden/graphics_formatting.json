@@ -1,0 +1,265 @@
+{
+  "ast": {
+    "labels": [
+      {
+        "nodes": [
+          {
+            "args": [],
+            "code": "^XA",
+            "kind": "Command",
+            "span": {
+              "end": 4,
+              "start": 0
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "w",
+                "presence": "value",
+                "value": "800"
+              }
+            ],
+            "code": "^PW",
+            "kind": "Command",
+            "span": {
+              "end": 11,
+              "start": 4
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "h",
+                "presence": "value",
+                "value": "600"
+              },
+              {
+                "key": "x",
+                "presence": "empty"
+              }
+            ],
+            "code": "^LL",
+            "kind": "Command",
+            "span": {
+              "end": 18,
+              "start": 11
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "x",
+                "presence": "value",
+                "value": "0"
+              },
+              {
+                "key": "y",
+                "presence": "value",
+                "value": "0"
+              },
+              {
+                "key": "z",
+                "presence": "empty"
+              }
+            ],
+            "code": "^FO",
+            "kind": "Command",
+            "span": {
+              "end": 24,
+              "start": 18
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "w",
+                "presence": "value",
+                "value": "800"
+              },
+              {
+                "key": "h",
+                "presence": "value",
+                "value": "600"
+              },
+              {
+                "key": "t",
+                "presence": "value",
+                "value": "3"
+              },
+              {
+                "key": "c",
+                "presence": "empty"
+              },
+              {
+                "key": "r",
+                "presence": "empty"
+              }
+            ],
+            "code": "^GB",
+            "kind": "Command",
+            "span": {
+              "end": 36,
+              "start": 24
+            }
+          },
+          {
+            "args": [],
+            "code": "^FS",
+            "kind": "Command",
+            "span": {
+              "end": 40,
+              "start": 36
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "x",
+                "presence": "value",
+                "value": "350"
+              },
+              {
+                "key": "y",
+                "presence": "value",
+                "value": "60"
+              },
+              {
+                "key": "z",
+                "presence": "empty"
+              }
+            ],
+            "code": "^FO",
+            "kind": "Command",
+            "span": {
+              "end": 49,
+              "start": 40
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "f",
+                "presence": "value",
+                "value": "0"
+              },
+              {
+                "key": "o",
+                "presence": "value",
+                "value": "N"
+              },
+              {
+                "key": "h",
+                "presence": "value",
+                "value": "40"
+              },
+              {
+                "key": "w",
+                "presence": "value",
+                "value": "40"
+              }
+            ],
+            "code": "^A",
+            "kind": "Command",
+            "span": {
+              "end": 59,
+              "start": 49
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "data",
+                "presence": "value",
+                "value": "INVOICE"
+              }
+            ],
+            "code": "^FD",
+            "kind": "Command",
+            "span": {
+              "end": 69,
+              "start": 59
+            }
+          },
+          {
+            "args": [],
+            "code": "^FS",
+            "kind": "Command",
+            "span": {
+              "end": 73,
+              "start": 69
+            }
+          },
+          {
+            "args": [],
+            "code": "^XZ",
+            "kind": "Command",
+            "span": {
+              "end": 76,
+              "start": 73
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "label_count": 1,
+  "ok": true,
+  "parser_diagnostics": [],
+  "validator_issues": [
+    {
+      "context": {
+        "command": "^PW",
+        "plane": "device"
+      },
+      "id": "ZPL2205",
+      "message": "^PW is a device command and should not appear inside a label (^XA/^XZ)",
+      "severity": "warn",
+      "span": {
+        "end": 11,
+        "start": 4
+      }
+    },
+    {
+      "context": {
+        "command": "^LL",
+        "plane": "device"
+      },
+      "id": "ZPL2205",
+      "message": "^LL is a device command and should not appear inside a label (^XA/^XZ)",
+      "severity": "warn",
+      "span": {
+        "end": 18,
+        "start": 11
+      }
+    },
+    {
+      "context": {
+        "command": "^FO",
+        "kind": "order",
+        "target": "^FS"
+      },
+      "id": "ZPL2103",
+      "message": "^FO should appear before its ^FS",
+      "severity": "info",
+      "span": {
+        "end": 49,
+        "start": 40
+      }
+    },
+    {
+      "context": {
+        "command": "^A",
+        "kind": "order",
+        "target": "^FS"
+      },
+      "id": "ZPL2103",
+      "message": "^A should appear before its field terminator ^FS",
+      "severity": "info",
+      "span": {
+        "end": 59,
+        "start": 49
+      }
+    }
+  ]
+}

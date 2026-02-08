@@ -1,0 +1,17 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^XB"],
+      "name": "Suppress Backfeed",
+      "plane": "format",
+      "scope": "document",
+      "arity": 0,
+      "constraints": [
+        { "kind": "note", "message": "Because no forward feed occurs, backfeed before printing the next label is not necessary, improving throughput. The last label in a batch should not contain this command. In cutter mode, ^XB suppresses both backfeed and cutting to prevent jamming." }
+      ],
+      "docs": "Suppresses forward feed of media to tear-off position depending on the current printer mode. Eliminates the need for backfeed before the next label, improving throughput."
+    }
+  ]
+}

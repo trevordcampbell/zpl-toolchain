@@ -1,0 +1,17 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~HU"],
+      "name": "Return ZebraNet Alert Configuration",
+      "plane": "device",
+      "scope": "document",
+      "arity": 0,
+      "constraints": [
+        { "kind": "note", "message": "If there are no ^SX alerts configured, the printer will not respond to this command." }
+      ],
+      "docs": "Returns the table of configured ZebraNet Alert settings to the host, showing condition type, destination, set/clear flags, email address, and port number for each alert."
+    }
+  ]
+}

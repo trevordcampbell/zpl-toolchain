@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~TA"],
+      "name": "Tear-off Adjust Position",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "adjustment", "key": "a", "type": "int",
+          "range": [-120, 120], "unit": "dot rows",
+          "doc": "Change in media rest position in dot rows. Range: -120 to 120 (0 to 120 on HC100). Must be a 3-digit value. Default: last permanent value saved." }
+      ],
+      "effects": { "sets": ["media.tearOffPosition"] },
+      "constraints": [
+        { "kind": "note", "message": "For 600 dpi printers, the step size doubles. If the number of characters is less than 3, the command is ignored. If the parameter is missing or invalid, the command is ignored." }
+      ],
+      "docs": "Adjusts the rest position of the media after a label is printed, changing the position at which the label is torn or cut."
+    }
+  ]
+}

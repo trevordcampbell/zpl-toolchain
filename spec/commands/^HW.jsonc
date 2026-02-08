@@ -1,0 +1,26 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^HW"],
+      "name": "Host Directory List",
+      "plane": "device",
+      "scope": "document",
+      "arity": 3,
+      "signature": { "params": ["d","o","x"], "joiner": ":", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A","Z"], "optional": true, "default": "R",
+          "doc": "Location to retrieve object listing. Values: R:, E:, B:, A:, and Z:." },
+        { "name": "name", "key": "o", "type": "string", "optional": true, "default": "*",
+          "doc": "Object name filter. 1 to 8 alphanumeric characters. Supports * and ? wildcards. Default: * (all objects)." },
+        { "name": "extension", "key": "x", "type": "string", "optional": true, "default": "*",
+          "doc": "Extension filter. Any extension conforming to Zebra conventions. Supports * and ? wildcards. Default: * (all extensions)." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Returns a formatted ASCII string of object names to the host. Each object is listed on a fixed-length line starting with an asterisk. An optional f parameter (c=column, d=default) is supported in firmware V60.16.0Z and V53.16.0Z or later." }
+      ],
+      "docs": "Transmits a directory listing of objects in a specific memory area back to the host device."
+    }
+  ]
+}

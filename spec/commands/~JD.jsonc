@@ -1,0 +1,16 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JD"],
+      "name": "Enable Communications Diagnostics",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "effects": { "sets": ["diagnostics.enabled"] },
+      "constraints": [],
+      "docs": "Initiates Diagnostic Mode, producing an ASCII printout of all characters received by the printer including ASCII characters, hexadecimal values, and any communication errors."
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^ID"],
+      "name": "Object Delete",
+      "plane": "format",
+      "scope": "document",
+      "arity": 3,
+      "signature": { "params": ["d","o","x"], "joiner": ":", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Location of stored object. Values: R:, E:, B:, and A:." },
+        { "name": "name", "key": "o", "type": "string", "optional": true,
+          "doc": "Object name. 1 to 8 alphanumeric characters. Supports * wildcard. Default: UNKNOWN." },
+        { "name": "extension", "key": "x", "type": "string", "optional": true, "default": "GRF",
+          "doc": "Extension. Supports * wildcard. Default: .GRF." }
+      ],
+      "constraints": [],
+      "docs": "Deletes objects, graphics, fonts, and stored formats from storage areas. Objects can be deleted selectively or in groups using the asterisk (*) wildcard."
+    }
+  ]
+}

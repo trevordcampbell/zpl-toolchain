@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^XZ"],
+      "name": "End Format",
+      "plane": "format",
+      "scope": "document",
+      "arity": 0,
+      "effects": { "sets": ["label.close"] },
+      "docs": "End the current label format (label close). Must be the last command in a label format. Every label must begin with ^XA and end with ^XZ."
+    }
+  ]
+}

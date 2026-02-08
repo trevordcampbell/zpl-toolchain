@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^GE"],
+      "name": "Graphic Ellipse",
+      "plane": "format",
+      "scope": "field",
+      "arity": 4,
+      "signature": { "params": ["w","h","t","c"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "width", "key": "w", "type": "int", "unit": "dots", "range": [3, 4095], "optional": true, "default": 1,
+          "doc": "Ellipse width in dots." },
+        { "name": "height", "key": "h", "type": "int", "unit": "dots", "range": [3, 4095], "optional": true, "default": 1,
+          "doc": "Ellipse height in dots." },
+        { "name": "thickness", "key": "t", "type": "int", "unit": "dots", "range": [2, 4095], "optional": true, "default": 1,
+          "doc": "Border thickness in dots. Extends inward." },
+        { "name": "color", "key": "c", "type": "enum", "enum": ["B","W"], "optional": true, "default": "B",
+          "doc": "Line color. B=black, W=white." }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FS", "message": "^GE should appear before its ^FS", "severity": "info" }
+      ],
+      "docs": "Produces an ellipse in the label format with specified width, height, border thickness, and color."
+    }
+  ]
+}

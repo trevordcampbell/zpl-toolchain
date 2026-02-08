@@ -1,0 +1,42 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^SX"],
+      "name": "Set ZebraNet Alert",
+      "plane": "device",
+      "scope": "session",
+      "arity": 6,
+      "signature": { "params": ["a", "b", "c", "d", "e", "f"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "condition_type", "key": "a", "type": "enum",
+          "enum": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "*"],
+          "doc": "Condition type. A=paper out, B=ribbon out, C=printhead over-temp, D=printhead under-temp, E=head open, F=power supply over-temp, G=ribbon-in warning, H=rewind full, I=cut error, J=printer paused, K=PQ job completed, L=label ready, M=head element out, N=ZBI runtime error, O=ZBI forced error, P=power on, Q=clean printhead, R=media low, S=ribbon low, T=replace head, U=battery low, V=RFID error, *=all errors." },
+        { "name": "destination", "key": "b", "type": "enum",
+          "enum": ["A", "B", "C", "D", "E", "F"],
+          "doc": "Destination for route alert. A=serial port, B=parallel port, C=e-mail address, D=TCP/IP, E=UDP/IP, F=SNMP trap." },
+        { "name": "set_alert", "key": "c", "type": "enum",
+          "enum": ["Y", "N"],
+          "optional": true, "default": "Y",
+          "doc": "Enable condition set alert to this destination. Y = yes, N = no." },
+        { "name": "clear_alert", "key": "d", "type": "enum",
+          "enum": ["Y", "N"],
+          "optional": true, "default": "N",
+          "doc": "Enable condition clear alert to this destination. Y = yes, N = no." },
+        { "name": "destination_setting", "key": "e", "type": "string",
+          "optional": true,
+          "doc": "Destination setting. Email address (for C), IP address (for D/E/F)." },
+        { "name": "port_number", "key": "f", "type": "int",
+          "range": [0, 65535],
+          "optional": true,
+          "doc": "Port number for TCP (D) or UDP (E) destinations. Range: 0-65535." }
+      ],
+      "effects": { "sets": ["alerts.zebraNet"] },
+      "constraints": [
+        { "kind": "note", "message": "If the condition type or destination parameter is missing or invalid, the command is ignored. Sub-options e and f are based on destination type." }
+      ],
+      "docs": "Configures the ZebraNet Alert System to send notifications for specific printer conditions to designated destinations (serial, parallel, email, TCP/IP, UDP/IP, or SNMP)."
+    }
+  ]
+}

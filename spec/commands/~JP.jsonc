@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JP"],
+      "name": "Pause and Cancel Format",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Clears the format currently being processed and places the printer into Pause Mode. Each subsequent ~JP clears the next buffered format until the buffer is empty. Identical to using CANCEL on the printer."
+    }
+  ]
+}

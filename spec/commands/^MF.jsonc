@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^MF"],
+      "name": "Media Feed",
+      "plane": "device",
+      "scope": "document",
+      "arity": 2,
+      "signature": { "params": ["p", "h"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "power_up_action", "key": "p", "type": "enum",
+          "enum": ["F", "C", "L", "N", "S"],
+          "optional": true, "default": "C",
+          "doc": "Feed action at power-up. F = feed to first web, C = calibration (~JC), L = length set (~JL), N = no feed, S = short calibration." },
+        { "name": "head_close_action", "key": "h", "type": "enum",
+          "enum": ["F", "C", "L", "N", "S"],
+          "optional": true, "default": "C",
+          "doc": "Feed action after closing printhead. F = feed to first web, C = calibration (~JC), L = length set (~JL), N = no feed, S = short calibration." }
+      ],
+      "effects": { "sets": ["media.powerUpAction", "media.headCloseAction"] },
+      "constraints": [
+        { "kind": "note", "message": "Value S (short calibration) is only supported on Xi4, RXi4, XiIIIPlus, PAX, ZM400/ZM600, RZ400/RZ600, and S4M printers." }
+      ],
+      "docs": "Dictates what happens to the media at power-up and at head-close after error clears."
+    }
+  ]
+}

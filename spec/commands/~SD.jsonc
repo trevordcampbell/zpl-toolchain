@@ -1,0 +1,25 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~SD"],
+      "name": "Set Darkness",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "darkness_value", "key": "a", "type": "int",
+          "range": [0, 30],
+          "profileConstraint": { "field": "darkness_range.max", "op": "lte" },
+          "doc": "Desired darkness setting (two-digit number, 00 to 30). On XiIIIPlus/Xi4/RXi4, accepts increments of 0.1. Default: last permanently saved value." }
+      ],
+      "effects": { "sets": ["media.darkness"] },
+      "constraints": [
+        { "kind": "note", "message": "The ^MD command value, if applicable, is added to the ~SD command. On XiIIIPlus/Xi4/RXi4, the darkness setting range is 0 to 30 in increments of 0.1." }
+      ],
+      "docs": "Sets the darkness of printing. Equivalent to the darkness setting parameter on the control panel display."
+    }
+  ]
+}

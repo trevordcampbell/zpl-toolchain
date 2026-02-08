@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^FW"],
+      "name": "Field Orientation",
+      "plane": "format",
+      "scope": "document",
+      "arity": 2,
+      "signature": { "params": ["r","z"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "r", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "default": "N",
+          "doc": "Default field orientation. N=normal, R=rotated 90° CW, I=inverted 180°, B=bottom-up 270°." },
+        { "name": "justification", "key": "z", "type": "enum", "enum": ["0","1","2"], "optional": true, "default": "0",
+          "doc": "Default field justification. 0=left, 1=right, 2=auto." }
+      ],
+      "effects": { "sets": ["field.orientation", "field.justification"] },
+      "constraints": [],
+      "docs": "Set default field orientation and justification for subsequent fields."
+    }
+  ]
+}

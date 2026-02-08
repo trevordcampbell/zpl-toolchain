@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^IL"],
+      "name": "Image Load",
+      "plane": "format",
+      "scope": "document",
+      "arity": 3,
+      "signature": { "params": ["d","o","x"], "joiner": ":", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Location of stored object. Values: R:, E:, B:, and A:." },
+        { "name": "name", "key": "o", "type": "string", "optional": true,
+          "doc": "Object name. 1 to 8 alphanumeric characters. Default: UNKNOWN." },
+        { "name": "extension", "key": "x", "type": "enum", "enum": ["GRF","PNG"], "optional": true, "default": "GRF",
+          "doc": "Extension. Fixed value: .GRF or .PNG." }
+      ],
+      "constraints": [],
+      "docs": "Loads a stored image at the beginning of a label format and merges it with additional data. The image is always positioned at 0,0. Used with ^IS to overlay constant information with variable data for increased throughput."
+    }
+  ]
+}

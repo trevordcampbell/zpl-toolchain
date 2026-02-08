@@ -1,0 +1,21 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~WQ"],
+      "name": "Write Query",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "query_type", "key": "a", "type": "enum",
+          "enum": ["ES","HA","JT","MA","MI","OD","PH","PP","SN","UI"],
+          "doc": "ES=printer status, HA=hardware address of internal wired print server, JT=printhead test results summary, MA=maintenance alert settings, MI=maintenance information, OD=odometer, PH=printhead life history, PP=Plug and Play string, SN=serial number, UI=USB product ID and BCD release version." }
+      ],
+      "constraints": [],
+      "docs": "Triggers the printer to print a label with odometer, maintenance/alert, and printhead history information based on the query type."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^MC"],
+      "name": "Map Clear",
+      "plane": "device",
+      "scope": "document",
+      "arity": 1,
+      "signature": { "params": ["c"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "clear", "key": "c", "type": "enum", "enum": ["Y", "N"],
+          "optional": true, "default": "Y",
+          "doc": "Y = clear bitmap after printing, N = retain current bitmap for next label." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Must be used with ^FV to produce a label template." }
+      ],
+      "docs": "Controls whether the bitmap is cleared after the format has been printed. Use N to retain the current label image as background for the next label."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JX"],
+      "name": "Cancel Current Partially Input Format",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Cancels a format currently being sent to the printer. Does not affect formats currently printing or subsequent formats."
+    }
+  ]
+}

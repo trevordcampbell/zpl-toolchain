@@ -1,0 +1,31 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^FB"],
+      "name": "Field Block",
+      "plane": "format",
+      "scope": "field",
+      "arity": 5,
+      "signature": { "params": ["a","b","c","d","e"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "width", "key": "a", "type": "int", "unit": "dots", "range": [0, 32000], "optional": true, "default": 0,
+          "doc": "Width of the text block in dots." },
+        { "name": "max_lines", "key": "b", "type": "int", "range": [1, 9999], "optional": true, "default": 1,
+          "doc": "Maximum number of lines in the text block." },
+        { "name": "line_spacing", "key": "c", "type": "int", "unit": "dots", "range": [-9999, 9999], "optional": true, "default": 0,
+          "doc": "Add or subtract space between lines in dots. Positive adds, negative reduces." },
+        { "name": "justification", "key": "d", "type": "enum", "enum": ["L","C","R","J"], "optional": true, "default": "L",
+          "doc": "Text justification. L=left, C=center, R=right, J=justified." },
+        { "name": "hanging_indent", "key": "e", "type": "int", "unit": "dots", "optional": true, "range": [0, 9999], "default": 0,
+          "doc": "Indent in dots for the second and subsequent lines of the text block." }
+      ],
+      "constraints": [
+        { "kind": "requires", "expr": "^FD|^FV", "message": "^FB is meaningful with a following ^FD/^FV", "severity": "info" },
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^FB should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Format block text: width, lines, line spacing, justification, indent."
+    }
+  ]
+}

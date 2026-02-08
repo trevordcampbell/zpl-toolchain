@@ -1,0 +1,17 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^HT"],
+      "name": "Host Linked Fonts List",
+      "plane": "device",
+      "scope": "document",
+      "arity": 0,
+      "constraints": [
+        { "kind": "note", "message": "Available only for printers with firmware version V60.14.x, V50.14.x, or later." }
+      ],
+      "docs": "Returns the complete list of font links to the host over a communication port."
+    }
+  ]
+}

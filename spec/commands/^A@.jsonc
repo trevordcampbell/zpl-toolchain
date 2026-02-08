@@ -1,0 +1,32 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^A@"],
+      "name": "Use Font Name to Call Font",
+      "plane": "format",
+      "scope": "field",
+      "arity": 4,
+      "signature": { "params": ["o", "h", "w", "n"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N", "R", "I", "B"],
+          "optional": true, "defaultFrom": "^FW",
+          "doc": "Font orientation. N=normal, R=rotated 90 degrees clockwise, I=inverted 180 degrees, B=bottom-up 270 degrees." },
+        { "name": "height", "key": "h", "type": "int", "range": [10, 32000], "unit": "dots",
+          "optional": true, "defaultFrom": "^CF",
+          "doc": "Character height in dots. For scalable fonts, this is the height of the entire character block." },
+        { "name": "width", "key": "w", "type": "int", "range": [10, 32000], "unit": "dots",
+          "optional": true, "defaultFrom": "^CF",
+          "doc": "Character width in dots. For scalable fonts, this is the width of the entire character block." },
+        { "name": "font_name", "key": "n", "type": "string",
+          "optional": true,
+          "doc": "Full font name including drive location and extension (e.g. E:MYFONT.TTF). If no drive letter specified, default device is R:. Once set, carries over on subsequent ^A@ commands without a font name." }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FS", "message": "^A@ should appear before its field terminator ^FS", "severity": "info" }
+      ],
+      "docs": "Selects a font by its full filename rather than a single-character identifier. Once defined, the font name persists for subsequent ^A@ commands until a new name is specified."
+    }
+  ]
+}

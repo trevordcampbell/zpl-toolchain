@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^BF"],
+      "name": "MicroPDF417 Bar Code",
+      "plane": "format",
+      "scope": "field",
+      "arity": 3,
+      "signature": { "params": ["o","h","m"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
+        { "name": "height", "key": "h", "type": "int", "range": [1, 9999], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+          "doc": "Height of the barcode in dots" },
+        { "name": "mode", "key": "m", "type": "int", "range": [0, 33], "optional": true, "default": 0,
+          "doc": "MicroPDF417 symbol mode (0=automatic, 1-33=specific column/row configurations)" }
+      ],
+      "constraints": [
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BF to set module width", "severity": "warn" },
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BF should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print a MicroPDF417 barcode, a compact variant of PDF417 for area-efficient applications.",
+      "fieldDataRules": { "maxLength": 250, "notes": "Capacity: 250 7-bit ASCII chars, 150 8-bit chars, or 366 numeric digits; compact 2D variant of PDF417" }
+    }
+  ]
+}

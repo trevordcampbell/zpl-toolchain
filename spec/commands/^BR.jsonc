@@ -1,0 +1,34 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^BR"],
+      "name": "GS1 DataBar Bar Code",
+      "plane": "format",
+      "scope": "field",
+      "arity": 6,
+      "signature": { "params": ["a","b","c","d","e","f"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "a", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
+        { "name": "symbology_type", "key": "b", "type": "int", "range": [1, 12], "optional": true, "default": 1,
+          "doc": "GS1 DataBar variant (1=omnidirectional, 2=truncated, 3=stacked, 4=stacked omnidirectional, 5=limited, 6=expanded, 7-12=composite variants)" },
+        { "name": "magnification_factor", "key": "c", "type": "int", "range": [1, 10], "optional": true, "default": 2,
+          "doc": "Size multiplier for the symbol modules (1-10)" },
+        { "name": "separator_height", "key": "d", "type": "int", "range": [1, 2], "optional": true, "default": 1,
+          "doc": "Separator height between rows (1 or 2 dots)" },
+        { "name": "barcode_height", "key": "e", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+          "doc": "Height of the barcode in dots" },
+        { "name": "segment_width", "key": "f", "type": "int", "range": [2, 22], "optional": true, "default": 22,
+          "doc": "Segment width for expanded variants (even values 2-22)" }
+      ],
+      "constraints": [
+        { "kind": "requires", "expr": "^BY", "message": "^BR requires ^BY to set module width defaults", "severity": "warn" },
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BR should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print a GS1 DataBar (formerly Reduced Space Symbology) barcode for space-constrained identification.",
+      "fieldDataRules": { "notes": "Data format depends on symbology type (b param). Types 1-5 (DataBar variants): numeric 0-9, 14-digit GTIN, check digit auto-calculated. Type 6 (Expanded): alphanumeric GS1 AI element strings. Types 7-10 (UPC/EAN composites): numeric per underlying symbology. Types 11-12 (UCC/EAN-128 composites): full ASCII via Code 128 subsets" }
+    }
+  ]
+}

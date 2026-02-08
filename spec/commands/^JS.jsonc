@@ -1,0 +1,21 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^JS"],
+      "name": "Sensor Select",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "sensor_type", "key": "a", "type": "enum", "enum": ["A","R","T"], "optional": true, "default": "A",
+          "doc": "Sensor selection. A = auto select, R = reflective sensor, T = transmissive sensor. Default: A for Z series, R for S4M. Only for S4M and some Z Series printers." }
+      ],
+      "effects": { "sets": ["sensor.type"] },
+      "constraints": [],
+      "docs": "Specifies which sensor to use for media detection. Only for use with S4M and some Z Series printers; ignored on ZM400/ZM600 and RZ400/RZ600."
+    }
+  ]
+}

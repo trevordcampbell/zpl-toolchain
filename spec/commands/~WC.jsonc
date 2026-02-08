@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~WC"],
+      "name": "Print Configuration Label",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Generates a printer configuration label containing sensor type, network ID, ZPL mode, firmware version, and descriptive data on R:, E:, B:, and A: devices. Works only when the printer is idle."
+    }
+  ]
+}

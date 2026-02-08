@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^SF"],
+      "name": "Serialization Field",
+      "plane": "format",
+      "scope": "field",
+      "serialization": true,
+      "requires_field": true,
+      "arity": 2,
+      "signature": { "params": ["a","b"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "mask", "key": "a", "type": "string",
+          "doc": "Mask string that sets the serialization scheme. Placeholders: D/d=decimal 0-9, H/h=hexadecimal 0-9+a-f/A-F, O/o=octal 0-7, A/a=alphabetic A-Z/a-z, N/n=alphanumeric 0-9+A-Z/a-z, %=skip character. Max 3K combined with increment string." },
+        { "name": "increment", "key": "b", "type": "string", "optional": true,
+          "doc": "Increment value to add to the field on each label. Default is equivalent to decimal one. For alphabetic strings, A/a is the zero placeholder (use B/b to increment by one). Use % for characters that should not be incremented." }
+      ],
+      "constraints": [],
+      "docs": "Serializes a standard ^FD string using a mask and increment pattern. The mask defines which characters to serialize and the increment defines the value added per label."
+    }
+  ]
+}

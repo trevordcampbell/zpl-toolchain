@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^CT", "~CT"],
+      "name": "Change Tilde Control Prefix",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "new_prefix_char", "key": "a", "type": "char",
+          "doc": "New control command prefix character. Any ASCII character is accepted. If no parameter is entered, the next character received becomes the new prefix. Default prefix is tilde (~)." }
+      ],
+      "effects": { "sets": ["parser.tildePrefix"] },
+      "constraints": [
+        { "kind": "note", "message": "Takes immediate effect. All subsequent control commands must use the new prefix character. Use ^JUS to persist across power cycles." }
+      ],
+      "docs": "Changes the control command prefix character from the default tilde (~) to any other ASCII character. Takes immediate effect for all subsequent control commands."
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+[package]
+name = "zpl_toolchain_wasm"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "ZPL toolchain WASM bindings — parse, validate, format ZPL from JavaScript/TypeScript"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = { workspace = true }
+serde-wasm-bindgen = { workspace = true }
+serde = { workspace = true }
+zpl_toolchain_bindings_common = { path = "../bindings-common" }

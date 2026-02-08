@@ -1,0 +1,18 @@
+[package]
+name = "zpl_toolchain_diagnostics"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Diagnostic codes and structured error reporting for the ZPL toolchain"
+keywords = ["zpl", "zebra", "diagnostics"]
+categories = ["parsing"]
+
+[dependencies]
+serde = { workspace = true }
+
+[build-dependencies]
+serde_json = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }

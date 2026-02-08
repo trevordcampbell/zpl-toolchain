@@ -1,0 +1,26 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^FM"],
+      "name": "Multiple Field Origin Locations",
+      "plane": "format",
+      "scope": "field",
+      "arity": 2,
+      "signature": { "params": ["x1", "y1"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "x1", "key": "x1", "type": "int",
+          "range": [0, 32000], "unit": "dots",
+          "doc": "X-axis location of first symbol in dots. Use 'e' to exclude this bar code from printing." },
+        { "name": "y1", "key": "y1", "type": "int",
+          "range": [0, 32000], "unit": "dots",
+          "doc": "Y-axis location of first symbol in dots. Use 'e' to exclude this bar code from printing." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Only works with ^B7 (PDF417) and ^BF (MicroPDF417) for structured append. Maximum 60 x,y pairs. Ignored with any other commands." }
+      ],
+      "docs": "Designates multiple field origin locations for PDF417 and MicroPDF417 bar codes when using structured append capabilities."
+    }
+  ]
+}

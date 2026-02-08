@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^KL"],
+      "printerGates": ["lcd"],
+      "name": "Define Language",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "language", "key": "a", "type": "enum",
+          "enum": ["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18","19","20"],
+          "optional": true, "default": "1",
+          "doc": "1=English, 2=Spanish, 3=French, 4=German, 5=Italian, 6=Norwegian, 7=Portuguese, 8=Swedish, 9=Danish, 10=Spanish2, 11=Dutch, 12=Finnish, 13=Japanese, 14=Korean, 15=Simplified Chinese, 16=Traditional Chinese, 17=Russian, 18=Polish, 19=Czech, 20=Romanian. Values 14-20 only supported on ZT200, ZE500, Xi4, RXi4, ZM400/ZM600, RZ400/RZ600." }
+      ],
+      "effects": { "sets": ["display.language"] },
+      "constraints": [],
+      "docs": "Selects the language displayed on the printer control panel."
+    }
+  ]
+}

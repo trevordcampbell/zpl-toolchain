@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^MW"],
+      "name": "Modify Head Cold Warning",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "enable", "key": "a", "type": "enum",
+          "enum": ["Y", "N"],
+          "doc": "Enable or disable head cold warning. Y = enable, N = disable." }
+      ],
+      "effects": { "sets": ["print.headColdWarning"] },
+      "constraints": [
+        { "kind": "note", "message": "When a parameter is not given, the instruction is ignored." }
+      ],
+      "docs": "Sets the head cold warning indicator based on the operating environment. Enables or disables the warning when the printhead temperature is too low."
+    }
+  ]
+}

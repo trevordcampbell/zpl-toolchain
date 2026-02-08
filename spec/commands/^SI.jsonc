@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^SI"],
+      "name": "Set Sensor Intensity",
+      "plane": "device",
+      "scope": "session",
+      "arity": 2,
+      "signature": { "params": ["a", "b"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "setting", "key": "a", "type": "enum",
+          "enum": ["1", "2"],
+          "doc": "Indicates the setting to modify. 1 = transmissive sensor brightness setting, 2 = transmissive sensor baseline setting." },
+        { "name": "value", "key": "b", "type": "int",
+          "range": [0, 196],
+          "doc": "The value to use for the sensor being configured. Range: 0 to 196." }
+      ],
+      "effects": { "sets": ["sensor.intensity"] },
+      "constraints": [
+        { "kind": "note", "message": "Available only for printers with firmware versions V53.15.x or later. Both parameters must be accepted values or the entire command is ignored." }
+      ],
+      "docs": "Changes the values for the media sensors, which are also set during the media calibration process."
+    }
+  ]
+}

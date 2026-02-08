@@ -1,0 +1,38 @@
+{
+  "name": "zpl-toolchain Dev Container",
+  "dockerFile": "Dockerfile",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ExodiusStudios.comment-anchors",
+        "ms-azuretools.vscode-containers",
+        "ms-azuretools.vscode-docker",
+        "vadimcn.vscode-lldb",
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml"
+      ],
+      "settings": {
+        "editor.tabSize": 2,
+        "terminal.integrated.defaultProfile.linux": "zsh"
+      }
+    }
+  },
+  "features": {
+    "ghcr.io/stuartleeks/dev-container-features/shell-history:0": {},
+    "ghcr.io/schlich/devcontainer-features/powerlevel10k:1": {},
+    "ghcr.io/nils-geistmann/devcontainers-features/zsh:0": {},
+    "ghcr.io/devcontainers-extra/features/zsh-plugins:0": {},
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "1.93.0"
+    },
+    "ghcr.io/lee-orr/rusty-dev-containers/cargo-binstall:0": {},
+    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/python:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "overrideFeatureInstallOrder": [
+    "ghcr.io/devcontainers/features/rust",
+    "ghcr.io/lee-orr/rusty-dev-containers/cargo-binstall"
+  ],
+  "postCreateCommand": "cargo binstall cargo-nextest wasm-pack maturin --no-confirm && git config core.hooksPath .githooks"
+}

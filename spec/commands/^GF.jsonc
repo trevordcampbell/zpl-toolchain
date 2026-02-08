@@ -1,0 +1,31 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^GF"],
+      "name": "Graphic Field",
+      "plane": "format",
+      "scope": "field",
+      "arity": 5,
+      "raw_payload": true,
+      "signature": { "params": ["a","b","c","d","data"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "compression", "key": "a", "type": "enum", "enum": ["A","B","C"], "optional": true, "default": "A",
+          "doc": "Compression type. A=ASCII hex, B=binary, C=compressed binary." },
+        { "name": "binary_byte_count", "key": "b", "type": "int", "range": [1, 99999],
+          "doc": "Total number of bytes in the binary-encoded graphic data." },
+        { "name": "graphic_field_count", "key": "c", "type": "int", "range": [1, 99999],
+          "doc": "Total number of bytes in the graphic field (typically same as binary_byte_count for uncompressed data)." },
+        { "name": "bytes_per_row", "key": "d", "type": "int", "range": [1, 99999],
+          "doc": "Number of bytes of data per row of the graphic image." },
+        { "name": "data", "key": "data", "type": "string",
+          "doc": "Raw graphic data in the format specified by the compression parameter." }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FS", "message": "^GF header must precede its ^FS-delimited data block", "severity": "info" }
+      ],
+      "docs": "Graphic field: download graphic data directly into bitmap storage. Parameters: compression type (A=ASCII hex, B=binary, C=compressed binary), binary byte count, graphic field count, bytes per row, followed by data."
+    }
+  ]
+}

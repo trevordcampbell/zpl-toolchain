@@ -1,0 +1,21 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^CV"],
+      "name": "Code Validation",
+      "plane": "device",
+      "scope": "job",
+      "arity": 1,
+      "signature": { "params": ["d"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "mode", "key": "d", "type": "enum", "enum": ["N","Y"], "optional": true, "default": "N",
+          "doc": "Y = enable code validation, N = disable code validation." }
+      ],
+      "effects": { "sets": ["barcode.codeValidation"] },
+      "constraints": [],
+      "docs": "Enable/disable code validation for bar code data integrity checking."
+    }
+  ]
+}

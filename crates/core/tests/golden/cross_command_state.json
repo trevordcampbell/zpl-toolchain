@@ -1,0 +1,157 @@
+{
+  "ast": {
+    "labels": [
+      {
+        "nodes": [
+          {
+            "args": [],
+            "code": "^XA",
+            "kind": "Command",
+            "span": {
+              "end": 4,
+              "start": 0
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "w",
+                "presence": "value",
+                "value": "3"
+              },
+              {
+                "key": "r",
+                "presence": "value",
+                "value": "2"
+              },
+              {
+                "key": "h",
+                "presence": "value",
+                "value": "100"
+              }
+            ],
+            "code": "^BY",
+            "kind": "Command",
+            "span": {
+              "end": 15,
+              "start": 4
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "x",
+                "presence": "value",
+                "value": "50"
+              },
+              {
+                "key": "y",
+                "presence": "value",
+                "value": "50"
+              },
+              {
+                "key": "z",
+                "presence": "empty"
+              }
+            ],
+            "code": "^FO",
+            "kind": "Command",
+            "span": {
+              "end": 24,
+              "start": 15
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "o",
+                "presence": "value",
+                "value": "N"
+              },
+              {
+                "key": "h",
+                "presence": "value",
+                "value": "100"
+              },
+              {
+                "key": "f",
+                "presence": "value",
+                "value": "Y"
+              },
+              {
+                "key": "g",
+                "presence": "value",
+                "value": "N"
+              },
+              {
+                "key": "e",
+                "presence": "value",
+                "value": "N"
+              },
+              {
+                "key": "m",
+                "presence": "empty"
+              }
+            ],
+            "code": "^BC",
+            "kind": "Command",
+            "span": {
+              "end": 39,
+              "start": 24
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "data",
+                "presence": "value",
+                "value": "12345"
+              }
+            ],
+            "code": "^FD",
+            "kind": "Command",
+            "span": {
+              "end": 47,
+              "start": 39
+            }
+          },
+          {
+            "args": [],
+            "code": "^FS",
+            "kind": "Command",
+            "span": {
+              "end": 51,
+              "start": 47
+            }
+          },
+          {
+            "args": [],
+            "code": "^XZ",
+            "kind": "Command",
+            "span": {
+              "end": 54,
+              "start": 51
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "label_count": 1,
+  "ok": true,
+  "parser_diagnostics": [],
+  "validator_issues": [
+    {
+      "context": {
+        "command": "^BY"
+      },
+      "id": "ZPL3001",
+      "message": "^BY sets defaults for subsequent barcode commands",
+      "severity": "warn",
+      "span": {
+        "end": 15,
+        "start": 4
+      }
+    }
+  ]
+}

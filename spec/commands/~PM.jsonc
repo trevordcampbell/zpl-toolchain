@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~PM"],
+      "name": "Decommissioning Mode",
+      "plane": "device",
+      "scope": "document",
+      "arity": 2,
+      "signature": { "params": ["a","b"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "serial_number", "key": "a", "type": "string",
+          "doc": "Printer's serial number. Mandatory parameter. Must match the serial number of the printer or the printer will not exit Protected Mode." },
+        { "name": "flash_wipe_count", "key": "b", "type": "int", "range": [0, 3], "optional": true, "default": 0,
+          "doc": "Number of times for the flash wipe-out to occur. Only use if the printer will be resold, recycled, or reused by another group." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Only accepted via USB for security. Ignored if sent over Bluetooth, Ethernet, or other communication channels. Causes the printer to exit Protected Mode. Flash wipe takes considerable time." }
+      ],
+      "docs": "Places the printer into Decommissioning Mode, clearing configuration and optionally wiping flash memory for secure disposal or transfer."
+    }
+  ]
+}

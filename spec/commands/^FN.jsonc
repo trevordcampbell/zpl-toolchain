@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^FN"],
+      "name": "Field Number",
+      "plane": "format",
+      "scope": "field",
+      "field_number": true,
+      "arity": 2,
+      "signature": { "params": ["n", "p"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "field_number", "key": "n", "type": "int", "range": [0, 9999],
+          "doc": "Field number used to identify this field when merging with a stored format via ^XF. Each field in a format should have a unique number." },
+        { "name": "optional_prompt", "key": "p", "type": "string",
+          "optional": true,
+          "doc": "Optional prompt string displayed to the operator when using keyboard input or applications. Enclosed in quotes if it contains commas." }
+      ],
+      "constraints": [],
+      "docs": "Assigns a field number for use with stored formats (^DF/^XF). When a format is recalled with ^XF, the ^FN fields are populated with data from the recalling format's ^FN-matched ^FD fields."
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^MA"],
+      "name": "Set Maintenance Alerts",
+      "plane": "device",
+      "scope": "session",
+      "arity": 5,
+      "signature": { "params": ["type", "print", "printlabel_threshold", "frequency", "units"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "type", "key": "type", "type": "enum",
+          "enum": ["R", "C"],
+          "doc": "Type of alert. R = head replacement, C = head cleaning." },
+        { "name": "print", "key": "print", "type": "enum",
+          "enum": ["Y", "N"],
+          "optional": true, "default": "N",
+          "doc": "Determines if the alert prints a label. Y = print, N = do not print." },
+        { "name": "printlabel_threshold", "key": "printlabel_threshold", "type": "int",
+          "range": [0, 150000],
+          "optional": true,
+          "doc": "Distance where the first alert occurs. For R (head replacement): 0-150 km. For C (head cleaning): 100-2000 meters. 0 = off (disables the alert). Default: R=50 km, C=0 (off)." },
+        { "name": "frequency", "key": "frequency", "type": "int",
+          "range": [0, 2000], "unit": "meters",
+          "optional": true, "default": 0,
+          "doc": "Distance in meters before reissuing the alert. 0 = print on power-up only. G-Series range: 0 or 5-2000." },
+        { "name": "units", "key": "units", "type": "enum",
+          "enum": ["C", "I", "M"],
+          "optional": true, "default": "I",
+          "doc": "Units for odometer and printhead maintenance commands. C = centimeters, I = inches, M = meters." }
+      ],
+      "effects": { "sets": ["maintenance.alertType", "maintenance.printAlert", "maintenance.threshold", "maintenance.frequency", "maintenance.units"] },
+      "constraints": [
+        { "kind": "note", "message": "Available only for firmware V60.15.x, V50.15.x, or later. The type parameter must be specified as R or C for print, threshold, and frequency to be saved. The Early Warning Maintenance setting must be ON (via ^JH)." }
+      ],
+      "docs": "Controls how the printer issues printed maintenance alerts for printhead cleaning or replacement. Alerts print a warning label when distance thresholds are reached."
+    }
+  ]
+}

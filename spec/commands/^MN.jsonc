@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^MN"],
+      "name": "Media Tracking",
+      "plane": "device",
+      "scope": "document",
+      "arity": 2,
+      "signature": { "params": ["mode", "b"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "mode", "key": "mode", "type": "enum",
+          "enum": ["N", "Y", "W", "M", "A", "V"],
+          "doc": "N = continuous media, Y = non-continuous web sensing, W = non-continuous web sensing, M = non-continuous mark sensing, A = auto-detect (G-Series only), V = continuous variable length (KR403 only)." },
+        { "name": "black_mark_offset", "key": "b", "type": "int",
+          "range": [-240, 566], "unit": "dots",
+          "optional": true, "default": 0,
+          "doc": "Black mark offset in dots relative to the point of separation. Only used when mode is M. Range varies by printer model." }
+      ],
+      "effects": { "sets": ["media.trackingMode", "media.blackMarkOffset"] },
+      "constraints": [
+        { "kind": "note", "message": "Parameter b is only used when mode is set to M (mark sensing). Range varies: -80 to 283 (direct-thermal), -240 to 566 (600 dpi), -75 to 283 (KR403), -120 to 283 (all others)." }
+      ],
+      "docs": "Specifies the media type being used and the black mark offset in dots."
+    }
+  ]
+}

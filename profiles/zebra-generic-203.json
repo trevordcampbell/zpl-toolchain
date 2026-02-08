@@ -1,0 +1,29 @@
+{
+  "id": "zebra-generic-203",
+  "schema_version": "1.1.0",
+  "dpi": 203,
+  "page": { "width_dots": 812, "height_dots": 1218 },
+  "speed_range": { "min": 2, "max": 8 },
+  "darkness_range": { "min": 0, "max": 30 },
+  "features": {
+    "cutter": false,
+    "peel": false,
+    "rewinder": false,
+    "applicator": false,
+    "rfid": false,
+    "rtc": false,
+    "battery": false,
+    "zbi": false,
+    "lcd": false,
+    "kiosk": false
+  },
+  "media": {
+    "print_method": "direct_thermal",
+    "supported_modes": ["T"],
+    "supported_tracking": ["N", "Y", "W", "M"]
+  },
+  "memory": {
+    "ram_kb": 32768,
+    "flash_kb": 65536
+  }
+}

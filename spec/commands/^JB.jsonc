@@ -1,0 +1,20 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^JB"],
+      "name": "Initialize Flash Memory",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "device", "key": "a", "type": "enum", "enum": ["A","B","E"],
+          "doc": "Device to initialize. A = Option Flash memory, B = Flash card (PCMCIA), E = internal Flash memory. A device must be specified." }
+      ],
+      "constraints": [],
+      "docs": "Initializes various types of Flash memory available in Zebra printers. Initializing memory can take several minutes."
+    }
+  ]
+}

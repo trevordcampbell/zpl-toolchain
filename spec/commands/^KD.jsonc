@@ -1,0 +1,26 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^KD"],
+      "printerGates": ["rtc"],
+      "name": "Select Date and Time Format",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "format", "key": "a", "type": "enum",
+          "enum": ["0","1","2","3","4"],
+          "optional": true, "default": "0",
+          "doc": "0 = normal (displays firmware version), 1 = MM/DD/YY 24-hour, 2 = MM/DD/YY 12-hour, 3 = DD/MM/YY 24-hour, 4 = DD/MM/YY 12-hour." }
+      ],
+      "effects": { "sets": ["rtc.displayFormat"] },
+      "constraints": [
+        { "kind": "note", "message": "If Real-Time Clock hardware is not present, Display Mode is forced to 0 (Version Number). If Display Mode is 0 and RTC hardware is present, config label and control panel use format 1." }
+      ],
+      "docs": "Selects the format for the Real-Time Clock date and time display on configuration labels and the control panel."
+    }
+  ]
+}

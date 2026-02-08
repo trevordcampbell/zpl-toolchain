@@ -1,0 +1,262 @@
+name: Release (automated)
+
+# Runs on every push to main. release-plz handles the logic:
+#   - release-pr: opens/updates a Release PR with version bumps + changelog
+#   - release: publishes crates + creates tag/GH Release (only when versions are bumped)
+#   - downstream jobs: build artifacts + publish to npm/PyPI (only when a release happens)
+
+on:
+  push:
+    branches: [main]
+
+# Don't cancel in-progress releases — a partial publish is worse than a duplicate run.
+concurrency:
+  group: release-plz
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  # ── Open / update the Release PR ──────────────────────────────────────
+  release-pr:
+    name: Release PR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-rust
+
+      - uses: release-plz/action@v0.5
+        with:
+          command: release-pr
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── Publish crates + create tag / GH Release ─────────────────────────
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      releases_created: ${{ steps.release.outputs.releases_created }}
+      tag: ${{ steps.extract-tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-rust
+
+      - name: Run release-plz release
+        id: release
+        uses: release-plz/action@v0.5
+        with:
+          command: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+      - name: Extract tag from release output
+        id: extract-tag
+        if: steps.release.outputs.releases_created == 'true'
+        env:
+          RELEASES_JSON: ${{ steps.release.outputs.releases }}
+        run: |
+          # release-plz outputs a JSON array of releases.
+          # In single-tag mode, only zpl_toolchain_cli has a tag.
+          TAG=$(echo "$RELEASES_JSON" \
+            | jq -r '.[] | select(.package_name == "zpl_toolchain_cli") | .tag')
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Release tag: $TAG"
+
+  # ── Publish WASM package to npm ───────────────────────────────────────
+  publish-npm:
+    name: Publish to npm
+    needs: [release]
+    if: needs.release.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          targets: wasm32-unknown-unknown
+          cache-key: release-npm
+
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@wasm-pack
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Build WASM
+        run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
+
+      - name: Install dependencies & build TypeScript wrapper
+        working-directory: packages/ts/core
+        run: npm install && npm run build
+
+      - name: Publish to npm
+        working-directory: packages/ts/core
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ── Publish Python wheel to PyPI ──────────────────────────────────────
+  publish-pypi:
+    name: Publish to PyPI
+    needs: [release]
+    if: needs.release.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: release-pypi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Build and publish to PyPI
+        working-directory: crates/python
+        run: maturin publish --no-sdist
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+
+  # ── Build CLI binaries for each platform ──────────────────────────────
+  build-cli:
+    name: Build CLI (${{ matrix.target }})
+    needs: [release]
+    if: needs.release.outputs.releases_created == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            archive: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            archive: tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive: zip
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          targets: ${{ matrix.target }}
+          cache-key: release-cli-${{ matrix.target }}
+
+      - name: Build CLI (release)
+        run: cargo build -p zpl_toolchain_cli --release --locked --target ${{ matrix.target }}
+
+      - name: Package (Unix)
+        if: matrix.archive == 'tar.gz'
+        run: |
+          BINARY=target/${{ matrix.target }}/release/zpl
+          ARCHIVE=zpl-${{ matrix.target }}.tar.gz
+          tar czf "$ARCHIVE" -C "$(dirname "$BINARY")" "$(basename "$BINARY")"
+          sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
+          echo "ARCHIVE=$ARCHIVE" >> "$GITHUB_ENV"
+
+      - name: Package (Windows)
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          $binary = "target/${{ matrix.target }}/release/zpl.exe"
+          $archive = "zpl-${{ matrix.target }}.zip"
+          Compress-Archive -Path $binary -DestinationPath $archive
+          $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower()
+          "$hash  $archive" | Out-File -FilePath "$archive.sha256" -Encoding utf8
+          "ARCHIVE=$archive" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ matrix.target }}
+          path: |
+            zpl-${{ matrix.target }}.*
+
+  # ── Build C FFI for each platform ─────────────────────────────────────
+  build-ffi:
+    name: Build FFI (${{ matrix.target }})
+    needs: [release]
+    if: needs.release.outputs.releases_created == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            lib_glob: libzpl_toolchain_ffi.so
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            lib_glob: libzpl_toolchain_ffi.dylib
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            lib_glob: zpl_toolchain_ffi.dll
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          targets: ${{ matrix.target }}
+          cache-key: release-ffi-${{ matrix.target }}
+
+      - name: Build FFI (release)
+        run: cargo build -p zpl_toolchain_ffi --release --locked --target ${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffi-${{ matrix.target }}
+          path: |
+            target/${{ matrix.target }}/release/${{ matrix.lib_glob }}
+
+  # ── Upload artifacts to the GitHub Release ────────────────────────────
+  upload-artifacts:
+    name: Upload Release Artifacts
+    needs: [release, build-cli, build-ffi]
+    if: needs.release.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release.outputs.tag }}
+          files: |
+            artifacts/**/*

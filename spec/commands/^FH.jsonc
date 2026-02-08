@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^FH"],
+      "name": "Field Hexadecimal Indicator",
+      "plane": "format",
+      "scope": "field",
+      "hex_escape_modifier": true,
+      "requires_field": true,
+      "arity": 1,
+      "signature": { "params": ["i"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "indicator", "key": "i", "type": "char", "optional": true, "default": "_",
+          "doc": "Hexadecimal escape character used in subsequent ^FD data. Default is underscore (_)." }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^FH should precede field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Enable hexadecimal escape indicator for field data (default '_')."
+    }
+  ]
+}

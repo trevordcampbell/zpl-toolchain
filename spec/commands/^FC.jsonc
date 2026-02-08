@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^FC"],
+      "name": "Field Clock",
+      "plane": "format",
+      "scope": "field",
+      "arity": 3,
+      "signature": { "params": ["a", "b", "c"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "clock_indicator", "key": "a", "type": "char",
+          "optional": true, "default": "%",
+          "doc": "Primary clock indicator character. Any ASCII character." },
+        { "name": "exit_character", "key": "b", "type": "char",
+          "optional": true,
+          "doc": "Secondary clock indicator character. Any ASCII character. Cannot be the same as a or c." },
+        { "name": "entry_character", "key": "c", "type": "char",
+          "optional": true,
+          "doc": "Third clock indicator character. Any ASCII character. Cannot be the same as a or b." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Ignored if the Real Time Clock hardware is not present. Must be included within each label field command string each time Real-Time Clock values are required." }
+      ],
+      "docs": "Sets the clock indicators (delimiters) and the clock mode for use with the Real-Time Clock hardware within field data."
+    }
+  ]
+}

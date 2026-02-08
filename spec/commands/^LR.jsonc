@@ -1,0 +1,21 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^LR"],
+      "name": "Label Reverse Print",
+      "plane": "device",
+      "scope": "document",
+      "arity": 1,
+      "signature": { "params": ["m"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "mode", "key": "m", "type": "enum", "enum": ["N","Y"], "optional": true, "default": "N",
+          "doc": "Y = reverse print (invert all field colors), N = normal printing." }
+      ],
+      "effects": { "sets": ["label.reversePrint"] },
+      "constraints": [],
+      "docs": "Reverse print (invert) the label when enabled."
+    }
+  ]
+}

@@ -1,0 +1,150 @@
+{
+  "ast": {
+    "labels": [
+      {
+        "nodes": [
+          {
+            "args": [],
+            "code": "^XA",
+            "kind": "Command",
+            "span": {
+              "end": 4,
+              "start": 0
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "a",
+                "presence": "value",
+                "value": "999"
+              }
+            ],
+            "code": "^ZZ",
+            "kind": "Command",
+            "span": {
+              "end": 11,
+              "start": 4
+            }
+          },
+          {
+            "args": [
+              {
+                "presence": "value",
+                "value": "ACMD"
+              }
+            ],
+            "code": "^NOT",
+            "kind": "Command",
+            "span": {
+              "end": 20,
+              "start": 11
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "x",
+                "presence": "value",
+                "value": "50"
+              },
+              {
+                "key": "y",
+                "presence": "value",
+                "value": "100"
+              },
+              {
+                "key": "z",
+                "presence": "empty"
+              }
+            ],
+            "code": "^FO",
+            "kind": "Command",
+            "span": {
+              "end": 30,
+              "start": 20
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "data",
+                "presence": "value",
+                "value": "Hello"
+              }
+            ],
+            "code": "^FD",
+            "kind": "Command",
+            "span": {
+              "end": 38,
+              "start": 30
+            }
+          },
+          {
+            "args": [],
+            "code": "^FS",
+            "kind": "Command",
+            "span": {
+              "end": 42,
+              "start": 38
+            }
+          },
+          {
+            "args": [],
+            "code": "^XZ",
+            "kind": "Command",
+            "span": {
+              "end": 45,
+              "start": 42
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "label_count": 1,
+  "ok": false,
+  "parser_diagnostics": [
+    {
+      "context": {
+        "command": "^NOT"
+      },
+      "id": "ZPL.PARSER.1002",
+      "message": "unknown command ^NOT",
+      "severity": "warn",
+      "span": {
+        "end": 20,
+        "start": 11
+      }
+    }
+  ],
+  "validator_issues": [
+    {
+      "context": {
+        "arg": "0",
+        "command": "^ZZ",
+        "value": "999"
+      },
+      "id": "ZPL1103",
+      "message": "^ZZ.0 invalid enum",
+      "severity": "error",
+      "span": {
+        "end": 11,
+        "start": 4
+      }
+    },
+    {
+      "context": {
+        "command": "^ZZ",
+        "plane": "device"
+      },
+      "id": "ZPL2205",
+      "message": "^ZZ is a device command and should not appear inside a label (^XA/^XZ)",
+      "severity": "warn",
+      "span": {
+        "end": 11,
+        "start": 4
+      }
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^DF"],
+      "name": "Download Format",
+      "plane": "format",
+      "scope": "document",
+      "arity": 3,
+      "signature": { "params": ["d","o","x"], "joiner": ":", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Device to store the format. Values: R:, E:, B:, and A:." },
+        { "name": "name", "key": "o", "type": "string", "optional": true,
+          "doc": "Name for the stored format. 1 to 16 alphanumeric characters. Default: UNKNOWN." },
+        { "name": "extension", "key": "x", "type": "string", "optional": true, "default": "ZPL",
+          "doc": "Extension for the stored format. Fixed: .ZPL." }
+      ],
+      "constraints": [],
+      "docs": "Saves ZPL II format commands as text strings to be later merged using ^XF with variable data. The format may contain ^FN commands for field referencing when recalled. Enter immediately after ^XA."
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~DU"],
+      "name": "Download Unbounded TrueType Font",
+      "plane": "device",
+      "scope": "session",
+      "arity": 4,
+      "raw_payload": true,
+      "signature": { "params": ["d","o","x","s"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Font location. R:, E:, B:, A:." },
+        { "name": "name", "key": "o", "type": "string", "optional": true,
+          "doc": "Font name. 1 to 8 alphanumeric characters. Default: UNKNOWN." },
+        { "name": "extension", "key": "x", "type": "string", "optional": true, "default": "FNT",
+          "doc": "Extension. Format: .FNT." },
+        { "name": "font_size", "key": "s", "type": "int",
+          "doc": "Font size in bytes. Number of memory bytes required. Command is ignored if no data is entered." }
+      ],
+      "constraints": [],
+      "docs": "Downloads an unbounded TrueType font (more than 256 characters, e.g. Asian fonts) converted via ZTools. The Field Block (^FB) command cannot support these fonts."
+    }
+  ]
+}

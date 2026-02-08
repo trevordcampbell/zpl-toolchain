@@ -1,0 +1,16 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JI"],
+      "printerGates": ["zbi"],
+      "name": "Start ZBI (Zebra BASIC Interpreter)",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Initializes the Zebra BASIC Interpreter (ZBI) in interactive mode. Echoes received characters back to source. Only one ZBI interpreter can be active at a time. Deactivate with ZPL at the ZBI prompt or ~JQ."
+    }
+  ]
+}

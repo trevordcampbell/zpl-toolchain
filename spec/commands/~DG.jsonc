@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~DG"],
+      "name": "Download Graphic",
+      "plane": "device",
+      "scope": "session",
+      "arity": 5,
+      "raw_payload": true,
+      "signature": { "params": ["d","o","x","t","w"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Device to store the image. Values: R:, E:, B:, and A:." },
+        { "name": "name", "key": "o", "type": "string", "optional": true,
+          "doc": "Image name. 1 to 8 alphanumeric characters. Default: UNKNOWN." },
+        { "name": "extension", "key": "x", "type": "string", "optional": true, "default": "GRF",
+          "doc": "Extension. Fixed: .GRF. If not specified, .GRF is automatically appended." },
+        { "name": "total_bytes", "key": "t", "type": "int",
+          "doc": "Total number of bytes in the graphic. Calculated as (width_mm * dots_per_mm / 8) * (height_mm * dots_per_mm)." },
+        { "name": "bytes_per_row", "key": "w", "type": "int",
+          "doc": "Number of bytes per row. Calculated as width_mm * dots_per_mm / 8." }
+      ],
+      "constraints": [],
+      "docs": "Downloads an ASCII hex representation of a graphic image to the printer. The data string defines the image using hex nibbles (each character = 4 dots). Use ~DY for more saving and loading options."
+    }
+  ]
+}

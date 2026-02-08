@@ -1,0 +1,33 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^BQ"],
+      "name": "QR Code Bar Code",
+      "plane": "format",
+      "scope": "field",
+      "arity": 5,
+      "signature": { "params": ["a","b","c","d","e"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "a", "type": "enum", "enum": ["N"], "optional": true, "default": "N",
+          "doc": "Orientation (fixed N; rotation via ^FW has no effect on QR codes)" },
+        { "name": "model", "key": "b", "type": "enum", "enum": ["1","2"], "optional": true, "default": "2",
+          "doc": "QR Code model (1=original, 2=enhanced with higher capacity)" },
+        { "name": "magnification_factor", "key": "c", "type": "int", "range": [1, 100], "optional": true,
+          "default": 2,
+          "defaultByDpi": { "150": 1, "200": 2, "203": 2, "300": 3, "600": 6 },
+          "doc": "Size multiplier for the QR Code modules (1-100). Default varies by DPI: 1 at 150, 2 at 200/203, 3 at 300, 6 at 600." },
+        { "name": "error_correction", "key": "d", "type": "enum", "enum": ["H","Q","M","L"], "optional": true, "default": "Q",
+          "doc": "Error correction level (H=ultra-high 30%, Q=high 25%, M=standard 15%, L=low 7%)" },
+        { "name": "mask_value", "key": "e", "type": "int", "range": [0, 7], "optional": true, "default": 7,
+          "doc": "Mask pattern applied to the symbol (0-7)" }
+      ],
+      "constraints": [
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BQ should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print a QR Code two-dimensional matrix barcode with configurable model, magnification, and error correction.",
+      "fieldDataRules": { "notes": "^FD contains embedded switch fields: [D<codeNo><divs><parity>,]<errCorr><inputMode>,<[charMode]data>. Error correction (H/Q/M/L) and input mode (A=automatic, M=manual) are mandatory. Manual mode requires character mode: N=numeric (0-9), A=alphanumeric (0-9 A-Z space $%*+-./:), Bxxxx=byte (xxxx=4-digit count), K=Kanji. Automatic mode cannot encode bytes 0x80-0x9F and 0xE0-0xFF" }
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^CO"],
+      "name": "Cache On",
+      "plane": "device",
+      "scope": "session",
+      "arity": 3,
+      "signature": { "params": ["a", "b", "c"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "cache_on", "key": "a", "type": "enum",
+          "enum": ["Y", "N"],
+          "optional": true, "default": "Y",
+          "doc": "Enable or disable the character cache. Y = yes, N = no." },
+        { "name": "additional_memory", "key": "b", "type": "int",
+          "range": [1, 9999], "unit": "kilobytes",
+          "optional": true, "default": 40,
+          "doc": "Amount of additional memory to be added to cache, in kilobytes." },
+        { "name": "cache_type", "key": "c", "type": "enum",
+          "enum": ["0", "1"],
+          "optional": true, "default": "0",
+          "doc": "Cache type. 0 = cache buffer (normal fonts), 1 = internal buffer (recommended for Asian fonts)." }
+      ],
+      "effects": { "sets": ["cache.enabled", "cache.additionalMemory", "cache.type"] },
+      "constraints": [
+        { "kind": "note", "message": "If firmware x.12 or greater, this command is not required because the printer automatically expands the character cache as needed." }
+      ],
+      "docs": "Controls the scalable character cache size and type. Increasing cache size improves scalable font performance but reduces memory available for label bitmaps, graphics, and fonts."
+    }
+  ]
+}

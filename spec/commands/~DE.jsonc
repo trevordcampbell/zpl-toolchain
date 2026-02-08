@@ -1,0 +1,27 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~DE"],
+      "name": "Download Encoding",
+      "plane": "device",
+      "scope": "session",
+      "arity": 4,
+      "raw_payload": true,
+      "signature": { "params": ["d","o","x","s"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Location of table. R:, E:, B:, A:." },
+        { "name": "name", "key": "o", "type": "string", "optional": true,
+          "doc": "Name of table. Any valid name up to 8 characters. Default: UNKNOWN." },
+        { "name": "extension", "key": "x", "type": "string", "optional": true, "default": "DAT",
+          "doc": "Extension. Format: .DAT." },
+        { "name": "table_size", "key": "s", "type": "int",
+          "doc": "Table size in bytes. Number of memory bytes required. Command is ignored if incorrect or missing." }
+      ],
+      "constraints": [],
+      "docs": "Downloads character encoding translation tables to the printer, essential for printing non-standard or foreign language characters with TrueType fonts. Data is a string of ASCII hexadecimal values."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^FE"],
+      "name": "Field Concatenation",
+      "plane": "format",
+      "scope": "field",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "delimiter", "key": "a", "type": "char",
+          "optional": true, "default": "#",
+          "doc": "Delimiter character for field concatenation and substring extraction. Any character except the current format and control prefix." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Must precede each ^FD command where it is used. Only applies to the immediately following ^FD field." }
+      ],
+      "docs": "Allows field data concatenation and substring extraction by referencing ^FN fields. Use #n# to insert an entire ^FN field, or #n,a,x,y# to insert a substring."
+    }
+  ]
+}

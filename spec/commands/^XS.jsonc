@@ -1,0 +1,31 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^XS"],
+      "name": "Set Dynamic Media Calibration",
+      "plane": "device",
+      "scope": "session",
+      "arity": 3,
+      "signature": { "params": ["length", "threshold", "gain"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "length", "key": "length", "type": "enum",
+          "enum": ["Y", "N"],
+          "optional": true, "default": "Y",
+          "doc": "Dynamic length calibration. Y = enable, N = disable." },
+        { "name": "threshold", "key": "threshold", "type": "enum",
+          "enum": ["Y", "N"],
+          "optional": true, "default": "Y",
+          "doc": "Dynamic threshold calibration. Y = enable, N = disable." },
+        { "name": "gain", "key": "gain", "type": "enum",
+          "enum": ["Y", "N"],
+          "optional": true, "default": "Y",
+          "doc": "Dynamic gain calibration (future implementation). Y = enable, N = disable." }
+      ],
+      "effects": { "sets": ["media.dynamicCalibration.length", "media.dynamicCalibration.threshold", "media.dynamicCalibration.gain"] },
+      "constraints": [],
+      "docs": "Controls whether dynamic media calibration is performed to compensate for variations in label length, position, transmissivity, and/or reflectance after power-up or head open."
+    }
+  ]
+}

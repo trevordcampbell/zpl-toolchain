@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^SR"],
+      "name": "Set Printhead Resistance",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "resistance", "key": "a", "type": "int",
+          "range": [488, 1175],
+          "doc": "Resistance value (four-digit numeric). Range: 0488 to 1175. Should be less than or equal to the value shown on the printhead to avoid damage." }
+      ],
+      "effects": { "sets": ["printhead.resistance"] },
+      "constraints": [
+        { "kind": "note", "message": "Setting a value higher than the printhead rating could damage the printhead. New printer models automatically set head resistance." }
+      ],
+      "docs": "Sets the printhead resistance value. The value should match or be less than the resistance rating on the printhead being used."
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+# Publish All Packages — Plan
+
+> **Status (2026-02-08):** Phase 6 complete. Full release automation via release-plz is configured. First publish pending (use `scripts/publish.sh` for v0.1.0, then release-plz handles all future releases).
+
+## How releases work
+
+### Automated (day-to-day) — `.github/workflows/release-plz.yml`
+
+1. Push conventional commits to `main` (`feat:`, `fix:`, `docs:`, etc.)
+2. release-plz opens a **Release PR** with version bumps + CHANGELOG updates
+3. Review and merge the PR
+4. release-plz automatically:
+   - Publishes 6 crates to crates.io (dependency-ordered)
+   - Creates a git tag (`v0.x.0`)
+   - Creates a GitHub Release with changelog notes
+   - Triggers npm, PyPI, and binary build jobs
+5. Done — all registries updated, artifacts uploaded, no manual steps
+
+### Manual fallback — `scripts/publish.sh`
+
+For first-time publishing or emergencies. Dry-run by default — pass `--live` to publish.
+
+```bash
+./scripts/publish.sh crates           # dry-run 6 crates to crates.io
+./scripts/publish.sh crates --live    # actually publish to crates.io
+./scripts/publish.sh npm              # dry-run WASM package to npm
+./scripts/publish.sh npm --live       # actually publish to npm
+./scripts/publish.sh pypi             # dry-run Python wheel to PyPI
+./scripts/publish.sh pypi --live      # actually publish to PyPI
+./scripts/publish.sh all              # dry-run all registries
+./scripts/publish.sh all --live       # publish everything
+```
+
+Tokens loaded from `.env` at the project root (in `.gitignore`).
+Required variables: `crates_api_key`, `npmjs_api_key`, `pypi_api_key`.
+
+### Manual tag push — `.github/workflows/release.yml`
+
+If you need to bypass release-plz: `git tag v0.3.0 && git push origin v0.3.0`.
+Builds CLI binaries + FFI libs and creates a GitHub Release.
+
+## Conventional commits (required going forward)
+
+- `feat: ...` — minor bump (0.1.0 -> 0.2.0)
+- `fix: ...` — patch bump (0.1.0 -> 0.1.1)
+- `feat!: ...` or `BREAKING CHANGE:` footer — major bump
+- `docs:`, `chore:`, `ci:`, `refactor:` — no version bump (no release)
+
+Enforced locally by git hooks (`.githooks/commit-msg`). Hooks also run `cargo fmt --check` on commit and `cargo clippy` + tests on push. Enable with `git config core.hooksPath .githooks` (automatic in devcontainer).
+
+## Required GitHub Secrets
+
+| Secret | Registry | Used by |
+|---|---|---|
+| `CARGO_REGISTRY_TOKEN` | crates.io | release-plz.yml |
+| `NPM_TOKEN` | npmjs.com | release-plz.yml |
+| `PYPI_TOKEN` | pypi.org | release-plz.yml |
+
+## Crates.io publish order (handled automatically by release-plz)
+
+1. `zpl_toolchain_diagnostics` (leaf)
+2. `zpl_toolchain_spec_tables` (leaf)
+3. `zpl_toolchain_profile` (leaf)
+4. `zpl_toolchain_core` (depends on 1, 2, 3)
+5. `zpl_toolchain_spec_compiler` (depends on 2)
+6. `zpl_toolchain_cli` (depends on 1, 3, 4)
+
+## Phase checklist
+
+### Phase 1: Account Setup ✅
+
+- [x] Create crates.io account + API token
+- [x] Create npm account + API token
+- [x] Create PyPI account + API token
+- [x] Store tokens as GitHub Actions secrets
+
+### Phase 2: Crates.io Prep ✅
+
+- [x] Add `publish = false` to non-publishable crates
+- [x] Add metadata to all 6 publishable crates (description, repository, keywords, categories)
+- [x] Add version pins to inter-crate path dependencies
+- [x] Move `spec/diagnostics.jsonc` into crate for packaging
+- [x] Workspace inheritance for edition, license, repository
+- [x] `cargo publish --dry-run` validated
+
+### Phase 3–5: Registry Publishing (automated by Phase 6)
+
+- [x] npm: WASM build + publish configured in release-plz.yml
+- [x] PyPI: maturin publish configured in release-plz.yml
+- [ ] NuGet: deferred (no account yet)
+
+### Phase 6: CI Automation ✅
+
+- [x] `release-plz.toml` — single-tag mode, workspace config
+- [x] `.github/workflows/release-plz.yml` — unified release workflow
+- [x] `.github/workflows/release.yml` — manual fallback annotated
+- [x] `scripts/publish.sh` — manual/emergency publishing script

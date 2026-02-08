@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^JM"],
+      "name": "Set Dots per Millimeter",
+      "plane": "device",
+      "scope": "document",
+      "arity": 1,
+      "signature": { "params": ["n"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "dpi", "key": "n", "type": "enum", "enum": ["A","B"], "optional": true, "default": "A",
+          "doc": "A = full density (24/12/8/6 dots/mm), B = half density (12/6/4/3 dots/mm). Doubles the format size of the label." }
+      ],
+      "effects": { "sets": ["print.dotsPerMillimeter"] },
+      "constraints": [
+        { "kind": "note", "message": "^JM must be entered before the first ^FS command in a format. Effects are persistent. Using ^JMB causes UPS MaxiCode to become out of specification." }
+      ],
+      "docs": "Lowers print density: 24→12, 12→6, 8→4, 6→3 dots/mm. Also affects field origin (^FO) placement. Must be entered before the first ^FS in a format."
+    }
+  ]
+}

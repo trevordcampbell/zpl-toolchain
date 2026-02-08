@@ -1,0 +1,20 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^JU"],
+      "name": "Configuration Update",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "action", "key": "a", "type": "enum", "enum": ["S","R","F","N","A"],
+          "doc": "S = save current settings (used at power-on), R = recall last saved settings, F = reload factory settings, N = reload factory network settings, A = reload factory settings and factory network settings. F/N/A values are lost at power-off if not saved with ^JUS." }
+      ],
+      "constraints": [],
+      "docs": "Sets the active configuration for the printer. Save current settings, recall saved settings, or reload factory defaults."
+    }
+  ]
+}

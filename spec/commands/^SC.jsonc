@@ -1,0 +1,34 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^SC"],
+      "name": "Set Serial Communications",
+      "plane": "device",
+      "scope": "session",
+      "arity": 6,
+      "signature": { "params": ["a","b","c","d","e","f"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "baud", "key": "a", "type": "enum",
+          "enum": ["110","300","600","1200","2400","4800","9600","14400","19200","28800","38400","57600","115200"],
+          "doc": "Baud rate. 110 is not supported on Xi4/RXi4/ZM/RZ/S4M printers." },
+        { "name": "data_bits", "key": "b", "type": "enum", "enum": ["7","8"],
+          "doc": "Word length in data bits." },
+        { "name": "parity", "key": "c", "type": "enum", "enum": ["N","E","O"],
+          "doc": "N = none, E = even, O = odd." },
+        { "name": "stop_bits", "key": "d", "type": "enum", "enum": ["1","2"],
+          "doc": "Number of stop bits." },
+        { "name": "protocol", "key": "e", "type": "enum", "enum": ["X","D","R","M"],
+          "doc": "X = XON/XOFF, D = DTR/DSR, R = RTS, M = DTR/DSR XON/XOFF (G-Series only)." },
+        { "name": "zebra_protocol", "key": "f", "type": "enum", "enum": ["A","N","Z"],
+          "doc": "A = ACK/NAK, N = none, Z = Zebra." }
+      ],
+      "effects": { "sets": ["serial.baud", "serial.dataBits", "serial.parity", "serial.stopBits", "serial.protocol", "serial.zebraProtocol"] },
+      "constraints": [
+        { "kind": "note", "message": "If any parameters are missing, out of specification, not supported, or have a ZPL-override DIP switch set, the command is ignored. Use ^JUS to persist changes through power-up." }
+      ],
+      "docs": "Changes the serial communications parameters. All parameters must be specified or the command is ignored."
+    }
+  ]
+}

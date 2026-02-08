@@ -1,0 +1,34 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^BB"],
+      "name": "CODABLOCK Bar Code",
+      "plane": "format",
+      "scope": "field",
+      "arity": 6,
+      "signature": { "params": ["o","h","s","c","r","m"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+          "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
+        { "name": "row_height", "key": "h", "type": "int", "range": [2, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+          "doc": "Height of each row in dots (minimum 2)" },
+        { "name": "security_level", "key": "s", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "Y",
+          "doc": "Whether to add a row security indicator" },
+        { "name": "characters_per_row", "key": "c", "type": "int", "range": [2, 62], "optional": true,
+          "doc": "Number of data characters per row (2-62)" },
+        { "name": "number_of_rows", "key": "r", "type": "int", "range": [1, 44], "optional": true,
+          "doc": "Number of rows to encode (1-44)" },
+        { "name": "mode", "key": "m", "type": "enum", "enum": ["A","E","F"], "optional": true, "default": "F",
+          "doc": "CODABLOCK variant (A=Code 39, E=Code 128 with auto FNC4, F=Code 128)" }
+      ],
+      "constraints": [
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BB to set module width", "severity": "warn" },
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BB should precede its field data (^FD/^FV)", "severity": "info" }
+      ],
+      "docs": "Print a CODABLOCK two-dimensional stacked barcode (modes A, E, F) for encoding large amounts of data.",
+      "fieldDataRules": { "notes": "Character set depends on mode. Mode A: Code 39 set (0-9, A-Z, - . $ / + % space); invalid chars produce no barcode or error. Mode E/F: full ASCII except ZPL-reserved chars; function codes via ^FH (FNC1=0x80, FNC2=0x81, FNC3=0x82, FNC4=0x83, NUL=0x84); chars above 0x84 invalid" }
+    }
+  ]
+}

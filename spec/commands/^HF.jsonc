@@ -1,0 +1,24 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^HF"],
+      "name": "Host Format",
+      "plane": "device",
+      "scope": "document",
+      "arity": 3,
+      "signature": { "params": ["d","o","x"], "joiner": ":", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Device to recall format from. Values: R:, E:, B:, and A:." },
+        { "name": "name", "key": "o", "type": "string", "optional": true,
+          "doc": "Format name. 1 to 8 alphanumeric characters. Default: UNKNOWN." },
+        { "name": "extension", "key": "x", "type": "string", "optional": true, "default": "ZPL",
+          "doc": "Extension. Fixed value: .ZPL." }
+      ],
+      "constraints": [],
+      "docs": "Sends stored formats back to the host computer via the communication port."
+    }
+  ]
+}

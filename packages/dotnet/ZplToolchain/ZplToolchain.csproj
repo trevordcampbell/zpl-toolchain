@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <PackageId>ZplToolchain</PackageId>
+    <Version>0.1.0</Version>
+    <Description>ZPL II toolchain — parse, validate, and format Zebra Programming Language files</Description>
+    <Authors>zpl-toolchain contributors</Authors>
+    <PackageLicenseExpression>MIT OR Apache-2.0</PackageLicenseExpression>
+    <PackageTags>zpl;zebra;label;printer;parser</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/trevordcampbell/zpl-toolchain</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/trevordcampbell/zpl-toolchain</PackageProjectUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" Version="8.0.0" />
+  </ItemGroup>
+
+</Project>

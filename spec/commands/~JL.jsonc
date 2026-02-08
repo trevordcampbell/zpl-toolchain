@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~JL"],
+      "name": "Set Label Length",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Sets the label length. Depending on the size of the label, the printer feeds one or more blank labels."
+    }
+  ]
+}

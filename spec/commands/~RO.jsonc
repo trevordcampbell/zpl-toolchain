@@ -1,0 +1,23 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~RO"],
+      "name": "Reset Advanced Counters",
+      "plane": "device",
+      "scope": "session",
+      "arity": 1,
+      "signature": { "params": ["c"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "counter", "key": "c", "type": "enum",
+          "enum": ["1", "2", "3", "4", "C", "R"],
+          "doc": "Counter to reset. 1 = reset counter 1, 2 = reset counter 2, 3 = reset valid RFID label counter, 4 = reset voided RFID label counter, C = reset head cleaned counter, R = reset head replaced counter and head cleaned counter." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Values C and R are supported only on Xi4, RXi4, ZM400/ZM600, RZ400/RZ600, S4M, and G-Series printers. A value must be specified or the command is ignored." }
+      ],
+      "docs": "Resets the advanced counters used by the printer to monitor label generation in inches, centimeters, and number of labels."
+    }
+  ]
+}

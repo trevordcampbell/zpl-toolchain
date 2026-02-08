@@ -1,0 +1,39 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^MM"],
+      "name": "Print Mode",
+      "plane": "device",
+      "scope": "session",
+      "arity": 2,
+      "signature": { "params": ["a", "b"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "mode", "key": "a", "type": "enum",
+          "enum": [
+            "T",
+            { "value": "P", "printerGates": ["peel"] },
+            { "value": "R", "printerGates": ["rewinder"] },
+            { "value": "A", "printerGates": ["applicator"] },
+            { "value": "C", "printerGates": ["cutter"] },
+            { "value": "D", "printerGates": ["cutter"] },
+            { "value": "F", "printerGates": ["rfid"] },
+            "L",
+            "U",
+            { "value": "K", "printerGates": ["kiosk"] }
+          ],
+          "optional": true, "default": "T",
+          "doc": "Print mode. T=tear-off, P=peel-off, R=rewind, A=applicator, C=cutter, D=delayed cutter, F=RFID, L=reserved, U=reserved, K=kiosk." },
+        { "name": "prepeel", "key": "b", "type": "enum", "enum": ["N", "Y"],
+          "optional": true, "default": "N",
+          "doc": "Prepeel select. Y = enable prepeel, N = disable prepeel. Not supported by Link-OS printers." }
+      ],
+      "effects": { "sets": ["print.mode"] },
+      "constraints": [
+        { "kind": "note", "message": "Available modes depend on printer model and installed options. Command is ignored if parameters are missing or invalid." }
+      ],
+      "docs": "Determines the action the printer takes after a label or group of labels has printed (tear-off, peel, rewind, cutter, applicator, etc.)."
+    }
+  ]
+}

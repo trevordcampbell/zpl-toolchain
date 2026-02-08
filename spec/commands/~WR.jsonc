@@ -1,0 +1,15 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["~WR"],
+      "name": "Reset Wireless Radio Card",
+      "plane": "device",
+      "scope": "session",
+      "arity": 0,
+      "constraints": [],
+      "docs": "Reinitializes the wireless radio card and the print server (wired or wireless), causing any wireless radio card to reassociate to the wireless network."
+    }
+  ]
+}

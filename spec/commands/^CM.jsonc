@@ -1,0 +1,30 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^CM"],
+      "name": "Change Memory Letter Designation",
+      "plane": "device",
+      "scope": "session",
+      "arity": 3,
+      "signature": { "params": ["a", "b", "c"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "memory_alias_b", "key": "a", "type": "string",
+          "optional": true, "default": "B:",
+          "doc": "Letter designation to assign to the B: memory device. Accepted values: B:, E:, R:, or none." },
+        { "name": "memory_alias_e", "key": "b", "type": "string",
+          "optional": true, "default": "E:",
+          "doc": "Letter designation to assign to the E: memory device. Accepted values: B:, E:, R:, or none." },
+        { "name": "memory_alias_r", "key": "c", "type": "string",
+          "optional": true, "default": "R:",
+          "doc": "Letter designation to assign to the R: memory device. Accepted values: B:, E:, R:, or none." }
+      ],
+      "effects": { "sets": ["memory.letterDesignation"] },
+      "constraints": [
+        { "kind": "note", "message": "If two or more parameters specify the same letter designator, all are reset to defaults. If any parameter is out of specification, the command is ignored. Use ^JUS to persist across power cycles." }
+      ],
+      "docs": "Reassigns letter designations for the printer's memory devices (B:, E:, R:). Allows reformatting memory references without altering existing format files. Impacts all subsequent file operation commands."
+    }
+  ]
+}

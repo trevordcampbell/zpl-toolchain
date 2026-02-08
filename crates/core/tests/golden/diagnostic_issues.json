@@ -1,0 +1,193 @@
+{
+  "ast": {
+    "labels": [
+      {
+        "nodes": [
+          {
+            "args": [],
+            "code": "^XA",
+            "kind": "Command",
+            "span": {
+              "end": 4,
+              "start": 0
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "data",
+                "presence": "value",
+                "value": "No origin"
+              }
+            ],
+            "code": "^FD",
+            "kind": "Command",
+            "span": {
+              "end": 16,
+              "start": 4
+            }
+          },
+          {
+            "args": [],
+            "code": "^FS",
+            "kind": "Command",
+            "span": {
+              "end": 20,
+              "start": 16
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "x",
+                "presence": "value",
+                "value": "50"
+              },
+              {
+                "key": "y",
+                "presence": "value",
+                "value": "50"
+              },
+              {
+                "key": "z",
+                "presence": "empty"
+              }
+            ],
+            "code": "^FO",
+            "kind": "Command",
+            "span": {
+              "end": 28,
+              "start": 20
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "x",
+                "presence": "value",
+                "value": "100"
+              },
+              {
+                "key": "y",
+                "presence": "value",
+                "value": "100"
+              },
+              {
+                "key": "z",
+                "presence": "empty"
+              }
+            ],
+            "code": "^FO",
+            "kind": "Command",
+            "span": {
+              "end": 38,
+              "start": 28
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "data",
+                "presence": "value",
+                "value": "Overlap"
+              }
+            ],
+            "code": "^FD",
+            "kind": "Command",
+            "span": {
+              "end": 48,
+              "start": 38
+            }
+          },
+          {
+            "args": [],
+            "code": "^FS",
+            "kind": "Command",
+            "span": {
+              "end": 52,
+              "start": 48
+            }
+          },
+          {
+            "args": [],
+            "code": "^XZ",
+            "kind": "Command",
+            "span": {
+              "end": 55,
+              "start": 52
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "label_count": 1,
+  "ok": true,
+  "parser_diagnostics": [],
+  "validator_issues": [
+    {
+      "context": {
+        "command": "^FD"
+      },
+      "id": "ZPL2201",
+      "message": "^FD without preceding field origin (no field origin)",
+      "severity": "warn",
+      "span": {
+        "end": 16,
+        "start": 4
+      }
+    },
+    {
+      "context": {
+        "command": "^FS"
+      },
+      "id": "ZPL2204",
+      "message": "^FS without a preceding field origin (orphaned field separator)",
+      "severity": "warn",
+      "span": {
+        "end": 20,
+        "start": 16
+      }
+    },
+    {
+      "context": {
+        "command": "^FO",
+        "kind": "order",
+        "target": "^FS"
+      },
+      "id": "ZPL2103",
+      "message": "^FO should appear before its ^FS",
+      "severity": "info",
+      "span": {
+        "end": 28,
+        "start": 20
+      }
+    },
+    {
+      "context": {
+        "command": "^FO",
+        "kind": "order",
+        "target": "^FS"
+      },
+      "id": "ZPL2103",
+      "message": "^FO should appear before its ^FS",
+      "severity": "info",
+      "span": {
+        "end": 38,
+        "start": 28
+      }
+    },
+    {
+      "context": {
+        "command": "^FO"
+      },
+      "id": "ZPL2203",
+      "message": "^FO opens a new field before previous field was closed with ^FS",
+      "severity": "warn",
+      "span": {
+        "end": 38,
+        "start": 28
+      }
+    }
+  ]
+}

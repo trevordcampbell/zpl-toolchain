@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+#
+# pre-commit — Fast checks before every commit.
+# Only runs formatting check (< 1 second). Heavier checks go in pre-push.
+
+set -e
+
+echo "pre-commit: checking formatting..."
+if ! cargo fmt --all -- --check; then
+    echo ""
+    echo "  Formatting check failed. Run 'cargo fmt' to fix, then re-stage."
+    echo ""
+    exit 1
+fi

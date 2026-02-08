@@ -1,0 +1,47 @@
+# Rust
+/target/
+# Cargo.lock is intentionally committed (workspace has a CLI binary)
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors / IDEs
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+.cursor/
+
+# WASM (wasm-pack output)
+crates/wasm/pkg/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.whl
+dist/
+*.egg-info/
+
+# Node / TypeScript
+node_modules/
+package-lock.json
+packages/ts/core/dist/
+packages/ts/core/wasm/
+
+# Shared libraries (FFI build output)
+*.so
+*.dylib
+*.dll
+
+# Reference materials (copyrighted, not for distribution)
+*.pdf
+
+# Development planning files
+z.plan.md
+
+# Environment / Secrets
+.env
+.npmrc

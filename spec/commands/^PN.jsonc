@@ -1,0 +1,22 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^PN"],
+      "name": "Present Now",
+      "plane": "device",
+      "scope": "document",
+      "arity": 1,
+      "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "eject_length", "key": "a", "type": "int", "range": [0, 255], "unit": "mm",
+          "doc": "Additional millimeters of media to eject. Total eject = 50 mm + ~PL value + this value. Command is ignored if parameter is missing or invalid." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Supported only on KR403 printers. See ~PL for present length addition." }
+      ],
+      "docs": "Causes the printer to run a presenter cycle, ejecting the specified amount of media."
+    }
+  ]
+}

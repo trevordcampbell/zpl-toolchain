@@ -1,0 +1,26 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^WP"],
+      "name": "Set Wireless Password",
+      "plane": "device",
+      "scope": "session",
+      "arity": 2,
+      "signature": { "params": ["a","b"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "old_password", "key": "a", "type": "string",
+          "optional": true, "default": "0000",
+          "doc": "Old wireless password. Values: 0000 through 9999." },
+        { "name": "new_password", "key": "b", "type": "string",
+          "optional": true, "default": "0000",
+          "doc": "New wireless password. Values: 0000 through 9999. If 0000, wireless settings run in unprotected mode." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "This command does not apply to the S4M. If a wireless password is set, MAC Address, ESSID, WLAN Security, WEP Type, WEP Index, and Reset Network will not appear on the control panel until the wireless password is entered." }
+      ],
+      "docs": "Sets the four-digit wireless password (separate from the general printer password)."
+    }
+  ]
+}

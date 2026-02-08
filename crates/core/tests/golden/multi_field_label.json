@@ -1,0 +1,351 @@
+{
+  "ast": {
+    "labels": [
+      {
+        "nodes": [
+          {
+            "args": [],
+            "code": "^XA",
+            "kind": "Command",
+            "span": {
+              "end": 4,
+              "start": 0
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "x",
+                "presence": "value",
+                "value": "50"
+              },
+              {
+                "key": "y",
+                "presence": "value",
+                "value": "50"
+              },
+              {
+                "key": "z",
+                "presence": "empty"
+              }
+            ],
+            "code": "^FO",
+            "kind": "Command",
+            "span": {
+              "end": 12,
+              "start": 4
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "f",
+                "presence": "value",
+                "value": "0"
+              },
+              {
+                "key": "o",
+                "presence": "value",
+                "value": "N"
+              },
+              {
+                "key": "h",
+                "presence": "value",
+                "value": "30"
+              },
+              {
+                "key": "w",
+                "presence": "value",
+                "value": "30"
+              }
+            ],
+            "code": "^A",
+            "kind": "Command",
+            "span": {
+              "end": 22,
+              "start": 12
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "data",
+                "presence": "value",
+                "value": "Line 1"
+              }
+            ],
+            "code": "^FD",
+            "kind": "Command",
+            "span": {
+              "end": 31,
+              "start": 22
+            }
+          },
+          {
+            "args": [],
+            "code": "^FS",
+            "kind": "Command",
+            "span": {
+              "end": 35,
+              "start": 31
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "x",
+                "presence": "value",
+                "value": "50"
+              },
+              {
+                "key": "y",
+                "presence": "value",
+                "value": "100"
+              },
+              {
+                "key": "z",
+                "presence": "empty"
+              }
+            ],
+            "code": "^FO",
+            "kind": "Command",
+            "span": {
+              "end": 44,
+              "start": 35
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "f",
+                "presence": "value",
+                "value": "0"
+              },
+              {
+                "key": "o",
+                "presence": "value",
+                "value": "N"
+              },
+              {
+                "key": "h",
+                "presence": "value",
+                "value": "30"
+              },
+              {
+                "key": "w",
+                "presence": "value",
+                "value": "30"
+              }
+            ],
+            "code": "^A",
+            "kind": "Command",
+            "span": {
+              "end": 54,
+              "start": 44
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "data",
+                "presence": "value",
+                "value": "Line 2"
+              }
+            ],
+            "code": "^FD",
+            "kind": "Command",
+            "span": {
+              "end": 63,
+              "start": 54
+            }
+          },
+          {
+            "args": [],
+            "code": "^FS",
+            "kind": "Command",
+            "span": {
+              "end": 67,
+              "start": 63
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "x",
+                "presence": "value",
+                "value": "50"
+              },
+              {
+                "key": "y",
+                "presence": "value",
+                "value": "150"
+              },
+              {
+                "key": "z",
+                "presence": "empty"
+              }
+            ],
+            "code": "^FO",
+            "kind": "Command",
+            "span": {
+              "end": 76,
+              "start": 67
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "f",
+                "presence": "value",
+                "value": "0"
+              },
+              {
+                "key": "o",
+                "presence": "value",
+                "value": "N"
+              },
+              {
+                "key": "h",
+                "presence": "value",
+                "value": "30"
+              },
+              {
+                "key": "w",
+                "presence": "value",
+                "value": "30"
+              }
+            ],
+            "code": "^A",
+            "kind": "Command",
+            "span": {
+              "end": 86,
+              "start": 76
+            }
+          },
+          {
+            "args": [
+              {
+                "key": "data",
+                "presence": "value",
+                "value": "Line 3"
+              }
+            ],
+            "code": "^FD",
+            "kind": "Command",
+            "span": {
+              "end": 95,
+              "start": 86
+            }
+          },
+          {
+            "args": [],
+            "code": "^FS",
+            "kind": "Command",
+            "span": {
+              "end": 99,
+              "start": 95
+            }
+          },
+          {
+            "args": [],
+            "code": "^XZ",
+            "kind": "Command",
+            "span": {
+              "end": 102,
+              "start": 99
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "label_count": 1,
+  "ok": true,
+  "parser_diagnostics": [],
+  "validator_issues": [
+    {
+      "context": {
+        "command": "^FO",
+        "kind": "order",
+        "target": "^FS"
+      },
+      "id": "ZPL2103",
+      "message": "^FO should appear before its ^FS",
+      "severity": "info",
+      "span": {
+        "end": 44,
+        "start": 35
+      }
+    },
+    {
+      "context": {
+        "command": "^A",
+        "kind": "order",
+        "target": "^FS"
+      },
+      "id": "ZPL2103",
+      "message": "^A should appear before its field terminator ^FS",
+      "severity": "info",
+      "span": {
+        "end": 54,
+        "start": 44
+      }
+    },
+    {
+      "context": {
+        "command": "^A",
+        "kind": "order",
+        "target": "^FD|^FV"
+      },
+      "id": "ZPL2103",
+      "message": "^A should appear before field data (^FD/^FV)",
+      "severity": "warn",
+      "span": {
+        "end": 54,
+        "start": 44
+      }
+    },
+    {
+      "context": {
+        "command": "^FO",
+        "kind": "order",
+        "target": "^FS"
+      },
+      "id": "ZPL2103",
+      "message": "^FO should appear before its ^FS",
+      "severity": "info",
+      "span": {
+        "end": 76,
+        "start": 67
+      }
+    },
+    {
+      "context": {
+        "command": "^A",
+        "kind": "order",
+        "target": "^FS"
+      },
+      "id": "ZPL2103",
+      "message": "^A should appear before its field terminator ^FS",
+      "severity": "info",
+      "span": {
+        "end": 86,
+        "start": 76
+      }
+    },
+    {
+      "context": {
+        "command": "^A",
+        "kind": "order",
+        "target": "^FD|^FV"
+      },
+      "id": "ZPL2103",
+      "message": "^A should appear before field data (^FD/^FV)",
+      "severity": "warn",
+      "span": {
+        "end": 86,
+        "start": 76
+      }
+    }
+  ]
+}

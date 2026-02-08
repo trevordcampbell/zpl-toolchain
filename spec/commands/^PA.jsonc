@@ -1,0 +1,29 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^PA"],
+      "name": "Advanced Text Properties",
+      "plane": "device",
+      "scope": "document",
+      "arity": 4,
+      "signature": { "params": ["a","b","c","d"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "default_glyph", "key": "a", "type": "enum", "enum": ["0","1"], "optional": true, "default": "0",
+          "doc": "Default glyph behavior. 0 = space character as default, 1 = font's default glyph (often a hollow box)." },
+        { "name": "bidirectional_layout", "key": "b", "type": "enum", "enum": ["0","1"], "optional": true, "default": "0",
+          "doc": "Bidirectional text layout. 0 = off, 1 = on." },
+        { "name": "character_shaping", "key": "c", "type": "enum", "enum": ["0","1"], "optional": true, "default": "0",
+          "doc": "Character shaping. 0 = off, 1 = on." },
+        { "name": "opentype_support", "key": "d", "type": "enum", "enum": ["0","1"], "optional": true, "default": "0",
+          "doc": "OpenType table support. 0 = off, 1 = on." }
+      ],
+      "effects": { "sets": ["text.defaultGlyph", "text.bidirectional", "text.characterShaping", "text.openType"] },
+      "constraints": [
+        { "kind": "note", "message": "Available only for printers with firmware version V60.14.x, V50.14.x, or later." }
+      ],
+      "docs": "Configures advanced text layout features including default glyph behavior, bidirectional text layout, character shaping, and OpenType table support."
+    }
+  ]
+}

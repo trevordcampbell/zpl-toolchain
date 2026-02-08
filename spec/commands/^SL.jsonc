@@ -1,0 +1,28 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^SL"],
+      "printerGates": ["rtc"],
+      "name": "Set Mode and Language",
+      "plane": "device",
+      "scope": "document",
+      "arity": 2,
+      "signature": { "params": ["a","b"], "joiner": ",", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "mode", "key": "a", "type": "string", "optional": true, "default": "S",
+          "doc": "S = Start Time Mode (time read when ^XA is received, same for all labels in batch). T = Time Now Mode (time read when label enters print queue, like serialized time). Numeric value (1-999) = accuracy tolerance in seconds (Enhanced RTC, V60.13.0.10 or later). 0 = one second tolerance." },
+        { "name": "language", "key": "b", "type": "enum",
+          "enum": ["1","2","3","4","5","6","7","8","9","10","11","12","13","14","15","16","17","18"],
+          "optional": true,
+          "doc": "1=English, 2=Spanish, 3=French, 4=German, 5=Italian, 6=Norwegian, 7=Portuguese, 8=Swedish, 9=Danish, 10=Spanish 2, 11=Dutch, 12=Finnish, 13=Japanese, 14=Korean, 15=Simplified Chinese, 16=Traditional Chinese, 17=Russian, 18=Polish. Default: language selected with ^KL or control panel." }
+      ],
+      "effects": { "sets": ["rtc.mode", "rtc.language"] },
+      "constraints": [
+        { "kind": "note", "message": "^SL must be placed before the first ^FO command in the format." }
+      ],
+      "docs": "Specifies the Real-Time Clock mode of operation and language for printing information. Controls whether the time is captured at format start (S) or at print time (T)."
+    }
+  ]
+}

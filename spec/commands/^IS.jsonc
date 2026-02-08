@@ -1,0 +1,26 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^IS"],
+      "name": "Image Save",
+      "plane": "format",
+      "scope": "document",
+      "arity": 4,
+      "signature": { "params": ["d","o","x","p"], "joiner": ":", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Location of stored object. Values: R:, E:, B:, and A:." },
+        { "name": "name", "key": "o", "type": "string", "optional": true,
+          "doc": "Object name. 1 to 8 alphanumeric characters. Default: UNKNOWN." },
+        { "name": "extension", "key": "x", "type": "enum", "enum": ["GRF","PNG"], "optional": true, "default": "GRF",
+          "doc": "Extension. .GRF or .PNG." },
+        { "name": "print_after_storing", "key": "p", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "Y",
+          "doc": "Print image after storing. Y = yes, N = no." }
+      ],
+      "constraints": [],
+      "docs": "Saves the current label format as a graphic image rather than a ZPL II script. The saved image can be recalled with ^IL with virtually no formatting time and overlaid with variable data."
+    }
+  ]
+}

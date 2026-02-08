@@ -1,0 +1,26 @@
+{
+  "version": "0.1.0",
+  "schemaVersion": "1.1.1",
+  "commands": [
+    {
+      "codes": ["^HY"],
+      "name": "Upload Graphics",
+      "plane": "device",
+      "scope": "document",
+      "arity": 3,
+      "signature": { "params": ["d","o","x"], "joiner": ":", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "drive", "key": "d", "type": "enum", "enum": ["R","E","B","A"], "optional": true, "default": "R",
+          "doc": "Location of object. Values: R:, E:, B:, and A:. Default: search priority." },
+        { "name": "name", "key": "o", "type": "string",
+          "doc": "Object name. 1 to 8 alphanumeric characters. An object name must be specified." },
+        { "name": "extension", "key": "x", "type": "enum", "enum": ["G","P"], "optional": true,
+          "doc": "Extension format. G = .GRF (raw bitmap), P = .PNG (compressed bitmap). Default: format of stored image." }
+      ],
+      "constraints": [
+        { "kind": "note", "message": "Extension of ^HG command. The image is uploaded in the form of a ~DY command with the data field always encoded in ZB64 format." }
+      ],
+      "docs": "Uploads graphic objects from the printer to the host in any supported format (GRF or PNG)."
+    }
+  ]
+}

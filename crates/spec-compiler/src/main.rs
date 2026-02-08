@@ -1,3 +1,5 @@
+//! ZPL spec compiler — validates spec files and generates parser tables.
+
 use std::path::PathBuf;
 
 use anyhow::Result;

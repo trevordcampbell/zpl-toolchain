@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.0...v0.1.1) - 2026-02-08
+
+### Other
+
+- add crate-level doc comments to all published crates
+
 _No unreleased changes._
 
 ## [0.1.0] — 2026-02-06

@@ -1,6 +1,6 @@
 [package]
 name = "zpl_toolchain_cli"
-version = "0.1.0"
+version = "0.1.1"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -14,9 +14,9 @@ ariadne = "0.6"
 clap = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-zpl_toolchain_core = { path = "../core", version = "0.1.0" }
-zpl_toolchain_profile = { path = "../profile", version = "0.1.0" }
-zpl_toolchain_diagnostics = { path = "../diagnostics", version = "0.1.0" }
+zpl_toolchain_core = { path = "../core", version = "0.1.1" }
+zpl_toolchain_profile = { path = "../profile", version = "0.1.1" }
+zpl_toolchain_diagnostics = { path = "../diagnostics", version = "0.1.1" }
 
 [[bin]]
 name = "zpl"

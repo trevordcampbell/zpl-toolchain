@@ -33,7 +33,7 @@ git_release_enable = true
 
 # Write a single unified changelog at the repo root.
 changelog_update = true
-changelog_path = "../../CHANGELOG.md"
+changelog_path = "CHANGELOG.md"
 
 # Include commits from all published crates in the changelog,
 # so changes to core/diagnostics/etc. aren't invisible.

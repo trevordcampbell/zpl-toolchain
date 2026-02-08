@@ -55,7 +55,7 @@ jobs:
 
           PR_NUMBER=$(echo "$PR_JSON" | jq -r '.number')
           VERSION=$(echo "$PR_JSON" | jq -r \
-            '.releases[] | select(.package_name == "zpl_toolchain_cli") | .version')
+            '(.releases // [])[] | select(.package_name == "zpl_toolchain_cli") | .version')
 
           if [[ -z "$VERSION" || "$VERSION" == "null" ]]; then
             echo "No CLI version in release PR — skipping version sync"

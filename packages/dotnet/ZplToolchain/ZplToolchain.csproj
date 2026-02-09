@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <PackageId>ZplToolchain</PackageId>
     <Version>0.1.0</Version>
-    <Description>ZPL II toolchain — parse, validate, and format Zebra Programming Language files</Description>
+    <Description>ZPL II toolchain — parse, validate, format, and print Zebra Programming Language files</Description>
     <Authors>zpl-toolchain contributors</Authors>
     <PackageLicenseExpression>MIT OR Apache-2.0</PackageLicenseExpression>
     <PackageTags>zpl;zebra;label;printer;parser</PackageTags>

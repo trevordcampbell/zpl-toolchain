@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "Parser tables and command spec data structures for the ZPL toolchain"
+readme = "README.md"
 keywords = ["zpl", "zebra", "parser", "tables"]
 categories = ["parsing", "data-structures"]
 

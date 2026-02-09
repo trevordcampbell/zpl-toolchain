@@ -1,66 +1,123 @@
-python
-======
+# zpl-toolchain
 
-Python bindings for the ZPL toolchain via [PyO3](https://pyo3.rs/) + [maturin](https://www.maturin.rs/).
+Python bindings for the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) — a spec-first, offline, deterministic ZPL II toolchain for parsing, validating, formatting, and printing Zebra Programming Language files.
 
-Build
------
+Built with Rust for performance, exposed to Python via [PyO3](https://pyo3.rs/).
+
+## Installation
+
 ```bash
-# Install maturin
+pip install zpl-toolchain
+```
+
+## Quick Start
+
+```python
+import json
+import zpl_toolchain
+
+# Parse ZPL — returns JSON string with AST + diagnostics
+result = json.loads(zpl_toolchain.parse("^XA^FDHello^FS^XZ"))
+print(f"Labels: {len(result['ast']['labels'])}")
+
+# Validate ZPL
+validation = json.loads(zpl_toolchain.validate("^XA^FDHello^FS^XZ"))
+print(f"Valid: {validation['ok']}")
+
+# Format ZPL
+formatted = zpl_toolchain.format("^XA^FD Hello ^FS^XZ", "label")
+print(formatted)
+
+# Explain a diagnostic code
+explanation = zpl_toolchain.explain("ZPL1201")
+print(explanation)
+```
+
+## Printing
+
+Send ZPL directly to network printers over TCP:
+
+```python
+import json
+import zpl_toolchain
+
+# Print ZPL to a printer (with optional validation)
+result = json.loads(zpl_toolchain.print_zpl(
+    "^XA^FDHello^FS^XZ",
+    "192.168.1.100",   # printer address (IP or hostname:port)
+))
+print(f"Success: {result['success']}, Bytes sent: {result['bytes_sent']}")
+
+# Print with profile-based validation
+profile_json = open("profiles/zebra-generic-203.json").read()
+result = json.loads(zpl_toolchain.print_zpl(
+    "^XA^FDHello^FS^XZ",
+    "192.168.1.100",
+    profile_json,      # optional printer profile for validation
+    True,              # validate before sending
+))
+
+# Query printer status
+status_json = zpl_toolchain.query_printer_status("192.168.1.100")
+status = json.loads(status_json)
+print(f"Paper out: {status['paper_out']}, Paused: {status['paused']}")
+```
+
+## API
+
+All functions return **JSON strings** — use `json.loads()` to parse. This gives you zero-dependency interop and full access to the rich structured data.
+
+### Core Functions
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `parse` | `(input: str) -> str` | Parse ZPL, return AST + diagnostics |
+| `parse_with_tables` | `(input: str, tables_json: str) -> str` | Parse with explicit parser tables |
+| `validate` | `(input: str, profile_json: str? = None) -> str` | Parse + validate (optional profile) |
+| `format` | `(input: str, indent: str? = None) -> str` | Format ZPL (`"none"`, `"label"`, or `"field"`) |
+| `explain` | `(id: str) -> str?` | Explain a diagnostic code, or `None` |
+
+### Print Functions
+
+| Function | Signature | Description |
+|----------|-----------|-------------|
+| `print_zpl` | `(zpl: str, addr: str, profile: str? = None, validate: bool = False) -> str` | Send ZPL to a network printer over TCP |
+| `query_printer_status` | `(addr: str) -> str` | Query `~HS` host status from a printer |
+
+## Features
+
+- **45 diagnostic codes** covering syntax, semantics, formatting, and preflight checks
+- **Printer profiles** for model-specific validation (label dimensions, DPI, memory limits)
+- **Deterministic output** — identical input always produces identical results
+- **Spec-driven** — parser tables generated from ZPL II command specifications
+- **Fast** — native Rust performance with zero Python runtime overhead
+
+## Requirements
+
+- Python 3.9+
+- No additional dependencies (self-contained native extension)
+
+## Documentation
+
+- [Print Client Guide](https://github.com/trevordcampbell/zpl-toolchain/blob/main/docs/PRINT_CLIENT.md)
+- [Diagnostic Codes](https://github.com/trevordcampbell/zpl-toolchain/blob/main/docs/DIAGNOSTIC_CODES.md)
+- [GitHub Repository](https://github.com/trevordcampbell/zpl-toolchain)
+
+## Building from Source
+
+```bash
 pip install maturin
 
 # Build parser tables first
 cargo run -p zpl_toolchain_spec_compiler -- build --spec-dir spec --out-dir generated
 
-# Build and install the Python wheel (development mode)
+# Build and install (development mode)
 maturin develop -m crates/python/Cargo.toml
 
-# Or build a wheel for distribution
+# Or build a wheel
 maturin build -m crates/python/Cargo.toml
 ```
 
-Usage
------
-```python
-import json
-import zpl_toolchain
+## License
 
-# Parse ZPL — returns a JSON string
-result = json.loads(zpl_toolchain.parse("^XA^FDHello^FS^XZ"))
-print(result["ast"]["labels"])
-
-# Parse with explicit tables
-tables_json = open("generated/parser_tables.json").read()
-result = json.loads(zpl_toolchain.parse_with_tables("^XA^FDHello^FS^XZ", tables_json))
-
-# Validate
-validation = json.loads(zpl_toolchain.validate("^XA^FDHello^FS^XZ"))
-print(validation["ok"])  # True
-
-# Format
-formatted = zpl_toolchain.format("^XA^FD Hello ^FS^XZ", "label")
-
-# Explain a diagnostic code
-explanation = zpl_toolchain.explain("ZPL1201")
-```
-
-API
----
-
-All functions return **JSON strings** (callers use `json.loads()`) for simplicity and zero-dependency interop.
-
-| Function | Signature | Returns |
-|---|---|---|
-| `parse` | `(input: str) → str` | JSON `{ "ast": ..., "diagnostics": [...] }` |
-| `parse_with_tables` | `(input: str, tables_json: str) → str` | JSON `{ "ast": ..., "diagnostics": [...] }` |
-| `validate` | `(input: str, profile_json: str? = None) → str` | JSON `{ "ok": ..., "issues": [...] }` |
-| `format` | `(input: str, indent: str? = None) → str` | Formatted ZPL string |
-| `explain` | `(id: str) → str?` | Explanation or None |
-
-Architecture
-------------
-- Thin wrapper over `crates/bindings-common/` which provides shared parse/validate/format/explain logic and embedded table management.
-- Built with `pyo3` 0.23 + `extension-module` feature.
-- `pyproject.toml` uses maturin as build backend for pip/PyPI compatibility.
-- Module name is `zpl_toolchain` (matches `import zpl_toolchain`).
-- ~78 lines of PyO3 glue code. Python 3.9+ supported.
+Dual-licensed under MIT or Apache-2.0.

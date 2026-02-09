@@ -5,10 +5,11 @@ build-backend = "maturin"
 [project]
 name = "zpl-toolchain"
 version = "0.1.2"
-description = "ZPL II toolchain — parse, validate, and format Zebra Programming Language files"
+description = "ZPL II toolchain — parse, validate, format, and print Zebra Programming Language files"
+readme = "README.md"
 license = { text = "MIT OR Apache-2.0" }
 requires-python = ">=3.9"
-keywords = ["zpl", "zebra", "label", "printer", "parser"]
+keywords = ["zpl", "zebra", "label", "printer", "parser", "printing"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Programming Language :: Rust",

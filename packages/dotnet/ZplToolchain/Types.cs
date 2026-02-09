@@ -37,6 +37,14 @@ public record ValidationResult(
     [property: JsonPropertyName("issues")] List<Diagnostic> Issues
 );
 
+/// <summary>Result of sending ZPL to a printer.</summary>
+public record PrintResult(
+    [property: JsonPropertyName("success")] bool Success,
+    [property: JsonPropertyName("bytes_sent")] int BytesSent,
+    [property: JsonPropertyName("error")] string? Error = null,
+    [property: JsonPropertyName("issues")] List<Diagnostic>? Issues = null
+);
+
 /// <summary>Top-level AST for a ZPL document.</summary>
 public record Ast(
     [property: JsonPropertyName("labels")] List<Label> Labels
@@ -131,8 +139,21 @@ internal class NodeJsonConverter : JsonConverter<Node>
 
     public override void Write(Utf8JsonWriter writer, Node value, JsonSerializerOptions options)
     {
-        // Forward to default serialization.
-        JsonSerializer.Serialize(writer, value, value.GetType(), new JsonSerializerOptions());
+        // Serialize via NodeDto to avoid infinite recursion — Node has [JsonConverter]
+        // on the type itself, so serializing Node directly would re-enter this converter.
+        var dto = new NodeDto
+        {
+            Kind = value.Kind,
+            Code = value.Code,
+            Args = value.Args,
+            Content = value.Content,
+            HexEscaped = value.HexEscaped,
+            Command = value.Command,
+            Data = value.Data,
+            Text = value.Text,
+            Span = value.Span,
+        };
+        JsonSerializer.Serialize(writer, dto);
     }
 
     /// <summary>Internal DTO to avoid converter recursion.</summary>

@@ -26,6 +26,7 @@ package main
 
 import (
     "fmt"
+    "log"
     "github.com/trevordcampbell/zpl-toolchain/packages/go/zpltoolchain"
 )
 
@@ -48,6 +49,20 @@ func main() {
     // Explain a diagnostic code
     explanation := zpltoolchain.Explain("ZPL1201")
     fmt.Println(explanation)
+
+    // Print ZPL to a network printer
+    printResult, err := zpltoolchain.Print("^XA^FDHello^FS^XZ", "192.168.1.100", "", true)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("Sent %d bytes\n", printResult.BytesSent)
+
+    // Query printer status
+    statusJSON, err := zpltoolchain.QueryStatus("192.168.1.100")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(statusJSON)
 }
 ```
 
@@ -60,6 +75,8 @@ func main() {
 | `Validate` | `(input, profileJSON string) (*ValidationResult, error)` | Parse + validate |
 | `Format` | `(input, indent string) (string, error)` | Format ZPL |
 | `Explain` | `(id string) string` | Explain a diagnostic code |
+| `Print` | `(zpl, printerAddr, profileJSON string, validate bool) (*PrintResult, error)` | Send ZPL to a network printer |
+| `QueryStatus` | `(printerAddr string) (string, error)` | Query printer host status |
 
 ## Types
 

@@ -62,6 +62,39 @@ fn explain(id: &str) -> Option<String> {
     common::explain_diagnostic(id).map(|s| s.to_string())
 }
 
+// ── Print (non-WASM only) ────────────────────────────────────────────
+
+/// Send ZPL to a network printer via TCP (port 9100).
+///
+/// If `validate` is true (the default) the ZPL is validated first using
+/// the optional `profile_json`. Validation failures are returned as JSON
+/// instead of sending anything to the printer.
+///
+/// Returns a JSON string: `{"success": true, "bytes_sent": N}` on
+/// success, or a JSON error object on failure.
+#[cfg(not(target_arch = "wasm32"))]
+#[pyfunction]
+#[pyo3(signature = (zpl, printer_addr, profile_json=None, validate=true))]
+fn print_zpl(
+    zpl: &str,
+    printer_addr: &str,
+    profile_json: Option<&str>,
+    validate: bool,
+) -> PyResult<String> {
+    common::print_zpl(zpl, printer_addr, profile_json, validate)
+        .map_err(pyo3::exceptions::PyRuntimeError::new_err)
+}
+
+/// Query printer status via `~HS` and return the result as a JSON string.
+///
+/// Connects to the printer at `printer_addr`, sends the `~HS` command,
+/// and returns the parsed host-status fields as JSON.
+#[cfg(not(target_arch = "wasm32"))]
+#[pyfunction]
+fn query_printer_status(printer_addr: &str) -> PyResult<String> {
+    common::query_printer_status(printer_addr).map_err(pyo3::exceptions::PyRuntimeError::new_err)
+}
+
 // ── Module ──────────────────────────────────────────────────────────────
 
 /// ZPL toolchain — parse, validate, and format Zebra Programming Language files.
@@ -72,5 +105,10 @@ fn zpl_toolchain(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(validate, m)?)?;
     m.add_function(wrap_pyfunction!(format, m)?)?;
     m.add_function(wrap_pyfunction!(explain, m)?)?;
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        m.add_function(wrap_pyfunction!(print_zpl, m)?)?;
+        m.add_function(wrap_pyfunction!(query_printer_status, m)?)?;
+    }
     Ok(())
 }

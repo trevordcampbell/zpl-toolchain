@@ -13,7 +13,8 @@
     "build:wasm": "wasm-pack build ../../crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg",
     "build": "npx tsc",
     "typecheck": "npx tsc --noEmit",
-    "test": "node --test"
+    "test": "node --test",
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "zpl",

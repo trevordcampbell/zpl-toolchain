@@ -16,3 +16,6 @@ zpl_toolchain_diagnostics = { path = "../diagnostics" }
 zpl_toolchain_spec_tables = { path = "../spec-tables" }
 zpl_toolchain_profile = { path = "../profile" }
 serde_json = { workspace = true }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+zpl_toolchain_print_client = { path = "../print-client" }

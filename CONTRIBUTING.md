@@ -52,7 +52,7 @@ Thanks for your interest in contributing to zpl-toolchain! This project is dual-
 - Add tests for new behavior
 - Prefer small, composable modules
 - Avoid `unwrap()` in production code — use proper error handling
-- `core`, `spec-tables`, and `diagnostics` crates have `#![warn(missing_docs)]` — all new public items need doc comments
+- `core`, `spec-tables`, `diagnostics`, and `print-client` crates have `#![warn(missing_docs)]` — all new public items need doc comments
 
 ## Project structure
 
@@ -63,11 +63,13 @@ Thanks for your interest in contributing to zpl-toolchain! This project is dual-
 - `crates/spec-tables/` — shared data structures (`CommandEntry`, `Arg`, etc.)
 - `crates/profile/` — printer profile loading and validation (use `load_profile_from_str()` to get semantic validation, not raw `serde_json::from_str`)
 - `crates/bindings-common/` — shared logic for all language bindings (embedded tables, parse/validate/format/explain)
-- `crates/cli/` — `zpl` command-line tool
+- `crates/print-client/` — TCP/USB/serial print client (`zpl_toolchain_print_client`)
+- `crates/cli/` — `zpl` command-line tool (parse, lint, format, print, etc.)
 - `crates/wasm/` — WASM bindings (thin wrapper over bindings-common)
 - `crates/python/` — Python bindings (thin wrapper over bindings-common)
 - `crates/ffi/` — C FFI (thin wrapper over bindings-common, foundation for Go/.NET)
 - `packages/ts/core/` — TypeScript wrapper for WASM (`@zpl-toolchain/core`)
+- `packages/ts/print/` — TypeScript print client (`@zpl-toolchain/print`, pure TS, `node:net` + `ws`)
 - `packages/go/zpltoolchain/` — Go wrapper (cgo over C FFI)
 - `packages/dotnet/ZplToolchain/` — .NET wrapper (P/Invoke over C FFI)
 - `profiles/` — printer profiles (e.g., `zebra-generic-203.json`)
@@ -77,6 +79,8 @@ Thanks for your interest in contributing to zpl-toolchain! This project is dual-
 - `docs/BARCODE_DATA_RULES.md` — barcode field data validation rules
 - `docs/RELEASE.md` — release process and checklist
 - `docs/PROFILE_GUIDE.md` — printer profile system guide
+- `docs/PRINT_CLIENT.md` — print client usage and API guide
+- `docs/research/ZPL-PRINT-CLIENT-PLAN.md` — print client design plan
 - `CHANGELOG.md` — project changelog
 
 ## Working with language bindings

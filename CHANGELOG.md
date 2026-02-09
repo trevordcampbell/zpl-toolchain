@@ -7,13 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Print client** (`crates/print-client/`) — send ZPL to Zebra and ZPL-compatible printers over TCP (port 9100), USB (nusb), and serial/Bluetooth SPP (serialport); split `Printer`/`StatusQuery` trait design; `~HS` (24-field HostStatus) and `~HI` (PrinterInfo) parsing; STX/ETX frame parser; `RetryPrinter` wrapper with exponential backoff and jitter; `ReconnectRetryPrinter` wrapper with automatic reconnection between retry attempts via `Reconnectable` trait; `wait_for_completion()` generic polling; `PrintError` typed error hierarchy with `is_retryable()` classification; `#[non_exhaustive]` on all public enums for semver safety
+- **CLI `zpl print` command** — `zpl print <FILES> --printer <ADDR>` with lint-then-print workflow, `--dry-run`, `--status`, `--info`, `--wait`, `--wait-timeout`, `--strict`, `--no-lint`, `--serial`, `--baud`; supports TCP (IP/hostname), USB (`usb` / `usb:VID:PID`), and serial/Bluetooth (`--serial`) transports; `--output json` consolidates all data into a single JSON envelope
+- **TypeScript print package** (`@zpl-toolchain/print`) — pure TypeScript Node.js TCP print client using `node:net`; `TcpPrinter` class with persistent connections, `getStatus()`, `query()`, `isReachable()`; one-shot `print()` function; `printValidated()` with optional printer profile and strict mode; `parseHostStatus()` with full 24-field parity; HTTP proxy server (`createPrintProxy`) with SSRF protection and wildcard/glob allowlist patterns (e.g., `"192.168.1.*"`); WebSocket endpoint on the same port for persistent bidirectional communication with origin validation, `maxPayload` enforcement, and 30-second ping/pong keepalive; `_processValidationResult()` extracted for testability; 13 `printValidated` validation-logic unit tests; Zebra Browser Print SDK wrapper for browser environments
+- **Python/C FFI bindings** — `print_zpl()` and `query_printer_status()` exposed in `bindings-common` (cfg-gated, not WASM)
+- **Go print bindings** — `Print()` and `QueryStatus()` functions in `packages/go/zpltoolchain/` for sending ZPL over TCP and querying `~HS` printer status via the C FFI
+- **.NET print bindings** — `Zpl.Print()` and `Zpl.QueryStatus()` in `packages/dotnet/ZplToolchain/` for sending ZPL over TCP and querying `~HS` printer status via P/Invoke
+- **TypeScript batch API** — `printBatch()` standalone function and `TcpPrinter.printBatch(labels, opts?, onProgress?)` / `TcpPrinter.waitForCompletion()` methods for sending multiple labels with progress tracking; `BatchOptions`, `BatchProgress`, `BatchResult` types
+- **Preflight diagnostics** — ZPL2308 (graphics bounds — `^GF` exceeds printable area), ZPL2309 (graphics memory — total `^GF` memory exceeds printer RAM), ZPL2310 (missing explicit `^PW`/`^LL` label dimension commands); 10 new validator tests
+- **Zebra Browser Print tests** — 19 unit tests covering `isAvailable()`, `discover()`, `print()`, `getStatus()`, legacy device list parsing, and error handling
+- **Rust batch/completion tests** — 8 new tests for `send_batch_with_status` (happy path, no interval, early abort, error propagation), `wait_for_completion` (immediate, polling, timeout, formats_in_buffer)
+
+### Changed
+
+- **TcpPrinter write queue** — `print()` now serializes concurrent writes through an internal promise-chain mutex, preventing interleaved data on concurrent calls; `close()` drains the write queue before teardown
+- **Proxy `allowedPorts`** — new `ProxyConfig.allowedPorts` option (default `[9100]`) restricts which TCP ports the proxy can connect to; empty array = deny all (consistent with `allowedPrinters`)
+- **Proxy `maxConnections`** — new `ProxyConfig.maxConnections` option (default `50`) limits concurrent WebSocket connections; excess connections rejected with 503
+- **Proxy CORS single-string fix** — `verifyClient` and `setCorsHeaders` now correctly handle single-string CORS configurations (was silently allowing all origins)
+- **Proxy allowlist hardening** — glob-to-regex patterns are pre-compiled once at startup (no per-request regex compilation); uses `[^.]*` instead of `.*` to prevent ReDoS
+- **`readBody` double-rejection guard** — `readBody` includes a `settled` guard to prevent double-rejection when `req.destroy()` is called on oversized payloads
+- **`^MU` unit normalization** — `^FO`/`^FT` positions and `^PW`/`^LL` dimensions are now normalized to dots via `convert_to_dots()` when recorded in `LabelState`, fixing ZPL2302 and ZPL2308 bounds checks when `^MU` sets inches or millimeters
+- **`^GF` math hardening** — `bytes_per_row * 8` uses `saturating_mul` to prevent overflow; `graphic_field_count / bytes_per_row` uses `div_ceil` for correct ceiling division
+- **`#[non_exhaustive]` on structs** — added to `HostStatus`, `PrinterInfo`, `BatchProgress`, `BatchResult`, `PrinterConfig`, `PrinterTimeouts`, `RetryConfig`, `BatchOptions` for semver safety (already on all public enums)
+- **`SockRef` keepalive** — `configure_keepalive` uses `SockRef::from()` instead of `Socket::from(stream.try_clone()?)`, avoiding unnecessary file descriptor cloning
+- **Socket leak fixes** — `tcpQuery` `finish()` now calls `socket.destroy()`; `TcpPrinter.close()` has a 2-second force-destroy timer; `isReachable()` has a 1-second force-destroy timer after `sock.end()`
+- **TcpPrinter idle timeout fix** — `sock.setTimeout(0)` called after connection to disable idle timeout; TCP keepalive handles liveness for persistent connections
+- **Cleanup timer `.unref()`** — force-close timers in `tcpSend`, `isReachable`, and `close()` now call `.unref()` to prevent Node.js process hang on exit
+- **Batch status polling best-effort** — `getStatus()` in `printBatch` wrapped in try/catch; status query failures no longer abort the batch
+- **`serde_json` → dev-dependency** — moved from runtime to dev-dependencies in print-client (only used in tests)
+- **`CompletionTimeout` includes `formats_in_buffer`** — error now reports both formats in buffer and labels remaining for better diagnostics
+- **`RetryPrinter` accessor methods** — added `inner()` / `inner_mut()` for symmetry with `ReconnectRetryPrinter`
+- **CLI `--timeout` minimum** — rejects `--timeout 0` via clap value parser range constraint (minimum 1)
+- **CLI JSON mode quieter** — progress messages (`sent: ...`, `connected to ...`, `waiting for printer...`) only shown in `--output pretty`, not JSON
+- **TS input validation** — `resolveConfig()` validates host (non-empty), port (1–65535), and timeout for clear `PrintError` messages
+- **Proxy glob `*` matches IPs** — bare `*` in `allowedPrinters` now matches dotted IPs/hostnames (special-cased as match-all)
+- **Proxy `readBody` doesn't destroy socket** — uses `removeAllListeners` + `resume` instead of `req.destroy()` so 413 responses are delivered
+- **Proxy body-read timeout** — 30-second deadline on `readBody()` mitigates slow-loris attacks (408 on timeout)
+- **Proxy error message sanitization** — HTTP and WebSocket error responses return generic messages instead of leaking internal TCP error details
+- **Proxy HTTP connection limit** — `server.maxConnections` set to match the WebSocket `maxConnections` limit
+- **Proxy Content-Type case-insensitive** — `Content-Type` header check now uses `.toLowerCase()` per RFC 2045
+- **C# `NodeJsonConverter.Write` fix** — serializes via `NodeDto` to avoid `StackOverflowException` from infinite recursion
+- **C# `Validate` profileJson normalization** — empty string converted to null before FFI call, matching `Print()` behavior
+- **.NET README** — updated compatibility claim to .NET Core 3.1+ / .NET 5+ (LPUTF8Str not supported on .NET Framework)
+- **TypeScript `prepublishOnly`** — added to both `@zpl-toolchain/core` and `@zpl-toolchain/print` as a safety net
+
 ## [0.1.1](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.0...v0.1.1) - 2026-02-08
 
 ### Other
 
 - add crate-level doc comments to all published crates
-
-_No unreleased changes._
 
 ## [0.1.0] — 2026-02-06
 
@@ -47,6 +91,6 @@ _No unreleased changes._
 - **CLI** — `parse`, `syntax-check`, `lint`, `format`, `coverage`, `explain` commands with `--output pretty|json` auto-detection, `ariadne`-powered coloured diagnostics, embedded parser tables
 - **Printer profiles** — 11 shipped profiles (GK420t, ZD420, ZD620, ZD621, ZT231, ZT410, ZT411, ZT610, ZQ520, plus generics) with page bounds, speed/darkness ranges, 10 hardware feature gates, media capabilities, DPI-dependent defaults
 - **Ecosystem bindings** — WASM (wasm-bindgen), TypeScript (@zpl-toolchain/core), Python (PyO3/maturin), C FFI (cdylib/staticlib), Go (cgo), .NET (P/Invoke); all expose unified 5-function API
-- **Diagnostic system** — 42 diagnostic codes with structured context, severity levels, byte-offset spans, `explain()` for every code
+- **Diagnostic system** — 45 diagnostic codes with structured context, severity levels, byte-offset spans, `explain()` for every code
 - **Spec-compiler** — typed pipeline with cross-field validation, constraint DSL parsing, schema version enforcement
 - **CI** — multi-OS matrix (Linux/macOS/Windows), cargo cache, rustfmt/clippy checks, spec validation, coverage report, WASM size check, Python wheel build, C FFI cross-platform build

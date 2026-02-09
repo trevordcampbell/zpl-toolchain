@@ -1,0 +1,79 @@
+{
+  "name": "@zpl-toolchain/print",
+  "version": "0.1.0",
+  "description": "Print client for sending ZPL to Zebra and ZPL-compatible printers",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "node": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./proxy": {
+      "types": "./dist/proxy.d.ts",
+      "node": "./dist/proxy.js"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "default": "./dist/browser.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "node --test dist/test/*.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "zpl",
+    "zebra",
+    "label",
+    "printer",
+    "print",
+    "tcp",
+    "raw"
+  ],
+  "license": "MIT OR Apache-2.0",
+  "author": "zpl-toolchain contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trevordcampbell/zpl-toolchain.git",
+    "directory": "packages/ts/print"
+  },
+  "homepage": "https://github.com/trevordcampbell/zpl-toolchain",
+  "bugs": {
+    "url": "https://github.com/trevordcampbell/zpl-toolchain/issues"
+  },
+  "files": [
+    "dist/**/*.js",
+    "dist/**/*.d.ts",
+    "dist/**/*.d.ts.map",
+    "dist/**/*.js.map",
+    "!dist/test",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@types/node": "^25.2.2",
+    "@types/ws": "^8.18.1",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@zpl-toolchain/core": ">=0.1.0"
+  },
+  "peerDependenciesMeta": {
+    "@zpl-toolchain/core": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "ws": "^8.19.0"
+  }
+}

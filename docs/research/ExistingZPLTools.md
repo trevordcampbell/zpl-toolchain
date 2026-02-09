@@ -1,5 +1,77 @@
 # List of Existing ZPL design / render / viewer converter tools and libraries
 
+## Key Takeaways for Our Roadmap
+
+After surveying the landscape, several patterns emerge that inform our renderer and tooling strategy:
+
+### Primary Study References
+
+- **[BinaryKits/BinaryKits.Zpl](https://github.com/BinaryKits/BinaryKits.Zpl)** (.NET, MIT, 388 stars, 561 commits) — the most complete open-source ZPL renderer. Study its `CommandAnalyzer` (maps ZPL commands → renderable elements), `ElementDrawer` (draws each element type via SkiaSharp), and font mapping patterns. Our renderer should be better: spec-driven (not hand-parsed), profile-aware, and portable to WASM.
+- **[Fabrizz/zpl-renderer-js](https://github.com/Fabrizz/zpl-renderer-js)** and its **XaViewer** — best-in-class web UX for ZPL editing and preview. Code editor with completions, profile/DPI/label-size selector, live rendered preview, multi-label support. This is our UX model for the web playground.
+
+### Patterns Observed
+
+| Pattern | Examples | Implication for Us |
+|---------|----------|--------------------|
+| **Every renderer has its own parser** | zebrash, BinaryKits.Zpl, zpl-js, zpl2svg | Our renderer should consume our AST directly — no double parsing, better completeness (223/223 commands) |
+| **Most renderers are incomplete** | zpl2svg, zpl-js, zebrash all handle subsets | Our spec-driven approach can achieve broader coverage by design |
+| **Labelary is the de facto standard** | cod3monk/zpl, zpl-rest, ZplEscPrinter, Virtual-ZPL-Printer, zpl-labelary-preview all depend on it | Network dependency is a liability — offline rendering is a differentiator |
+| **No tool is profile-aware** | All renderers assume a single DPI or require manual configuration | Our profile system (11 printers, DPI-dependent defaults, feature gates) is unique |
+| **Generators lack validation** | JSZPL, simple_zpl2, openlabel output ZPL without checking correctness | Our generator (Phase 4) will be spec-validated by design |
+| **Template systems are ad-hoc** | zpl-rest uses mustache, PrintZPL uses `${varname}`, openlabel has placeholders | Our template system (Phase 4b) should be first-class with schema validation |
+| **Web viewers are converging on code-editor + preview** | XaViewer, zpl-js playground, led-zpl | Proven UX pattern we should adopt for our playground |
+| **Image-to-ZPL is a solved problem** | zpl-image, zplgfa, zebrafy, PDFtoZPL | Not a differentiator; can be built later using established algorithms (Z64, ACS) |
+| **TCP 9100 is universal** | simple_zpl2, PrintZPL, crbnos/zpl-print, Zemulator | Simple transport; our print client (Phase 5) is straightforward |
+| **Barcode libraries exist** | zpl-js uses bwip-js; we'll use rxing (Rust, WASM-compatible) | Don't build barcode encoding from scratch |
+
+### What No Existing Tool Does (Our Differentiators)
+
+1. **Complete spec coverage** — 223/223 commands parsed, validated, and eventually rendered
+2. **Spec-driven pipeline** — one source of truth (JSONC specs) drives parser, validator, formatter, renderer, and docs
+3. **Profile-aware rendering** — DPI, page bounds, and hardware features from real printer profiles
+4. **Cross-language bindings** — same engine in Rust, WASM (TypeScript), Python, Go, .NET, C
+5. **Offline-first** — every feature works without network; no Labelary dependency
+6. **Validation + rendering** — most tools do one or the other; we do both from the same AST
+
+---
+
+## [BinaryKits/BinaryKits.Zpl](https://github.com/BinaryKits/BinaryKits.Zpl)
+
+A .NET library providing ZPL parsing and rendering (via SkiaSharp). The most complete open-source ZPL renderer available.
+
+| Info                                       | Value                              |
+| ------------------------------------------ | ---------------------------------- |
+| Primary Languages                          | C# / .NET                          |
+| Tool Type                                  | ZPL Parser, ZPL Renderer / Viewer  |
+| Uses Labelary API for ZPL Code Generation? | No                                 |
+| Uses Labelary API for ZPL Rendering?       | No                                 |
+| Actively Developed?                        | Yes                                |
+| Actively Maintained?                       | Yes (561 commits, 388 stars)       |
+| Dependencies                               | Moderate (SkiaSharp)               |
+| License                                    | MIT                                |
+| "Quality" Score                            | A+                                 |
+
+#### Core Features of this Tool:
+
+- ZPL parsing (own parser, handles a significant subset of ZPL II)
+- ZPL rendering via SkiaSharp (2D graphics library)
+- Support for text, barcodes, graphic fields, boxes, lines, and more
+
+#### Most Interesting Features:
+
+- **CommandAnalyzer** pattern for mapping ZPL commands to renderable elements
+- **ElementDrawer** pattern for drawing each element type
+- Handles device fonts, rotations, and field positioning
+- Font mapping system for ZPL device fonts
+
+#### Important Notes:
+
+- **Our primary study reference for renderer architecture** — study its patterns but build better: spec-driven, profile-aware, WASM-portable, complete (223/223 commands vs its subset)
+- Uses its own parser (not spec-driven), so it doesn't handle all ZPL II commands
+- .NET/SkiaSharp dependency means it's not portable to WASM or other platforms
+
+---
+
 ## [cod3monk/zpl](https://github.com/cod3monk/zpl)
 
 `Python ZPL2 Library` generates ZPL2 code which can be sent to Zebra or similar label printers. The library uses only Millimeter as unit and converts them internally according to printer settings.
@@ -1119,18 +1191,72 @@ ZPL Print Server – A simple web server built with Hono.js that handles ZPL pri
 
 ---
 
-## Qualities We Want in Each part
+## Qualities We Want in Each Part
+
+### ZPL Renderer / Viewer:
+
+- **Native Rust renderer** — portable to WASM, no third-party renderer dependencies
+- **Dual output** — bitmap (tiny-skia, for golden tests and printer-accurate previews) and SVG (for browser embedding and debugging)
+- **Profile-aware** — DPI, page dimensions, and feature gates from our 11 printer profiles
+- **Spec-driven** — rendering behavior derived from the same JSONC spec files that drive parsing and validation
+- **Complete coverage** — 223/223 commands (incrementally, starting with geometry → text → barcodes → graphics)
+- **Barcode rendering via rxing** — Code 128, QR, DataMatrix, PDF417, Aztec, EAN, UPC, Code 39, ITF
+- **Device font rendering** — embedded bitmap font metrics (A–Z, 0–9), `^CI` code pages, orthogonal rotation
+- **`^GF` graphic field decode** — ASCII hex, binary, ACS compression, Z64
+- **Golden test suite** — rendered PNGs compared against reference images in CI
+- **Study BinaryKits.Zpl** — its CommandAnalyzer/ElementDrawer patterns, but build better
+
+### Web Playground / Viewer:
+
+- **Code editor** with ZPL syntax highlighting (Monaco or CodeMirror + TextMate grammar)
+- **Live preview** powered by our WASM renderer (not Labelary)
+- **Profile/DPI/label-size selector** — inspired by XaViewer's UX
+- **Live diagnostics** — errors and warnings as you type
+- **Hover docs** from `docs_bundle.json`
+- **Format button**
+- **Multi-label support**
+- **Shareable URLs** — no install required
+- **Study XaViewer** (Fabrizz/zpl-renderer-js) — our UX model
 
 ### ZPL Generator:
 
-- Single Label Generation
+- Single label generation via builder API
+- Batch label generation with data arrays
+- Broad / complete ZPL II support (spec-validated output)
+- Template system with `${varname}` placeholders and JSON Schema for inputs
+- Deterministic transforms (date formatting, uppercase, checksums)
+- **Image-to-`^GF` encoding** — grayscale thresholding, dithering (Floyd-Steinberg, ordered), ACS and Z64 compression, auto-trim, rotation. CLI: `zpl-toolchain encode-image`
+- **Rasterize-to-`^GF` fallback** — "whole-label-as-image" escape hatch for content that can't be natively expressed in ZPL
+- Exposed through all bindings (Rust, WASM, Python, Go, .NET, C)
+- **Future possibilities**: PDF-to-ZPL (PDF page → bitmap → `^GF`), HTML/CSS/Tailwind label authoring (web technologies → ZPL)
 
-- Batch Label Generation
+### ZPL Print Service / Client:
 
-- Broad / Complete ZPL II Support
+- **TCP 9100** raw socket connection (the universal Zebra transport)
+- **SGD-aware transport abstraction** — `send_zpl()` vs `send_sgd()` for future extensibility
+- **Status query** via `~HS` with fixed-format response parsing
+- **Retry with backoff**
+- **Preflight validation** — check label bounds, memory, media mode against profile before sending
+- **Printer discovery** via mDNS/Bonjour (later)
+- **Printer emulator** — virtual printer on port 9100 for testing (requires renderer)
 
-- Able to use value variables / template literals to define injectable values
+### VS Code Extension:
 
-- Possibly Generate Code other than ZPL (like xx) / convert other Codes to ZPL / Transpile 
+- **Syntax highlighting** via TextMate grammar
+- **Live diagnostics** via WASM `validate()` (not LSP — direct extension host integration)
+- **Format on save** via `format()`
+- **Hover docs** from `docs_bundle.json`
+- **Explain diagnostic** code action
+- **Profile switcher** for validation context
+- **Live preview** pane (when renderer is ready)
+- **Quick fixes** — insert missing `^XZ`, add `^PW`/`^LL`, fix barcode data
+- **Completions** — command names + signatures from spec tables
 
-- 
+### Cross-cutting Qualities:
+
+- **Offline-first** — every feature works without network
+- **Deterministic** — same input → same output, regardless of platform
+- **Composable** — each tool (parse, validate, format, render, print) is useful alone
+- **Spec-driven** — one source of truth for all behavior
+- **Profile-aware** — printer capabilities inform validation, rendering, and preflight
+

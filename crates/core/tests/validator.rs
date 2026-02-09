@@ -977,6 +977,216 @@ fn diag_zpl2307_gf_inline_only_regression() {
     );
 }
 
+// ─── ZPL2308: Graphics Bounds Check ──────────────────────────────────────────
+
+#[test]
+fn diag_zpl2308_gf_overflows_width() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_800x1200();
+    // ^PW400 sets width to 400. ^FO300,0 sets position.
+    // ^GF with bytes_per_row=20 → graphic_width = 20*8 = 160 dots.
+    // 300 + 160 = 460 > 400 → should overflow.
+    // Using ASCII hex (A): graphic_field_count=20, bytes_per_row=20 → 1 row.
+    // data: 40 hex chars (20 bytes * 2 hex/byte)
+    let data = "FF".repeat(20);
+    let input = format!("^XA^PW400^FO300,0^GFA,20,20,20,{}^FS^XZ", data);
+    let result = parse_with_tables(&input, Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::GF_BOUNDS_OVERFLOW),
+        "^GF overflowing label width should emit ZPL2308: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2308_gf_overflows_height() {
+    let tables = &*common::TABLES;
+    // ^FO0,50 sets position. ^GF with graphic_field_count=200, bytes_per_row=10.
+    // graphic_height = 200/10 = 20 rows. graphic_width = 10*8 = 80 dots.
+    // 50 + 20 = 70 > 60 → should overflow.
+    let profile = common::profile_from_json(
+        r#"{"id":"test","schema_version":"1.0.0","dpi":203,"page":{"width_dots":800,"height_dots":60}}"#,
+    );
+    let data = "FF".repeat(200);
+    let input = format!("^XA^FO0,50^GFA,200,200,10,{}^FS^XZ", data);
+    let result = parse_with_tables(&input, Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::GF_BOUNDS_OVERFLOW),
+        "^GF overflowing label height should emit ZPL2308: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2308_gf_fits_no_diagnostic() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_800x1200();
+    // ^FO0,0 + ^GF with bytes_per_row=10: graphic_width=80, graphic_height=10.
+    // 0+80 ≤ 800, 0+10 ≤ 1200 → fits fine.
+    let data = "FF".repeat(100);
+    let input = format!("^XA^FO0,0^GFA,100,100,10,{}^FS^XZ", data);
+    let result = parse_with_tables(&input, Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::GF_BOUNDS_OVERFLOW),
+        "^GF that fits should not emit ZPL2308: {:?}",
+        vr.issues,
+    );
+}
+
+// ─── ZPL2309: Graphics Memory Estimation ─────────────────────────────────────
+
+#[test]
+fn diag_zpl2309_gf_exceeds_memory() {
+    let tables = &*common::TABLES;
+    // Profile with 1 KB RAM (1024 bytes). Two ^GF with 600 bytes each = 1200 > 1024.
+    let profile = common::profile_from_json(
+        r#"{"id":"test","schema_version":"1.0.0","dpi":203,"page":{"width_dots":800,"height_dots":1200},"memory":{"ram_kb":1}}"#,
+    );
+    let data1 = "FF".repeat(600);
+    let data2 = "FF".repeat(600);
+    let input = format!(
+        "^XA^FO0,0^GFA,600,600,10,{}^FS^FO0,100^GFA,600,600,10,{}^FS^XZ",
+        data1, data2
+    );
+    let result = parse_with_tables(&input, Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::GF_MEMORY_EXCEEDED),
+        "total ^GF bytes exceeding RAM should emit ZPL2309: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2309_gf_no_warning_without_profile() {
+    let tables = &*common::TABLES;
+    // No profile → no memory check.
+    let data = "FF".repeat(600);
+    let input = format!("^XA^FO0,0^GFA,600,600,10,{}^FS^XZ", data);
+    let result = parse_with_tables(&input, Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::GF_MEMORY_EXCEEDED),
+        "^GF without profile should not emit ZPL2309: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2309_gf_within_memory_no_warning() {
+    let tables = &*common::TABLES;
+    // Profile with 512 KB RAM. ^GF with 100 bytes — well within limits.
+    let profile = common::profile_from_json(
+        r#"{"id":"test","schema_version":"1.0.0","dpi":203,"memory":{"ram_kb":512}}"#,
+    );
+    let data = "FF".repeat(100);
+    let input = format!("^XA^FO0,0^GFA,100,100,10,{}^FS^XZ", data);
+    let result = parse_with_tables(&input, Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::GF_MEMORY_EXCEEDED),
+        "^GF within RAM should not emit ZPL2309: {:?}",
+        vr.issues,
+    );
+}
+
+// ─── ZPL2310: Missing Explicit Dimensions ────────────────────────────────────
+
+#[test]
+fn diag_zpl2310_missing_pw_ll_with_profile() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_800x1200();
+    // Profile provides dimensions but label has no ^PW or ^LL
+    let result = parse_with_tables("^XA^FO50,50^FDHello^FS^XZ", Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        vr.issues
+            .iter()
+            .any(|d| d.id == codes::MISSING_EXPLICIT_DIMENSIONS),
+        "label without ^PW/^LL with profile should emit ZPL2310: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2310_has_pw_ll_no_diagnostic() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_800x1200();
+    // Label has both ^PW and ^LL — should NOT trigger
+    let result = parse_with_tables("^XA^PW800^LL1200^FO50,50^FDHello^FS^XZ", Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::MISSING_EXPLICIT_DIMENSIONS),
+        "label with ^PW and ^LL should not emit ZPL2310: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2310_no_profile_no_diagnostic() {
+    let tables = &*common::TABLES;
+    // No profile → no ZPL2310
+    let result = parse_with_tables("^XA^FO50,50^FDHello^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::MISSING_EXPLICIT_DIMENSIONS),
+        "label without profile should not emit ZPL2310: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2310_partial_pw_only() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_800x1200();
+    // Label has ^PW but not ^LL — should emit ZPL2310 for missing ^LL
+    let result = parse_with_tables("^XA^PW800^FO50,50^FDHello^FS^XZ", Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    let diag = vr
+        .issues
+        .iter()
+        .find(|d| d.id == codes::MISSING_EXPLICIT_DIMENSIONS);
+    assert!(
+        diag.is_some(),
+        "label with only ^PW should emit ZPL2310: {:?}",
+        vr.issues,
+    );
+    let ctx = diag.unwrap().context.as_ref().expect("should have context");
+    assert!(
+        ctx.get("missing_commands").unwrap().contains("^LL"),
+        "missing_commands should include ^LL: {:?}",
+        ctx,
+    );
+    assert!(
+        !ctx.get("missing_commands").unwrap().contains("^PW"),
+        "missing_commands should not include ^PW: {:?}",
+        ctx,
+    );
+}
+
+#[test]
+fn diag_zpl2310_profile_no_page_no_diagnostic() {
+    let tables = &*common::TABLES;
+    // Profile without page dimensions — should NOT trigger ZPL2310
+    let profile = common::profile_from_json(r#"{"id":"test","schema_version":"1.0.0","dpi":203}"#);
+    let result = parse_with_tables("^XA^FO50,50^FDHello^FS^XZ", Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::MISSING_EXPLICIT_DIMENSIONS),
+        "profile without page dimensions should not emit ZPL2310: {:?}",
+        vr.issues,
+    );
+}
+
 // ─── ZPL2401/2402: Barcode Validation ────────────────────────────────────────
 
 #[test]
@@ -1969,6 +2179,9 @@ fn all_diagnostic_ids_have_explanations() {
         codes::REDUNDANT_STATE,
         codes::SERIALIZATION_WITHOUT_FIELD_NUMBER,
         codes::GF_DATA_LENGTH_MISMATCH,
+        codes::GF_BOUNDS_OVERFLOW,
+        codes::GF_MEMORY_EXCEEDED,
+        codes::MISSING_EXPLICIT_DIMENSIONS,
         codes::BARCODE_INVALID_CHAR,
         codes::BARCODE_DATA_LENGTH,
         codes::NOTE,

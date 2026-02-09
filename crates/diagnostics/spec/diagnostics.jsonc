@@ -283,6 +283,33 @@
       "contextKeys": ["command", "format", "declared", "actual", "expected"]
     },
     {
+      "id": "ZPL2308",
+      "constName": "GF_BOUNDS_OVERFLOW",
+      "severity": "warn",
+      "category": "semantic-validation",
+      "summary": "Graphic field exceeds label bounds",
+      "description": "The ^GF graphic at the current ^FO position would extend beyond the effective label dimensions. This may cause truncated or misaligned output.",
+      "contextKeys": ["command", "x", "y", "graphic_width", "graphic_height", "label_width", "label_height"]
+    },
+    {
+      "id": "ZPL2309",
+      "constName": "GF_MEMORY_EXCEEDED",
+      "severity": "warn",
+      "category": "semantic-validation",
+      "summary": "Graphic memory usage exceeds available RAM",
+      "description": "Total graphic field data in this label exceeds the printer's available RAM. This may cause print failures or data loss.",
+      "contextKeys": ["command", "total_bytes", "ram_bytes"]
+    },
+    {
+      "id": "ZPL2310",
+      "constName": "MISSING_EXPLICIT_DIMENSIONS",
+      "severity": "info",
+      "category": "semantic-validation",
+      "summary": "Missing explicit label dimensions",
+      "description": "Label uses profile-provided dimensions but does not contain explicit ^PW or ^LL commands. Adding explicit dimension commands makes the label self-contained and portable across printers.",
+      "contextKeys": ["missing_commands"]
+    },
+    {
       "id": "ZPL2401",
       "constName": "BARCODE_INVALID_CHAR",
       "severity": "error",

@@ -112,3 +112,75 @@ pub fn format_zpl(input: &str, indent: Option<&str>) -> String {
 pub fn explain_diagnostic(id: &str) -> Option<&'static str> {
     zpl_toolchain_diagnostics::explain(id)
 }
+
+// ── Print (non-WASM only) ────────────────────────────────────────────
+
+#[cfg(not(target_arch = "wasm32"))]
+use zpl_toolchain_print_client::{Printer, PrinterConfig, StatusQuery, TcpPrinter};
+
+/// Send ZPL to a network printer via TCP (port 9100).
+///
+/// If `validate` is true the ZPL is validated first (using the optional
+/// printer profile); validation failures are returned as a JSON error
+/// instead of sending anything to the printer.
+///
+/// Returns a JSON string on success: `{"success": true, "bytes_sent": N}`
+/// or a JSON error object on validation failure.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn print_zpl(
+    zpl: &str,
+    printer_addr: &str,
+    profile_json: Option<&str>,
+    validate: bool,
+) -> Result<String, String> {
+    // 1. If validate is true, run validation first
+    if validate {
+        let vr = validate_zpl(zpl, profile_json)?;
+        if !vr.ok {
+            let issues_json =
+                serde_json::to_value(&vr.issues).map_err(|e| format!("serialize error: {e}"))?;
+            return Ok(serde_json::json!({
+                "success": false,
+                "error": "validation_failed",
+                "issues": issues_json,
+            })
+            .to_string());
+        }
+    }
+
+    // 2. Connect to printer via TcpPrinter
+    let config = PrinterConfig::default();
+    let mut printer =
+        TcpPrinter::connect(printer_addr, config).map_err(|e| format!("connection failed: {e}"))?;
+
+    // 3. Send ZPL
+    let bytes_sent = zpl.len();
+    printer
+        .send_zpl(zpl)
+        .map_err(|e| format!("send failed: {e}"))?;
+
+    // 4. Return JSON result
+    Ok(serde_json::json!({
+        "success": true,
+        "bytes_sent": bytes_sent,
+    })
+    .to_string())
+}
+
+/// Query printer status via `~HS` and return the result as JSON.
+///
+/// Connects to the printer, sends `~HS`, parses the three-line response
+/// into a [`HostStatus`](zpl_toolchain_print_client::HostStatus) struct,
+/// and serializes it to JSON.
+#[cfg(not(target_arch = "wasm32"))]
+pub fn query_printer_status(printer_addr: &str) -> Result<String, String> {
+    let config = PrinterConfig::default();
+    let mut printer =
+        TcpPrinter::connect(printer_addr, config).map_err(|e| format!("connection failed: {e}"))?;
+
+    let status = printer
+        .query_status()
+        .map_err(|e| format!("status query failed: {e}"))?;
+
+    serde_json::to_string(&status).map_err(|e| format!("serialize error: {e}"))
+}

@@ -1,6 +1,6 @@
 {
   "name": "@zpl-toolchain/core",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "ZPL II toolchain — parse, validate, format, and print Zebra Programming Language files (see @zpl-toolchain/print for printing)",
   "type": "module",
   "main": "./dist/index.js",

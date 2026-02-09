@@ -1,9 +1,9 @@
 # release-plz configuration
 # https://release-plz.dev/docs/config
 #
-# All crates share the same version and release together.
+# Crates are versioned independently based on which files changed.
 # The CLI crate is the "tag owner" — its version determines the project-wide
-# git tag (v0.x.0). Other crates get version bumps but no individual tags.
+# git tag (v0.x.y). Other crates get version bumps but no individual tags.
 
 [workspace]
 # Disable git tags and GitHub Releases for all packages by default.

@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "Core parser, emitter, and validator for ZPL II label code"
+readme = "README.md"
 keywords = ["zpl", "zebra", "label", "parser"]
 categories = ["parsing", "text-processing"]
 

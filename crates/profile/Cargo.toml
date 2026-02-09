@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "Printer profile loading and validation for the ZPL toolchain"
+readme = "README.md"
 keywords = ["zpl", "zebra", "printer", "profile"]
 categories = ["parsing", "config"]
 

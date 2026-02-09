@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "Diagnostic codes and structured error reporting for the ZPL toolchain"
+readme = "README.md"
 keywords = ["zpl", "zebra", "diagnostics"]
 categories = ["parsing"]
 

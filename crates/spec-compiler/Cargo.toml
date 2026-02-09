@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 description = "Spec-file compiler that generates parser tables and documentation for ZPL commands"
+readme = "README.md"
 keywords = ["zpl", "zebra", "compiler", "codegen"]
 categories = ["parsing", "command-line-utilities"]
 

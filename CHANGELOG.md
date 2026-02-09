@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.1...v0.1.2) - 2026-02-09
+
+### Added
+
+- add print client — send ZPL to printers over TCP, USB, and serial
+
+### Fixed
+
+- resolve CI failures and add TypeScript print tests to CI
+
+### Other
+
+- update Cargo.lock dependencies
+
 ### Added
 
 - **Print client** (`crates/print-client/`) — send ZPL to Zebra and ZPL-compatible printers over TCP (port 9100), USB (nusb), and serial/Bluetooth SPP (serialport); split `Printer`/`StatusQuery` trait design; `~HS` (24-field HostStatus) and `~HI` (PrinterInfo) parsing; STX/ETX frame parser; `RetryPrinter` wrapper with exponential backoff and jitter; `ReconnectRetryPrinter` wrapper with automatic reconnection between retry attempts via `Reconnectable` trait; `wait_for_completion()` generic polling; `PrintError` typed error hierarchy with `is_retryable()` classification; `#[non_exhaustive]` on all public enums for semver safety

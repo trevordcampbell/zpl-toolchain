@@ -3,7 +3,7 @@
 # publish.sh — Publish ZPL toolchain packages to registries.
 #
 # Usage:
-#   ./scripts/publish.sh crates           # dry-run publish 6 crates to crates.io
+#   ./scripts/publish.sh crates           # dry-run publish 7 crates to crates.io
 #   ./scripts/publish.sh crates --live    # actually publish to crates.io
 #   ./scripts/publish.sh npm              # dry-run publish TS packages to npm
 #   ./scripts/publish.sh npm --live       # actually publish to npm

@@ -22,12 +22,19 @@ Thanks for your interest in contributing to zpl-toolchain! This project is dual-
 
 4. Run tests:
    ```bash
-   cargo nextest run --workspace
+   # Rust (excludes WASM/Python crates that need special toolchains)
+   cargo nextest run --workspace --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+
+   # TypeScript print package
+   (cd packages/ts/print && npm install && npm run build && npm test)
    ```
+
+   > See [`docs/TESTING.md`](docs/TESTING.md) for the full testing guide, including
+   > print-client TCP test quirks, USB/serial feature flags, and troubleshooting.
 
 5. Check for warnings:
    ```bash
-   cargo clippy --workspace -- -D warnings
+   cargo clippy --workspace --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python -- -D warnings
    ```
 
 ## Adding or updating a ZPL command spec
@@ -82,6 +89,7 @@ Thanks for your interest in contributing to zpl-toolchain! This project is dual-
 - `docs/DIAGNOSTIC_CODES.md` — diagnostic codes reference
 - `docs/BARCODE_DATA_RULES.md` — barcode field data validation rules
 - `docs/RELEASE.md` — release process and checklist
+- `docs/TESTING.md` — comprehensive testing guide (running tests, CI, troubleshooting)
 - `docs/PROFILE_GUIDE.md` — printer profile system guide
 - `docs/PRINT_CLIENT.md` — print client usage and API guide
 - `docs/research/ZPL-PRINT-CLIENT-PLAN.md` — print client design plan

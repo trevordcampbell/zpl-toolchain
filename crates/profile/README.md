@@ -1,12 +1,12 @@
-profile
-=======
+# zpl_toolchain_profile
 
 Printer profile crate for the ZPL toolchain. Defines the `Profile` struct and loading utilities that drive data-driven validation.
 
+Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) project.
+
 > **Full guide:** See [`docs/PROFILE_GUIDE.md`](../../docs/PROFILE_GUIDE.md) for the complete profile system reference — schema, printerGates semantics, DPI-dependent defaults, and custom profile creation.
 
-Profile Schema
---------------
+## Profile Schema
 
 Profiles describe a printer's capabilities: resolution, page dimensions, speed/darkness ranges, hardware features, media capabilities, and memory/firmware info. The canonical schema lives in `spec/schema/profile.schema.jsonc` and is cross-validated by the spec-compiler.
 
@@ -35,8 +35,7 @@ Profiles describe a printer's capabilities: resolution, page dimensions, speed/d
 }
 ```
 
-Structs
--------
+## Structs
 - **`Profile`** — top-level printer profile with required `id`, `schema_version`, `dpi` and optional `page`, `speed_range`, `darkness_range`, `features`, `media`, `memory`
 - **`Page`** — page/label dimension constraints (`width_dots`, `height_dots` as `Option<u32>`)
 - **`Range`** — min/max range for numeric capabilities (`min: u32`, `max: u32`); validated that `min <= max` on load. Constructors: `Range::new(min, max)` (panics if `min > max`) and `Range::try_new(min, max) -> Option<Range>` (returns `None` if invalid)
@@ -46,8 +45,7 @@ Structs
 
 Derives: `Debug`, `Clone`, `Serialize`, `Deserialize`, `Default`, `PartialEq`, `Eq` (Profile, Page, Features, Media, Memory); `Range` derives all except `Default`.
 
-Gate Resolution
----------------
+## Gate Resolution
 The validator resolves `printerGates` against `Profile.features`:
 - Feature `true` → gate passes
 - Feature `false` → gate fails → ZPL1402
@@ -55,14 +53,12 @@ The validator resolves `printerGates` against `Profile.features`:
 
 Command-level gates emit errors; enum value-level gates emit warnings.
 
-Usage
------
+## Usage
 - CLI `--profile profiles/zebra-generic-203.json` loads a profile and enables `profileConstraint` checks (e.g., `^PW` width ≤ `page.width_dots`, `~SD` darkness ≤ `darkness_range.max`) and `printerGates` enforcement.
 - `load_profile_from_str()` deserializes and validates structural invariants, returning `ProfileError` on failure. `ProfileError` has two variants: `InvalidJson` (serde parse failure) and `InvalidField` (structural invariant violation such as `min > max`, empty `id`, DPI out of 100–600, non-positive page dimensions, speed outside 1–14, darkness outside 0–30, or non-positive memory).
 - `resolve_profile_field()` in the validator maps dotted paths (e.g., `"page.width_dots"`) to profile values.
 - The `all_profile_constraint_fields_are_resolvable` test ensures the resolver covers every field referenced in command specs.
 
-Shipped Profiles
-----------------
+## Shipped Profiles
 - `profiles/zebra-generic-203.json` — 203 dpi generic (4" printhead, 812×1218 dots, direct thermal, no cutter/RFID)
 - `profiles/zebra-generic-300.json` — 300 dpi generic (4" printhead, 1218×1800 dots, direct thermal, no cutter/RFID)

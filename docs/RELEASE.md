@@ -36,8 +36,31 @@ For emergencies or manual one-off publishes, use `scripts/publish.sh`:
 ./scripts/publish.sh all --live       # publish everything
 ```
 
-Or push a tag manually (`git tag v0.3.0 && git push origin v0.3.0`) to trigger
-the `.github/workflows/release.yml` workflow for CLI binaries and FFI artifacts.
+To rebuild CLI/FFI binaries and upload them to an existing GitHub Release (e.g. if
+the automated upload failed), trigger the manual workflow from the GitHub Actions UI:
+**Actions → Release (manual) → Run workflow → enter the tag (e.g. `v0.3.0`)**.
+
+> **Why not a tag trigger?** The automated `release-plz.yml` workflow uses a PAT
+> (needed so CI runs on release PRs), which means tags it creates bypass GitHub's
+> anti-recursion protection and trigger other workflows. A tag-triggered manual
+> workflow would run in parallel with the automated one, causing double builds,
+> race conditions, and API rate limiting. Using `workflow_dispatch` keeps the
+> manual workflow as an explicit, intentional action only.
+
+## Pre-release verification
+
+Before creating a release (or when debugging CI failures), run the full test suite locally.
+See [`docs/TESTING.md`](TESTING.md) for the complete guide, including platform-specific
+quirks and the print-client TCP tests.
+
+Quick smoke test:
+
+```bash
+cargo fmt --all -- --check
+cargo clippy --workspace --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python -- -D warnings
+cargo nextest run --workspace --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+(cd packages/ts/print && npm install && npm run build && npm test)
+```
 
 ## Version scheme
 
@@ -120,8 +143,8 @@ Skip any hook when needed: `git commit --no-verify` or `git push --no-verify`.
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `ci.yml` | Push / PR | Build, test, clippy, fmt |
-| `release-plz.yml` | Push to main | Release PR + automated publish (crates.io, npm, PyPI, Go tag) |
-| `release.yml` | Tag push `v*` | Manual fallback: build binaries + GitHub Release |
+| `release-plz.yml` | Push to main | Release PR + automated publish (crates.io, npm, PyPI, binaries, Go tag) |
+| `release.yml` | `workflow_dispatch` (manual) | Emergency fallback: rebuild binaries + upload to GitHub Release |
 
 ## Configuration files
 

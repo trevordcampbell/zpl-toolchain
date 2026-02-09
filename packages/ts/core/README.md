@@ -2,6 +2,8 @@
 
 TypeScript wrapper for the ZPL toolchain WASM bindings. Provides full TypeScript types and an ergonomic API for parsing, validating, formatting, and explaining ZPL code.
 
+Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) project.
+
 ## Installation
 
 ```bash

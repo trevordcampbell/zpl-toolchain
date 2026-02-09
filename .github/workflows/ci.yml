@@ -50,6 +50,10 @@ jobs:
       - name: Test
         run: cargo nextest run --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
 
+      - name: Test CLI with all transport features (Linux)
+        if: runner.os == 'Linux'
+        run: cargo nextest run -p zpl_toolchain_cli -p zpl_toolchain_print_client --locked --features zpl_toolchain_cli/usb,zpl_toolchain_cli/serial
+
   # ── Spec-compiler: validate spec files ────────────────────────────────
   spec-check:
     name: Spec Validation & Coverage

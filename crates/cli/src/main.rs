@@ -15,9 +15,14 @@ use zpl_toolchain_core::grammar::{
 };
 use zpl_toolchain_core::validate;
 use zpl_toolchain_diagnostics::{self as diag, Diagnostic, Severity};
+#[cfg(feature = "serial")]
+use zpl_toolchain_print_client::SerialPrinter;
+#[cfg(feature = "tcp")]
+use zpl_toolchain_print_client::TcpPrinter;
+#[cfg(feature = "usb")]
+use zpl_toolchain_print_client::UsbPrinter;
 use zpl_toolchain_print_client::{
-    PrinterConfig, SerialPrinter, StatusQuery, TcpPrinter, UsbPrinter, resolve_printer_addr,
-    wait_for_completion,
+    PrinterConfig, StatusQuery, resolve_printer_addr, wait_for_completion,
 };
 
 use crate::render::{Format, print_summary, render_diagnostics};
@@ -103,7 +108,7 @@ enum Cmd {
         /// ZPL file(s) to print.
         #[arg(required = true)]
         files: Vec<String>,
-        /// Printer address: IP, hostname, "usb", "usb:VID:PID", or serial port path (with --serial). TCP port defaults to 9100.
+        /// Printer address: IP or hostname (TCP port defaults to 9100). With --features usb: "usb" or "usb:VID:PID". With --features serial and --serial: serial port path.
         #[arg(long, short)]
         printer: String,
         /// Printer profile for pre-print validation.
@@ -137,9 +142,11 @@ enum Cmd {
         #[arg(long, default_value_t = 120, requires = "wait")]
         wait_timeout: u64,
         /// Use serial/Bluetooth SPP transport (printer address is a serial port path).
+        #[cfg(feature = "serial")]
         #[arg(long)]
         serial: bool,
         /// Baud rate for serial connections (default: 9600).
+        #[cfg(feature = "serial")]
         #[arg(long, default_value_t = 9600, requires = "serial")]
         baud: u32,
     },
@@ -214,7 +221,9 @@ fn main() -> Result<()> {
             wait,
             timeout,
             wait_timeout,
+            #[cfg(feature = "serial")]
             serial,
+            #[cfg(feature = "serial")]
             baud,
         } => cmd_print(PrintOpts {
             files: &files,
@@ -229,7 +238,9 @@ fn main() -> Result<()> {
             wait,
             timeout,
             wait_timeout,
+            #[cfg(feature = "serial")]
             serial,
+            #[cfg(feature = "serial")]
             baud,
             format,
         })?,
@@ -440,7 +451,9 @@ struct PrintOpts<'a> {
     wait: bool,
     timeout: Option<u64>,
     wait_timeout: u64,
+    #[cfg(feature = "serial")]
     serial: bool,
+    #[cfg(feature = "serial")]
     baud: u32,
     format: Format,
 }
@@ -461,7 +474,9 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
         wait,
         timeout,
         wait_timeout,
+        #[cfg(feature = "serial")]
         serial,
+        #[cfg(feature = "serial")]
         baud,
         format,
     } = opts;
@@ -558,12 +573,24 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
     // ── Dry run: resolve address and report ─────────────────────────
     if dry_run {
         // Determine transport and display address for dry-run output.
-        let (transport, display_addr) = if serial {
+        #[cfg(feature = "serial")]
+        let is_serial = serial;
+        #[cfg(not(feature = "serial"))]
+        let is_serial = false;
+
+        let is_usb_addr = printer_addr == "usb" || printer_addr.starts_with("usb:");
+
+        let (transport, display_addr) = if is_serial {
             ("serial", printer_addr.to_string())
-        } else if printer_addr == "usb" {
-            ("usb", "usb (auto-discover Zebra)".to_string())
-        } else if printer_addr.starts_with("usb:") {
-            ("usb", printer_addr.to_string())
+        } else if is_usb_addr {
+            #[cfg(not(feature = "usb"))]
+            anyhow::bail!("USB transport not available — rebuild with `--features usb` to enable");
+            #[cfg(feature = "usb")]
+            if printer_addr == "usb" {
+                ("usb", "usb (auto-discover Zebra)".to_string())
+            } else {
+                ("usb", printer_addr.to_string())
+            }
         } else {
             // TCP: resolve to verify the address is valid.
             let resolved = resolve_printer_addr(printer_addr).map_err(|e| {
@@ -645,6 +672,8 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
         format,
     };
 
+    // ── Serial transport ──────────────────────────────────────────
+    #[cfg(feature = "serial")]
     if serial && (printer_addr == "usb" || printer_addr.starts_with("usb:")) {
         anyhow::bail!(
             "--serial cannot be used with USB printer address '{}'",
@@ -652,27 +681,43 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
         );
     }
 
+    #[cfg(feature = "serial")]
     if serial {
         let mut printer =
             SerialPrinter::open(printer_addr, baud, config).map_err(connection_err)?;
         if format == Format::Pretty {
             eprintln!("connected to {} (serial, {} baud)", printer_addr, baud);
         }
-        run_print_session(&mut printer, printer_addr, &session)
-    } else if printer_addr == "usb" {
+        return run_print_session(&mut printer, printer_addr, &session);
+    }
+
+    // ── USB transport ────────────────────────────────────────────
+    #[cfg(feature = "usb")]
+    if printer_addr == "usb" {
         let mut printer = UsbPrinter::find_zebra(config).map_err(connection_err)?;
         if format == Format::Pretty {
             eprintln!("connected to USB Zebra printer");
         }
-        run_print_session(&mut printer, "usb", &session)
-    } else if let Some(vidpid) = printer_addr.strip_prefix("usb:") {
+        return run_print_session(&mut printer, "usb", &session);
+    }
+
+    #[cfg(feature = "usb")]
+    if let Some(vidpid) = printer_addr.strip_prefix("usb:") {
         let (vid, pid) = parse_usb_vidpid(vidpid)?;
         let mut printer = UsbPrinter::find(vid, pid, config).map_err(connection_err)?;
         if format == Format::Pretty {
             eprintln!("connected to USB printer {:04X}:{:04X}", vid, pid);
         }
-        run_print_session(&mut printer, printer_addr, &session)
-    } else {
+        return run_print_session(&mut printer, printer_addr, &session);
+    }
+
+    #[cfg(not(feature = "usb"))]
+    if printer_addr == "usb" || printer_addr.starts_with("usb:") {
+        anyhow::bail!("USB transport not available — rebuild with `--features usb` to enable");
+    }
+
+    // ── TCP transport (default) ──────────────────────────────────
+    {
         let mut printer = TcpPrinter::connect(printer_addr, config).map_err(connection_err)?;
         let remote = printer.remote_addr();
         if format == Format::Pretty {
@@ -683,6 +728,7 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
 }
 
 /// Parse a USB VID:PID string like "0A5F:0100".
+#[cfg(feature = "usb")]
 fn parse_usb_vidpid(s: &str) -> Result<(u16, u16)> {
     let (v, p) = s
         .split_once(':')

@@ -64,7 +64,7 @@ cargo nextest run --workspace --exclude zpl_toolchain_wasm --exclude zpl_toolcha
 
 ## Version scheme
 
-All crates share the same version number (`0.x.y`). We follow semver:
+Crates are versioned independently by release-plz based on which files changed. We follow semver:
 
 - **Patch** (`0.1.x`): bug fixes, doc improvements, spec corrections, new command specs
 - **Minor** (`0.x.0`): new features (new CLI commands, new API functions, new binding targets)

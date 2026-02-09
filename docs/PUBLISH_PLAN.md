@@ -1,6 +1,6 @@
 # Publish All Packages — Plan
 
-> **Status (2026-02-08):** All phases complete. v0.1.1 published to crates.io, npm, and PyPI. All future releases are automated via release-plz (including Go module tagging).
+> **Status (2026-02-09):** All phases complete. v0.1.4 published to crates.io, npm, and PyPI. All future releases are automated via release-plz (including Go module tagging).
 
 ## How releases work
 
@@ -10,7 +10,7 @@
 2. release-plz opens a **Release PR** with version bumps + CHANGELOG updates
 3. Review and merge the PR
 4. release-plz automatically:
-   - Publishes 6 crates to crates.io (dependency-ordered)
+   - Publishes 7 crates to crates.io (dependency-ordered)
    - Creates a git tag (`v0.x.0`)
    - Creates a GitHub Release with changelog notes
    - Triggers npm, PyPI, binary build, and Go module tagging jobs
@@ -21,7 +21,7 @@
 For emergencies or manual one-off publishes. Dry-run by default — pass `--live` to publish.
 
 ```bash
-./scripts/publish.sh crates           # dry-run 6 crates to crates.io
+./scripts/publish.sh crates           # dry-run 7 crates to crates.io
 ./scripts/publish.sh crates --live    # actually publish to crates.io
 ./scripts/publish.sh npm              # dry-run WASM package to npm
 ./scripts/publish.sh npm --live       # actually publish to npm
@@ -34,10 +34,11 @@ For emergencies or manual one-off publishes. Dry-run by default — pass `--live
 Tokens loaded from `.env` at the project root (in `.gitignore`).
 Required variables: `crates_api_key`, `npmjs_api_key`, `pypi_api_key`.
 
-### Manual tag push — `.github/workflows/release.yml`
+### Manual fallback — `.github/workflows/release.yml`
 
-If you need to bypass release-plz: `git tag v0.3.0 && git push origin v0.3.0`.
-Builds CLI binaries + FFI libs and creates a GitHub Release.
+Emergency manual workflow triggered from the GitHub Actions UI (`workflow_dispatch`).
+Builds CLI binaries + FFI libs and uploads them to an existing GitHub Release.
+Use when the automated release-plz pipeline fails and you need to rebuild artifacts.
 
 ## Conventional commits (required going forward)
 
@@ -62,9 +63,10 @@ Enforced locally by git hooks (`.githooks/commit-msg`). Hooks also run `cargo fm
 1. `zpl_toolchain_diagnostics` (leaf)
 2. `zpl_toolchain_spec_tables` (leaf)
 3. `zpl_toolchain_profile` (leaf)
-4. `zpl_toolchain_core` (depends on 1, 2, 3)
-5. `zpl_toolchain_spec_compiler` (depends on 2)
-6. `zpl_toolchain_cli` (depends on 1, 3, 4)
+4. `zpl_toolchain_print_client` (leaf)
+5. `zpl_toolchain_core` (depends on 1, 2, 3)
+6. `zpl_toolchain_spec_compiler` (depends on 2)
+7. `zpl_toolchain_cli` (depends on 1, 3, 4, 5)
 
 ## Phase checklist
 
@@ -78,7 +80,7 @@ Enforced locally by git hooks (`.githooks/commit-msg`). Hooks also run `cargo fm
 ### Phase 2: Crates.io Prep ✅
 
 - [x] Add `publish = false` to non-publishable crates
-- [x] Add metadata to all 6 publishable crates (description, repository, keywords, categories)
+- [x] Add metadata to all 7 publishable crates (description, repository, keywords, categories)
 - [x] Add version pins to inter-crate path dependencies
 - [x] Move `spec/diagnostics.jsonc` into crate for packaging
 - [x] Workspace inheritance for edition, license, repository

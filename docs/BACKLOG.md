@@ -21,7 +21,7 @@ All Tier 1 items completed. See "Completed Work" below.
 - [x] **WASM bindings** — `crates/wasm/` with `wasm-bindgen` + `serde-wasm-bindgen`; 5 exported functions (parse, parseWithTables, validate, format, explain); embedded parser tables via `build.rs`; TypeScript wrapper at `packages/ts/core/` with full type definitions
 - [x] **CI: expand matrix** — Linux/macOS/Windows build matrix for core tests and C FFI; `Swatinem/rust-cache@v2` for Cargo caching; `taiki-e/install-action@nextest` for nextest; `rustfmt --check` and `clippy -D warnings` gates; WASM size report via `$GITHUB_STEP_SUMMARY`
 - [x] **CI: add spec-compiler check step** — dedicated `spec-check` job runs `zpl-spec-compiler check`; builds tables; runs CLI `coverage` command to report spec coverage in CI
-- [x] **Draft release notes template** — `docs/RELEASE.md` with version scheme, crate publishing order, release checklist, release notes template with checksums; `CHANGELOG.md` (Keep a Changelog format); `.github/workflows/release.yml` with cross-platform CLI and FFI builds, artifact upload, and GitHub Release creation on tag push
+- [x] **Draft release notes template** — `docs/RELEASE.md` with version scheme, crate publishing order, release checklist, release notes template with checksums; `CHANGELOG.md` (Keep a Changelog format); `.github/workflows/release.yml` with cross-platform CLI and FFI builds, artifact upload, and GitHub Release creation (manual `workflow_dispatch` fallback)
 
 ### Tier 3: Quality & Polish
 

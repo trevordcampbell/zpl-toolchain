@@ -1,10 +1,10 @@
-core
-====
+# zpl_toolchain_core
 
 Parser, AST, validator, and glue for consuming generated spec tables.
 
-Parser
-------
+Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) project.
+
+## Parser
 - Zero-allocation lexer: `Token<'a>` borrows text directly from input (`&'a str`), eliminating per-token heap allocations.
 - Longest-match opcode lookup using the opcode trie (embedded in `parser_tables.json`) with cached `ParserTables` methods (`OnceLock`).
 - Signature-driven argument parsing (joiner, allowEmptyTrailing).
@@ -13,16 +13,14 @@ Parser
 - Emits `^XA`/`^XZ` as nodes while also delimiting labels.
 - Safe UTF-8 handling throughout (multi-byte character boundary checks).
 
-AST
----
+## AST
 - `Ast { labels: Vec<Label> }`, `Label { nodes: Vec<Node> }`.
 - `Node::Command { code, args, span } | FieldData { content, hex_escaped, span } | RawData | Trivia`. `Node` is `#[non_exhaustive]` to allow future variants without breaking downstream matches.
 - `span` on all `Node` variants is a required `Span` (not `Option<Span>`).
 - `ArgSlot { key, presence, value }` with tri-state `Presence`.
 - `Span { start, end }` byte span (re-exported from `diagnostics` crate).
 
-Validator
----------
+## Validator
 - Table-driven checks from `spec-tables`:
   - Presence/required args; arity; type validation (`int`, `float`, `char`); unknown commands.
   - Numeric/string constraints, enums, conditional range.
@@ -34,8 +32,7 @@ Validator
 - Dynamic prefix/delimiter support: `^CC`/`~CC`/`^CT`/`~CT` prefix changes and `^CD`/`~CD` delimiter changes tracked at both lexer and parser levels (lexer re-tokenizes with new delimiter character); commands with non-comma signature joiners (`:`, `.`) correctly preserved.
 - Spec-driven `^A` split rule via `SplitRule` struct (replaces hardcoded font+orientation splitting).
 
-Usage
------
+## Usage
 - Load `generated/parser_tables.json` and (optionally) a profile; run parse → validate.
 - The crate root re-exports the most common entry points for convenience:
   - **Parser:** `parse_str`, `parse_with_tables`, `ParseResult`
@@ -47,8 +44,7 @@ Usage
   - **Serialization:** `to_pretty_json`
 - Full module paths (`grammar::parser::parse_str`, etc.) remain available for less common types.
 
-Tests
------
+## Tests
 - 255 tests split across focused test files:
   - `parser.rs` (61 tests) — tokenization, command recognition, AST structure, field/raw data modes, span tracking, prefix/delimiter, parser diagnostics, error recovery.
   - `validator.rs` (111 tests) — validation diagnostics, profile constraints, printer gates, media modes, structural/semantic validation, cross-command constraints, barcode field data.

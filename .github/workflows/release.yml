@@ -1,14 +1,25 @@
 name: Release (manual)
 
-# Manual fallback: triggered by pushing a v* tag directly.
+# Emergency manual fallback — triggered only from the GitHub Actions UI.
 # Day-to-day releases go through release-plz.yml (automated via Release PRs).
-# Use this when you need to manually cut a release without release-plz,
-# e.g.:  git tag v0.3.0 && git push origin v0.3.0
+#
+# When to use this:
+#   - release-plz failed catastrophically and you need to rebuild/upload artifacts
+#   - You need to cut a one-off release outside the normal flow
+#
+# Note: This workflow is intentionally NOT triggered by tag pushes. The automated
+# release-plz.yml workflow already handles everything (crates.io, npm, PyPI,
+# CLI/FFI builds, artifact upload, Go tag). Using a tag trigger here would cause
+# double builds and race conditions because release-plz uses a PAT that bypasses
+# GitHub's anti-recursion protection.
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Git tag to build and release (e.g. v0.3.0)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -24,6 +35,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
@@ -61,6 +74,8 @@ jobs:
             archive: zip
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
 
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
@@ -120,6 +135,8 @@ jobs:
             lib_glob: zpl_toolchain_ffi.dll
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
 
       - uses: ./.github/actions/setup-rust
         with:
@@ -136,32 +153,20 @@ jobs:
           path: |
             target/${{ matrix.target }}/release/${{ matrix.lib_glob }}
 
-  # ── Create GitHub Release ─────────────────────────────────────────────
-  release:
-    name: Create Release
+  # ── Upload artifacts to the existing GitHub Release ───────────────────
+  upload:
+    name: Upload Artifacts to Release
     needs: [build-cli, build-ffi]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Extract changelog for this release
-        id: changelog
-        run: |
-          # Extract the section for the current tag version from CHANGELOG.md
-          TAG="${GITHUB_REF_NAME#v}"
-          awk -v ver="$TAG" '
-            /^## \[/ { if (found) exit; if (index($0, "[" ver "]")) found=1; next }
-            found { print }
-          ' CHANGELOG.md > release_notes.md
-
-      - name: Create GitHub Release
+      - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          body_path: release_notes.md
+          tag_name: ${{ inputs.tag }}
           files: |
             artifacts/**/*

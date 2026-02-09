@@ -1,10 +1,10 @@
-spec-tables
-===========
+# zpl_toolchain_spec_tables
 
 Defines shared data structures for generated tables consumed by parser/validator.
 
-Key types
----------
+Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) project.
+
+## Key types
 - `ParserTables { schema_version, format_version, commands, opcode_trie }`
 - `CommandEntry { codes, arity, field_data, raw_payload, opens_field, closes_field, hex_escape_modifier, field_number, serialization, requires_field, signature, args, constraints, effects, plane, scope, ... }`
 - `Signature { params, joiner, allow_empty_trailing }`
@@ -13,8 +13,7 @@ Key types
 - `Effects { sets: Vec<String> }`
 - `ProfileConstraint { field, op: ComparisonOp }`
 
-Enums
------
+## Enums
 - `ConstraintKind`: Order, Requires, Incompatible, EmptyData, Range, Note, Custom
   - `ConstraintKind::ALL` is the **single source of truth** for the set of valid kinds; the JSONC schema mirrors this list and a spec-compiler test validates they stay in sync.
 - `ConstraintSeverity`: Error, Warn, Info
@@ -25,14 +24,12 @@ Enums
 - `CommandCategory`: Format, Control, Status, Config
 - `Stability`: Stable, Deprecated, Undocumented
 
-Additional Types
-----------------
+## Additional Types
 - `FieldDataRules { charset, length, parity }` — barcode field data validation rules
 - `SplitRule { font_len, orientation_len }` — spec-driven `^A` font+orientation splitting
 - `Composite { prefix, args }` — composite command expansion (e.g., `^XG`)
 
-Notes
------
+## Notes
 - `TABLE_FORMAT_VERSION` is currently `0.3.0`.
 - Legacy `args_spec` was removed in format `0.3.0`; use `args` (and `ArgUnion`).
 - Structural role flags (`opens_field`, `closes_field`, etc.) drive the validator's field-tracking state machine.

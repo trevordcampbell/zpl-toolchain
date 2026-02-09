@@ -1,6 +1,6 @@
 [package]
 name = "zpl_toolchain_cli"
-version = "0.1.3"
+version = "0.1.4"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -23,10 +23,10 @@ ariadne = "0.6"
 clap = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-zpl_toolchain_core = { path = "../core", version = "0.1.3" }
-zpl_toolchain_profile = { path = "../profile", version = "0.1.2" }
-zpl_toolchain_diagnostics = { path = "../diagnostics", version = "0.1.3" }
-zpl_toolchain_print_client = { path = "../print-client", version = "0.1.0", default-features = false }
+zpl_toolchain_core = { path = "../core", version = "0.1.4" }
+zpl_toolchain_profile = { path = "../profile", version = "0.1.3" }
+zpl_toolchain_diagnostics = { path = "../diagnostics", version = "0.1.4" }
+zpl_toolchain_print_client = { path = "../print-client", version = "0.1.1", default-features = false }
 
 [dev-dependencies]
 assert_cmd = "2"

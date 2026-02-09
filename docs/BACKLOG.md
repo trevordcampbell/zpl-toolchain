@@ -2,7 +2,7 @@
 
 > Single source of truth for tactical work items. For the strategic roadmap (phases, priorities, and architectural decisions), see [ROADMAP.md](ROADMAP.md). Original plans archived at `docs/research/archive/`.
 >
-> Last updated: 2026-02-08
+> Last updated: 2026-02-09
 
 ---
 

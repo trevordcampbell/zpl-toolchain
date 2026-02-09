@@ -19,7 +19,7 @@ const ETX: u8 = 0x03;
 
 /// Default maximum frame size (1 KB). ~HS responses are about 100 bytes
 /// per frame; this guard prevents runaway reads from a misbehaving printer.
-pub const DEFAULT_MAX_FRAME_SIZE: usize = 1024;
+pub(crate) const DEFAULT_MAX_FRAME_SIZE: usize = 1024;
 
 /// Internal state of the frame parser.
 enum FrameState {

@@ -2,8 +2,6 @@
 //!
 //! Supports TCP (port 9100), USB, and serial/Bluetooth SPP transports.
 //! The core API is synchronous (`std::net`), with no async runtime required.
-#![warn(missing_docs)]
-
 mod addr;
 mod config;
 mod error;

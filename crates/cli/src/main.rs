@@ -656,7 +656,10 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
                 "error": "connection_failed",
                 "message": format!("failed to connect to printer '{}': {}", printer_addr, e),
             });
-            println!("{}", serde_json::to_string_pretty(&out).unwrap());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&out).expect("JSON serialization cannot fail")
+            );
             process::exit(1);
         }
         anyhow::anyhow!("failed to connect to printer '{}': {}", printer_addr, e)
@@ -810,7 +813,10 @@ fn run_print_session<P: StatusQuery>(
                     "file": path,
                     "files_sent": files_sent,
                 });
-                println!("{}", serde_json::to_string_pretty(&out).unwrap());
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&out).expect("JSON serialization cannot fail")
+                );
                 process::exit(1);
             }
             return Err(anyhow::anyhow!("failed to send '{}': {}", path, e));

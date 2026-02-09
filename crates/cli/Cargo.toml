@@ -4,6 +4,8 @@ version = "0.1.3"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+authors.workspace = true
+homepage.workspace = true
 description = "Command-line interface for parsing, validating, formatting, and printing ZPL II label code"
 readme = "README.md"
 keywords = ["zpl", "zebra", "label", "cli", "printing"]
@@ -34,3 +36,6 @@ serde_json = { workspace = true }
 [[bin]]
 name = "zpl"
 path = "src/main.rs"
+
+[lints]
+workspace = true

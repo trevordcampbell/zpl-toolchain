@@ -19,3 +19,6 @@ serde_json = { workspace = true }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 zpl_toolchain_print_client = { path = "../print-client" }
+
+[lints]
+workspace = true

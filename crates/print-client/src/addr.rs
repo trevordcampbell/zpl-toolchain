@@ -8,7 +8,7 @@ use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 use crate::PrintError;
 
 /// Default ZPL raw printing port (JetDirect / RAW).
-pub const DEFAULT_PORT: u16 = 9100;
+pub(crate) const DEFAULT_PORT: u16 = 9100;
 
 /// Resolve a user-provided printer address string to a `SocketAddr`.
 ///

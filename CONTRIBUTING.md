@@ -51,8 +51,12 @@ Thanks for your interest in contributing to zpl-toolchain! This project is dual-
 - Keep changes deterministic and offline — avoid hidden I/O in libraries
 - Add tests for new behavior
 - Prefer small, composable modules
-- Avoid `unwrap()` in production code — use proper error handling
-- `core`, `spec-tables`, `diagnostics`, and `print-client` crates have `#![warn(missing_docs)]` — all new public items need doc comments
+- Avoid `unwrap()` in production code — use proper error handling or `.expect("reason")`
+- **Workspace lints** are configured in the root `Cargo.toml` under `[workspace.lints]` and inherited by all crates via `[lints] workspace = true`. Key lints enforced:
+  - `missing_docs` — all new public items need doc comments
+  - `unreachable_pub` — use `pub(crate)` for items not part of the public API
+  - `clippy::manual_let_else` — prefer `let ... else { ... }` over `if let` / `match` for early returns
+  - `clippy::clone_on_ref_ptr` — prefer `.clone()` on the inner type rather than the `Rc`/`Arc`
 
 ## Project structure
 

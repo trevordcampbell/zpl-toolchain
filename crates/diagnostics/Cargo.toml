@@ -4,6 +4,8 @@ version = "0.1.3"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+authors.workspace = true
+homepage.workspace = true
 description = "Diagnostic codes and structured error reporting for the ZPL toolchain"
 readme = "README.md"
 keywords = ["zpl", "zebra", "diagnostics"]
@@ -17,3 +19,6 @@ serde_json = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
+
+[lints]
+workspace = true

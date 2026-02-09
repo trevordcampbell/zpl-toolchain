@@ -1,3 +1,7 @@
+//! ZPL spec compiler — reads ZPL command specification YAML/JSONC files and
+//! compiles them into parser tables, documentation bundles, and coverage
+//! reports. This is an internal build-time tool, not a runtime dependency.
+
 pub mod pipeline;
 pub mod source;
 
@@ -74,6 +78,7 @@ pub fn strip_jsonc(input: &str) -> String {
     out
 }
 
+/// Parse a JSONC string into a `serde_json::Value`, stripping comments first.
 pub fn parse_jsonc(input: &str) -> Result<Value> {
     let stripped = strip_jsonc(input);
     let v: Value =
@@ -81,6 +86,7 @@ pub fn parse_jsonc(input: &str) -> Result<Value> {
     Ok(v)
 }
 
+/// Serialize a JSON value to a pretty-printed file, creating parent directories as needed.
 pub fn write_json_pretty<P: AsRef<Path>>(path: P, v: &Value) -> Result<()> {
     let text = serde_json::to_string_pretty(v)?;
     if let Some(parent) = path.as_ref().parent() {
@@ -90,6 +96,9 @@ pub fn write_json_pretty<P: AsRef<Path>>(path: P, v: &Value) -> Result<()> {
     Ok(())
 }
 
+/// Build a prefix trie over all command opcodes, returned as a JSON value.
+///
+/// Used for efficient prefix-based opcode lookup during parsing.
 pub fn build_opcode_trie(commands: &[serde_json::Value]) -> serde_json::Value {
     use std::collections::BTreeMap;
     #[derive(Default)]

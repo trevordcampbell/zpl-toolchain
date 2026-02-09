@@ -5,8 +5,6 @@
 //! [`validate_with_profile`] for validation, and [`emit_zpl`] for formatted
 //! output.
 
-#![warn(missing_docs)]
-
 /// ZPL grammar: lexer, parser, AST, emitter, and related utilities.
 pub mod grammar;
 /// Hex escape processing for `^FH` field data.

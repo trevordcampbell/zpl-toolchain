@@ -1,3 +1,5 @@
+//! Tests for rich field data parsing and validation (hex escapes, field numbers).
+
 mod common;
 
 use zpl_toolchain_diagnostics::codes;

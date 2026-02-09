@@ -52,7 +52,7 @@ ZPL II is the standard language for Zebra thermal label printers, used across lo
 
 - **CLI** — `parse`, `syntax-check`, `lint`, `format`, `print`, `coverage`, `explain` with `--output pretty|json` auto-detection
 - **Language bindings** — unified API across WASM, Python, C FFI, Go, and .NET
-- **Zero clippy warnings, 490+ passing tests** — parser, validator, emitter, print client, preflight, batch API, browser SDK, and more
+- **Zero clippy warnings, 465+ passing tests** — parser, validator, emitter, print client, preflight, batch API, browser SDK, and more
 
 ---
 

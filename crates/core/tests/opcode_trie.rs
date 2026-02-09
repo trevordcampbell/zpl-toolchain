@@ -1,3 +1,5 @@
+//! Tests for opcode trie recognition and lookup.
+
 mod common;
 
 #[test]

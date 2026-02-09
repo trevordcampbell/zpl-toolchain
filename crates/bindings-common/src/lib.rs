@@ -17,6 +17,7 @@ use zpl_toolchain_spec_tables::ParserTables;
 
 static TABLES: OnceLock<Option<ParserTables>> = OnceLock::new();
 
+/// Returns a reference to the embedded parser tables (compiled-in from the spec).
 #[cfg(has_embedded_tables)]
 pub fn embedded_tables() -> Option<&'static ParserTables> {
     TABLES
@@ -30,6 +31,7 @@ pub fn embedded_tables() -> Option<&'static ParserTables> {
         .as_ref()
 }
 
+/// Returns `None` when parser tables are not embedded at compile time.
 #[cfg(not(has_embedded_tables))]
 pub fn embedded_tables() -> Option<&'static ParserTables> {
     None

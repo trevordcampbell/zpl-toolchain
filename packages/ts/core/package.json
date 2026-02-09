@@ -1,12 +1,19 @@
 {
   "name": "@zpl-toolchain/core",
   "version": "0.1.3",
-  "description": "ZPL II toolchain — parse, validate, and format Zebra Programming Language files",
+  "description": "ZPL II toolchain — parse, validate, format, and print Zebra Programming Language files (see @zpl-toolchain/print for printing)",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "scripts": {

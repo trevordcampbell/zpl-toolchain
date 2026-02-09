@@ -23,7 +23,7 @@ Expand the ZPL test corpus from 5 samples (141 lines) to 30-50 curated real-worl
   - `shipping_label.zpl` (18 lines) — basic shipping
   - `product_label.zpl` (16 lines) — product info
   - `warehouse_label.zpl` (11 lines) — warehouse tracking
-- ✅ **393+ passing tests** — parser, validator, emitter, fuzz smoke tests, print client
+- ✅ **465+ passing tests** — parser, validator, emitter, fuzz smoke tests, print client
 - ✅ **100% command coverage** — 223/223 ZPL II commands across 216 spec files
 
 ### Testing Infrastructure

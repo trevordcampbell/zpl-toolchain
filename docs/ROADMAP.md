@@ -1,6 +1,6 @@
 # ZPL Toolchain — Roadmap
 
-> **Status (2026-02-08):** Foundation complete. v0.1.1 published to crates.io, npm, and PyPI. This document captures the long-term vision, organized by phase, with honest assessments of complexity and approach.
+> **Status (2026-02-09):** Foundation complete. v0.1.3 published to crates.io, npm, and PyPI. This document captures the long-term vision, organized by phase, with honest assessments of complexity and approach.
 >
 > For tactical work items, see [BACKLOG.md](BACKLOG.md). For the original (pre-implementation) vision document, see [docs/research/archive/original-implementation-plan.md](research/archive/original-implementation-plan.md).
 
@@ -18,7 +18,7 @@ Everything below is **done and shipped**:
 - **CLI** — `parse`, `lint`, `format`, `coverage`, `explain` with `--output pretty|json`
 - **Bindings** — unified 5-function API across WASM (TypeScript), Python (PyO3), C FFI, Go (cgo), .NET (P/Invoke). Native (non-WASM) targets additionally expose `print_zpl()` and `query_printer_status()` for hardware printing
 - **CI/CD** — release-plz automation, publishing to crates.io, npm, PyPI, Go module tagging, cross-platform builds
-- **490+ passing tests** — parser, validator, emitter round-trips, golden snapshots, fuzz smoke tests, print client integration tests, preflight diagnostics, TypeScript batch API, browser SDK tests
+- **465+ passing tests** — parser, validator, emitter round-trips, golden snapshots, fuzz smoke tests, print client integration tests, preflight diagnostics, TypeScript batch API, browser SDK tests
 
 ---
 

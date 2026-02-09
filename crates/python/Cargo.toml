@@ -14,3 +14,6 @@ crate-type = ["cdylib"]
 pyo3 = { workspace = true }
 serde_json = { workspace = true }
 zpl_toolchain_bindings_common = { path = "../bindings-common" }
+
+[lints]
+workspace = true

@@ -4,8 +4,6 @@
 //! used to report errors, warnings, and informational messages from the parser
 //! and validator. Diagnostic codes are defined in the [`codes`] module.
 
-#![warn(missing_docs)]
-
 /// Diagnostic ID constants auto-generated from the spec.
 pub mod codes;
 

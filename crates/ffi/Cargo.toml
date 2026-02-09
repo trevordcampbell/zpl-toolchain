@@ -13,3 +13,6 @@ crate-type = ["cdylib", "staticlib"]
 serde = { workspace = true }
 serde_json = { workspace = true }
 zpl_toolchain_bindings_common = { path = "../bindings-common" }
+
+[lints]
+workspace = true

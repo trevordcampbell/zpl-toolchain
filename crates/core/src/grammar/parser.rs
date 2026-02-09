@@ -796,12 +796,12 @@ impl<'a> Parser<'a> {
     // ── Field data mode ─────────────────────────────────────────────────
 
     fn parse_field_data(&mut self) {
-        let (content_start, hex_escape) = match self.mode {
-            Mode::FieldData {
-                content_start,
-                hex_escape,
-            } => (content_start, hex_escape),
-            _ => unreachable!("parse_field_data called while not in FieldData mode"),
+        let Mode::FieldData {
+            content_start,
+            hex_escape,
+        } = self.mode
+        else {
+            unreachable!("parse_field_data called while not in FieldData mode")
         };
 
         // Scan forward looking for ^FS (the field separator).

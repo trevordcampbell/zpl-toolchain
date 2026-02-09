@@ -12,7 +12,12 @@ pub enum ProfileError {
 
     /// A required field value is out of its valid range.
     #[error("invalid {field}: {reason}")]
-    InvalidField { field: String, reason: String },
+    InvalidField {
+        /// The name of the field that failed validation.
+        field: String,
+        /// A human-readable explanation of why the field value is invalid.
+        reason: String,
+    },
 }
 
 /// A printer profile describing the capabilities and constraints of a
@@ -170,8 +175,11 @@ pub fn resolve_gate(features: &Features, gate: &str) -> Option<bool> {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum PrintMethod {
+    /// Direct thermal printing (heat-sensitive media, no ribbon).
     DirectThermal,
+    /// Thermal transfer printing (requires ribbon).
     ThermalTransfer,
+    /// Both direct thermal and thermal transfer methods supported.
     Both,
 }
 

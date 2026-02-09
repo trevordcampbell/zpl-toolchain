@@ -43,8 +43,11 @@ fn print_help_shows_flags() {
     assert!(stdout.contains("--status"), "missing --status flag in help");
     assert!(stdout.contains("--info"), "missing --info flag in help");
     assert!(stdout.contains("--wait"), "missing --wait flag in help");
-    assert!(stdout.contains("--serial"), "missing --serial flag in help");
-    assert!(stdout.contains("--baud"), "missing --baud flag in help");
+    #[cfg(feature = "serial")]
+    {
+        assert!(stdout.contains("--serial"), "missing --serial flag in help");
+        assert!(stdout.contains("--baud"), "missing --baud flag in help");
+    }
     assert!(
         stdout.contains("--timeout"),
         "missing --timeout flag in help"
@@ -150,6 +153,7 @@ fn print_dry_run_json() {
 }
 
 #[test]
+#[cfg(feature = "usb")]
 fn print_dry_run_usb_pretty() {
     let (_dir, path) = write_temp_zpl(SAMPLE_ZPL);
 
@@ -177,6 +181,7 @@ fn print_dry_run_usb_pretty() {
 }
 
 #[test]
+#[cfg(feature = "usb")]
 fn print_dry_run_usb_json() {
     let (_dir, path) = write_temp_zpl(SAMPLE_ZPL);
 
@@ -205,6 +210,7 @@ fn print_dry_run_usb_json() {
 }
 
 #[test]
+#[cfg(feature = "serial")]
 fn print_dry_run_serial_json() {
     let (_dir, path) = write_temp_zpl(SAMPLE_ZPL);
 
@@ -234,6 +240,7 @@ fn print_dry_run_serial_json() {
 }
 
 #[test]
+#[cfg(all(feature = "serial", feature = "usb"))]
 fn print_serial_usb_conflict() {
     let (_dir, path) = write_temp_zpl(SAMPLE_ZPL);
 

@@ -66,6 +66,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **C# `Validate` profileJson normalization** — empty string converted to null before FFI call, matching `Print()` behavior
 - **.NET README** — updated compatibility claim to .NET Core 3.1+ / .NET 5+ (LPUTF8Str not supported on .NET Framework)
 - **TypeScript `prepublishOnly`** — added to both `@zpl-toolchain/core` and `@zpl-toolchain/print` as a safety net
+- **CLI transport features** — USB (`--features usb`) and serial (`--features serial`) are now opt-in cargo features; TCP is default and always available; `cargo install zpl_toolchain_cli` works without system dependencies; pre-built release binaries include all transports
+- **CI: TypeScript print tests** — new CI job runs type-check, build, and all 71 tests for `@zpl-toolchain/print`
+- **CI: libudev-dev** — Ubuntu CI runners now install `libudev-dev` for USB transport compilation
+- **CI: all-features test** — Linux CI additionally runs tests with USB and serial features enabled to exercise all transport code paths
 
 ## [0.1.1](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.0...v0.1.1) - 2026-02-08
 

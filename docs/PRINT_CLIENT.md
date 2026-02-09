@@ -24,12 +24,14 @@ zpl print label.zpl --printer 192.168.1.55 --status
 # Print multiple files and wait for completion
 zpl print *.zpl --printer printer01.local --wait
 
-# Print via USB (auto-discover first Zebra printer)
+# Print via USB (requires --features usb or release binary)
 zpl print label.zpl --printer usb
 
-# Print via serial / Bluetooth SPP
+# Print via serial / Bluetooth SPP (requires --features serial or release binary)
 zpl print label.zpl --printer /dev/rfcomm0 --serial
 ```
+
+> **Transport features:** TCP is included by default. USB and serial/Bluetooth require opt-in cargo features when building from source: `cargo install zpl_toolchain_cli --features usb,serial`. Pre-built [release binaries](https://github.com/trevordcampbell/zpl-toolchain/releases) include all transports.
 
 ### Rust
 
@@ -197,8 +199,8 @@ zpl print <FILES>... --printer <ADDR> [OPTIONS]
 | `--info` | Query printer info (`~HI`) and display model, firmware, DPI, and memory. |
 | `--timeout <SECS>` | Connection timeout in seconds (minimum 1). Write timeout scales to 6× and read to 2×. Default: connect=5s, write=30s, read=10s. |
 | `--wait-timeout <SECS>` | Timeout in seconds for `--wait` polling (default: 120). Requires `--wait`. |
-| `--serial` | Use serial/Bluetooth SPP transport (printer address is a serial port path). |
-| `--baud <RATE>` | Baud rate for serial connections (default: 9600). Requires `--serial`. |
+| `--serial` | Use serial/Bluetooth SPP transport (printer address is a serial port path). Requires `--features serial`. |
+| `--baud <RATE>` | Baud rate for serial connections (default: 9600). Requires `--serial` and `--features serial`. |
 | `--output <FORMAT>` | Output format: `pretty` or `json`. Defaults to `pretty` when stdout is a TTY, `json` when piped. Global flag. |
 
 ### Address Formats
@@ -213,9 +215,9 @@ The `--printer` flag accepts these formats:
 | Hostname:PORT | `printer01.local:6101` | TCP (explicit port) |
 | IPv6 | `::1` | TCP (port 9100) |
 | IPv6:PORT | `[::1]:9100` | TCP (explicit port) |
-| `usb` | `usb` | USB (first Zebra printer, VID 0x0A5F) |
-| `usb:VID:PID` | `usb:0A5F:00A0` | USB (specific device) |
-| Serial path | `/dev/ttyUSB0` | Serial (requires `--serial`) |
+| `usb` | `usb` | USB (first Zebra printer, VID 0x0A5F). Requires `--features usb`. |
+| `usb:VID:PID` | `usb:0A5F:00A0` | USB (specific device). Requires `--features usb`. |
+| Serial path | `/dev/ttyUSB0` | Serial (requires `--serial` and `--features serial`). |
 
 ### Examples
 

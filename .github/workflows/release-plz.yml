@@ -99,6 +99,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+
       - uses: ./.github/actions/setup-rust
 
       - name: Run release-plz release
@@ -223,13 +226,17 @@ jobs:
         with:
           ref: ${{ needs.release.outputs.tag }}
 
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+
       - uses: ./.github/actions/setup-rust
         with:
           targets: ${{ matrix.target }}
           cache-key: release-cli-${{ matrix.target }}
 
-      - name: Build CLI (release)
-        run: cargo build -p zpl_toolchain_cli --release --locked --target ${{ matrix.target }}
+      - name: Build CLI (release, all transports)
+        run: cargo build -p zpl_toolchain_cli --release --locked --target ${{ matrix.target }} --features usb,serial
 
       - name: Package (Unix)
         if: matrix.archive == 'tar.gz'

@@ -61,8 +61,10 @@ ZPL II is the standard language for Zebra thermal label printers, used across lo
 ### Install
 
 ```bash
-# CLI (Rust)
+# CLI (Rust) — TCP printing included by default
 cargo install zpl_toolchain_cli
+# With USB and serial/Bluetooth support:
+cargo install zpl_toolchain_cli --features usb,serial
 
 # TypeScript
 npm install @zpl-toolchain/core     # parsing, validation, formatting (WASM)
@@ -74,6 +76,8 @@ pip install zpl-toolchain
 # Go
 go get github.com/trevordcampbell/zpl-toolchain/packages/go/zpltoolchain
 ```
+
+> **Note:** Pre-built release binaries from [GitHub Releases](https://github.com/trevordcampbell/zpl-toolchain/releases) include all transports (TCP, USB, and serial) out of the box.
 
 ### Lint a label
 
@@ -153,19 +157,21 @@ OPTIONS:
   --wait                   Poll until the printer finishes all labels
   --wait-timeout <SECS>    Timeout for --wait polling (default: 120)
   --timeout <SECS>         Connection timeout, minimum 1 (default: 5)
-  --serial                 Use serial/Bluetooth SPP transport
-  --baud <RATE>            Serial baud rate (default: 9600)
+  --serial                 Use serial/Bluetooth SPP transport (requires --features serial)
+  --baud <RATE>            Serial baud rate (default: 9600, requires --serial)
 ```
 
 **Printer address formats:**
 
-| Format | Transport | Example |
-|--------|-----------|---------|
-| IP or hostname | TCP (port 9100) | `192.168.1.55`, `printer.local` |
-| IP:port | TCP (custom port) | `192.168.1.55:6101` |
-| `usb` | USB (auto-discover) | `usb` |
-| `usb:VID:PID` | USB (specific device, hex) | `usb:0A5F:0100` |
-| Serial port path | Serial/BT SPP (with `--serial`) | `/dev/ttyUSB0`, `COM3` |
+| Format | Transport | Feature | Example |
+|--------|-----------|---------|---------|
+| IP or hostname | TCP (port 9100) | default | `192.168.1.55`, `printer.local` |
+| IP:port | TCP (custom port) | default | `192.168.1.55:6101` |
+| `usb` | USB (auto-discover) | `--features usb` | `usb` |
+| `usb:VID:PID` | USB (specific device, hex) | `--features usb` | `usb:0A5F:0100` |
+| Serial port path | Serial/BT SPP (with `--serial`) | `--features serial` | `/dev/ttyUSB0`, `COM3` |
+
+> USB and serial transports are opt-in via cargo features. Pre-built release binaries include all transports.
 
 ### Examples
 
@@ -185,10 +191,10 @@ zpl explain ZPL1401
 # Print via TCP
 zpl print label.zpl -p 192.168.1.55
 
-# Print via USB with status query
+# Print via USB with status query (requires --features usb or release binary)
 zpl print label.zpl -p usb --status --info
 
-# Print via serial/Bluetooth
+# Print via serial/Bluetooth (requires --features serial or release binary)
 zpl print label.zpl -p /dev/ttyUSB0 --serial --baud 115200
 
 # Dry-run: validate without sending

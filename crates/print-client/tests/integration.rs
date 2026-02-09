@@ -228,7 +228,13 @@ fn connect_to_nonexistent_server_fails() {
     // Use a port that's very likely not listening
     let result = TcpPrinter::connect("127.0.0.1:19999", fast_config());
     match result {
-        Err(PrintError::ConnectionRefused { .. } | PrintError::ConnectionFailed { .. }) => {
+        Err(
+            PrintError::ConnectionRefused { .. }
+            | PrintError::ConnectionFailed { .. }
+            // Windows may report a timeout instead of connection refused
+            // when connecting to a non-listening port on localhost.
+            | PrintError::ConnectionTimeout { .. },
+        ) => {
             // expected
         }
         Err(other) => panic!("expected connection error, got: {other:?}"),

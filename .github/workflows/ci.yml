@@ -26,6 +26,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+
       - uses: ./.github/actions/setup-rust
         with:
           components: rustfmt, clippy
@@ -53,6 +57,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+
       - uses: ./.github/actions/setup-rust
         with:
           cache-key: ci-spec-check
@@ -74,6 +81,33 @@ jobs:
           else
             echo "::warning::coverage.json not generated"
           fi
+
+  # ── TypeScript print package: build + test ─────────────────────────────
+  ts-print:
+    name: TypeScript Print Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install dependencies
+        working-directory: packages/ts/print
+        run: npm install
+
+      - name: Type-check
+        working-directory: packages/ts/print
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: packages/ts/print
+        run: npm run build
+
+      - name: Test
+        working-directory: packages/ts/print
+        run: npm test
 
   # ── WASM build + size check ───────────────────────────────────────────
   wasm:

@@ -182,12 +182,14 @@ describe("createPrintProxy - wildcard allowlist", () => {
   it("allows printers matching a wildcard pattern", async () => {
     const { close } = await createPrintProxy({
       port: 18904,
-      allowedPrinters: ["192.168.1.*"],
+      allowedPrinters: ["127.0.0.*"],
     });
 
-    // Should be allowed (matches 192.168.1.*)
+    // Should be allowed (matches 127.0.0.*)
+    // Uses 127.0.0.1 so the TCP connection fails instantly with ECONNREFUSED
+    // instead of timing out on an unreachable remote IP (~16s).
     const res = await request(18904, "POST", "/print", {
-      printer: "192.168.1.100",
+      printer: "127.0.0.1",
       zpl: "^XA^XZ",
     });
     // Will get 502 (can't connect to printer) but NOT 403
@@ -214,12 +216,14 @@ describe("createPrintProxy - wildcard allowlist", () => {
   it("supports multiple patterns", async () => {
     const { close } = await createPrintProxy({
       port: 18906,
-      allowedPrinters: ["192.168.1.*", "printer-*"],
+      allowedPrinters: ["10.0.0.*", "127.0.0.*"],
     });
 
-    // Should match printer-*
+    // Should match second pattern (127.0.0.*)
+    // Uses 127.0.0.1 so the TCP connection fails instantly with ECONNREFUSED
+    // instead of timing out on DNS resolution for a non-existent hostname.
     const res = await request(18906, "POST", "/print", {
-      printer: "printer-lab01",
+      printer: "127.0.0.1",
       zpl: "^XA^XZ",
     });
     assert.notEqual(res.status, 403);

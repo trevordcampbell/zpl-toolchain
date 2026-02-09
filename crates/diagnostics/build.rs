@@ -1,3 +1,9 @@
+//! Build script for generating diagnostic code data structures at compile time.
+//!
+//! This script reads `spec/diagnostics.jsonc` and generates two Rust files:
+//! - `generated_codes.rs`: Contains public constants mapping diagnostic constant names to their IDs
+//! - `generated_explain.rs`: Contains a match expression mapping diagnostic IDs to their descriptions
+
 use std::collections::HashSet;
 use std::env;
 use std::fs;

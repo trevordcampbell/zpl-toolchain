@@ -13,7 +13,7 @@ use zpl_toolchain_diagnostics::{Diagnostic, Severity};
 
 /// Output format for diagnostic rendering.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Format {
+pub(crate) enum Format {
     /// Coloured, source-annotated output (ariadne).
     Pretty,
     /// Machine-readable JSON.
@@ -22,7 +22,7 @@ pub enum Format {
 
 impl Format {
     /// Resolve `Auto` to a concrete format based on whether stdout is a TTY.
-    pub fn resolve_or_detect(explicit: Option<&str>) -> Self {
+    pub(crate) fn resolve_or_detect(explicit: Option<&str>) -> Self {
         match explicit {
             Some("json") => Format::Json,
             Some("pretty") => Format::Pretty,
@@ -65,7 +65,7 @@ fn severity_color(severity: &Severity) -> Color {
 /// Diagnostics with a [`Span`] are rendered with source context (line numbers,
 /// underlines, labels). Those without a span are rendered as standalone
 /// messages.
-pub fn render_diagnostics_pretty(source: &str, filename: &str, diagnostics: &[Diagnostic]) {
+pub(crate) fn render_diagnostics_pretty(source: &str, filename: &str, diagnostics: &[Diagnostic]) {
     if diagnostics.is_empty() {
         return;
     }
@@ -159,7 +159,7 @@ fn make_label_message(diag: &Diagnostic) -> String {
 // ── JSON rendering ──────────────────────────────────────────────────────
 
 /// Render diagnostics as a JSON array to stdout.
-pub fn render_diagnostics_json(diagnostics: &[Diagnostic]) {
+pub(crate) fn render_diagnostics_json(diagnostics: &[Diagnostic]) {
     let json =
         serde_json::to_string_pretty(diagnostics).expect("Diagnostic serialization cannot fail");
     println!("{json}");
@@ -171,7 +171,7 @@ pub fn render_diagnostics_json(diagnostics: &[Diagnostic]) {
 ///
 /// - `Pretty` → coloured output to stderr (source data stays on stdout).
 /// - `Json`   → JSON array to stdout.
-pub fn render_diagnostics(
+pub(crate) fn render_diagnostics(
     source: &str,
     filename: &str,
     diagnostics: &[Diagnostic],
@@ -188,7 +188,7 @@ pub fn render_diagnostics(
 /// Print a coloured summary line showing error/warning/info counts.
 ///
 /// Example: `2 errors, 1 warning, 0 info`
-pub fn print_summary(diagnostics: &[Diagnostic]) {
+pub(crate) fn print_summary(diagnostics: &[Diagnostic]) {
     use ariadne::Fmt;
 
     let (mut errors, mut warnings, mut infos) = (0usize, 0usize, 0usize);

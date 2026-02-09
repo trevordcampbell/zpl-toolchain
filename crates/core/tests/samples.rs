@@ -1,3 +1,5 @@
+//! Sample-based integration tests — parse real-world ZPL files and verify results.
+
 mod common;
 
 use std::fs;

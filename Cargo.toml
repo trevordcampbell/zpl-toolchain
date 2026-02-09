@@ -35,3 +35,12 @@ thiserror = "2"
 pyo3 = { version = "0.23", features = ["extension-module"] }
 backon = "1.3"
 socket2 = "0.5"
+
+[workspace.lints.rust]
+missing_docs = "warn"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+pedantic = { level = "allow", priority = -1 }
+clone_on_ref_ptr = "warn"
+manual_let_else = "warn"

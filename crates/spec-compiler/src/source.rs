@@ -14,10 +14,13 @@ use zpl_toolchain_spec_tables::{
 /// Top-level structure of a per-command JSONC file.
 #[derive(Debug, Clone, Deserialize)]
 pub struct SourceSpecFile {
+    /// Optional file-level version identifier.
     #[serde(default)]
     pub version: Option<String>,
+    /// The spec schema version this file conforms to (e.g. `"1.1.1"`).
     #[serde(rename = "schemaVersion")]
     pub schema_version: String,
+    /// The command definitions contained in this spec file.
     pub commands: Vec<SourceCommand>,
 }
 
@@ -29,33 +32,46 @@ pub struct SourceSpecFile {
 #[serde(rename_all = "camelCase")]
 pub struct SourceCommand {
     // Identity
+    /// Multi-code opcodes (e.g. `["^FD", "~FD"]`). Preferred over `code`+`aliases`.
     #[serde(default)]
     pub codes: Option<Vec<String>>,
+    /// Single opcode (legacy, e.g. `"^FD"`). Use `codes` for multi-code commands.
     #[serde(default)]
     pub code: Option<String>,
+    /// Legacy alias opcodes (e.g. `["~FD"]`). Use `codes` for new specs.
     #[serde(default)]
     pub aliases: Option<Vec<String>>,
 
     // Metadata
+    /// Human-readable command name (e.g. `"Field Data"`).
     #[serde(default)]
     pub name: Option<String>,
+    /// Functional category (e.g. printing, barcode, graphics).
     #[serde(default)]
     pub category: Option<CommandCategory>,
+    /// Print plane this command targets (e.g. ZPL II, EPL).
     #[serde(default)]
     pub plane: Option<Plane>,
+    /// Scope in which this command is valid (e.g. label, format, global).
     #[serde(default)]
     pub scope: Option<CommandScope>,
+    /// Free-text documentation / description of the command.
     #[serde(default)]
     pub docs: Option<String>,
 
     // Arguments
+    /// Number of positional parameters this command accepts.
     pub arity: u32,
+    /// Signature template describing parameter order and joining convention.
     #[serde(default)]
     pub signature: Option<Signature>,
+    /// Per-opcode signature overrides (keyed by opcode string).
     #[serde(default)]
     pub signature_overrides: Option<HashMap<String, Signature>>,
+    /// Composite argument groups that bundle multiple args under one name.
     #[serde(default)]
     pub composites: Option<Vec<Composite>>,
+    /// Positional argument definitions (may include `OneOf` union variants).
     #[serde(default)]
     pub args: Option<Vec<ArgUnion>>,
     /// Freeform default-value overrides. Stays as `serde_json::Value` because the
@@ -63,48 +79,66 @@ pub struct SourceCommand {
     /// pipeline code inspects its contents — it is only passed through to the output.
     #[serde(default)]
     pub defaults: Option<serde_json::Value>,
+    /// Unit of measurement for the command's arguments (e.g. `"dots"`).
     #[serde(default)]
     pub units: Option<String>,
 
     // Flags (snake_case in JSONC — explicit rename overrides camelCase default)
+    /// If `true`, the command carries a raw (non-parsed) payload.
     #[serde(default, rename = "raw_payload")]
     pub raw_payload: bool,
+    /// If `true`, this command consumes field data from the data stream.
     #[serde(default, rename = "field_data")]
     pub field_data: bool,
+    /// If `true`, this command opens a new field context.
     #[serde(default, rename = "opens_field")]
     pub opens_field: bool,
+    /// If `true`, this command closes the current field context.
     #[serde(default, rename = "closes_field")]
     pub closes_field: bool,
+    /// If `true`, hex escape sequences are interpreted as a modifier.
     #[serde(default, rename = "hex_escape_modifier")]
     pub hex_escape_modifier: bool,
+    /// If `true`, this command takes a field number parameter.
     #[serde(default, rename = "field_number")]
     pub field_number: bool,
+    /// If `true`, this command relates to serialization control.
     #[serde(default)]
     pub serialization: bool,
+    /// If `true`, this command must appear within an open field context.
     #[serde(default, rename = "requires_field")]
     pub requires_field: bool,
 
     // Validation
+    /// Validation constraints for this command (ordering, compatibility, etc.).
     #[serde(default)]
     pub constraints: Option<Vec<Constraint>>,
+    /// Printer model gates that restrict which printers support this command.
     #[serde(default)]
     pub printer_gates: Option<Vec<String>>,
 
     // Effects & versioning
+    /// Side effects this command produces (e.g. setting state variables).
     #[serde(default)]
     pub effects: Option<Effects>,
+    /// Rules governing how this command interacts with field data.
     #[serde(default)]
     pub field_data_rules: Option<zpl_toolchain_spec_tables::FieldDataRules>,
+    /// Firmware version when this command was introduced.
     #[serde(default)]
     pub since: Option<String>,
+    /// Whether this command is deprecated.
     #[serde(default)]
     pub deprecated: Option<bool>,
+    /// Firmware version when this command was deprecated.
     #[serde(default)]
     pub deprecated_since: Option<String>,
+    /// Stability level of this command (stable, experimental, etc.).
     #[serde(default)]
     pub stability: Option<Stability>,
 
     // Examples
+    /// Usage examples for this command.
     #[serde(default)]
     pub examples: Option<Vec<Example>>,
     /// Freeform extension/vendor data. Stays as `serde_json::Value` because the

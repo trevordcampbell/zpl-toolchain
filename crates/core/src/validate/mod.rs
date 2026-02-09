@@ -1091,9 +1091,8 @@ fn validate_command_args(
     label_state: &LabelState,
     issues: &mut Vec<Diagnostic>,
 ) {
-    let spec_args = match cmd_ctx.cmd.args.as_ref() {
-        Some(sa) => sa,
-        None => return,
+    let Some(spec_args) = cmd_ctx.cmd.args.as_ref() else {
+        return;
     };
 
     let mut key_to_slot: HashMap<String, &crate::grammar::ast::ArgSlot> = HashMap::new();
@@ -1188,9 +1187,8 @@ fn validate_command_constraints(
     seen_codes: &HashSet<&str>,
     issues: &mut Vec<Diagnostic>,
 ) {
-    let constraints = match cmd_ctx.cmd.constraints.as_ref() {
-        Some(c) => c,
-        None => return,
+    let Some(constraints) = cmd_ctx.cmd.constraints.as_ref() else {
+        return;
     };
 
     for c in constraints {

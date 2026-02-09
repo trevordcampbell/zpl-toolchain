@@ -1,3 +1,7 @@
+//! Shared test helpers for `zpl_toolchain_core` integration tests.
+
+#![allow(unreachable_pub)]
+
 use std::sync::LazyLock;
 use zpl_toolchain_core::grammar::ast::{ArgSlot, Node};
 use zpl_toolchain_core::grammar::parser::ParseResult;

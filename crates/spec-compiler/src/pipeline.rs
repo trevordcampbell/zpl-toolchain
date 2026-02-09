@@ -16,7 +16,9 @@ use zpl_toolchain_spec_tables::TABLE_FORMAT_VERSION;
 
 /// Result of loading spec files.
 pub struct LoadResult {
+    /// The parsed command entries loaded from spec files.
     pub commands: Vec<SourceCommand>,
+    /// The set of schema versions encountered across all spec files.
     pub schema_versions: BTreeSet<String>,
 }
 
@@ -71,7 +73,9 @@ pub fn load_spec_files(spec_dir: &Path) -> Result<LoadResult> {
 /// A non-fatal validation error for a command.
 #[derive(Debug, Clone)]
 pub struct ValidationError {
+    /// The command opcode that triggered the validation errors.
     pub code: String,
+    /// Human-readable descriptions of each validation issue found.
     pub errors: Vec<String>,
 }
 
@@ -811,6 +815,8 @@ pub fn generate_constraints_bundle(
 
 // ─── Generate coverage ──────────────────────────────────────────────────────
 
+/// Generate `coverage.json` — per-command completeness stats, missing fields,
+/// and validation error summaries for the spec authoring dashboard.
 pub fn generate_coverage(
     commands: &[SourceCommand],
     schema_versions: &BTreeSet<String>,

@@ -5,8 +5,6 @@
 //! recognition.  These tables are deserialized from the generated JSON spec
 //! and consumed by the parser and validator.
 
-#![warn(missing_docs)]
-
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;

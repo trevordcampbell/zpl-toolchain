@@ -1,3 +1,5 @@
+//! Tests for argument union parsing (positions accepting multiple types).
+
 #[test]
 fn arg_union_accepts_either_shape() {
     // Build tables with a synthetic ^ZZU command where the first position is a union:

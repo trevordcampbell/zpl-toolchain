@@ -9,14 +9,20 @@ Releases are fully automated via [release-plz](https://release-plz.ieni.dev/) an
 1. Push conventional commits to a new feature branch (enforced by git hooks — see below)
 2. Open a PR for merging these changes into `main`.
 3. Review and merge the PR
-2. release-plz opens a **Release PR** with version bumps + CHANGELOG updates
-3. Review and merge the PR
-4. release-plz automatically:
+4. release-plz opens a **Release PR** with version bumps + CHANGELOG updates
+5. Review and merge the Release PR
+6. release-plz automatically:
    - Publishes crates to crates.io (dependency-ordered)
    - Creates a git tag (`v0.x.y`)
    - Creates a GitHub Release with changelog notes
    - Triggers npm, PyPI, binary build, and Go module tagging jobs
-5. Done — all registries updated, artifacts uploaded, Go tag pushed
+7. Done — all registries updated, artifacts uploaded, Go tag pushed
+
+> **Self-healing releases:** `release_always = true` in `release-plz.toml` means
+> the release step runs on every push to main, not only when the commit comes from
+> a release PR. If a publish fails partway through (e.g. a missing system dep),
+> the next push to main automatically retries the unpublished crates. This is safe
+> because release-plz is idempotent — it skips versions already on the registry.
 
 ### Manual fallback
 

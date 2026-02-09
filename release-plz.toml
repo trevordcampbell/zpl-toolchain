@@ -18,9 +18,12 @@ changelog_update = false
 # Allow publishing even when generated files are present.
 publish_allow_dirty = true
 
-# Only publish when the release PR is merged, not on every push to main.
-# This gives CI a chance to validate the PR before anything is published.
-release_always = false
+# Publish whenever local versions exceed what's on crates.io, not only when
+# the current commit is from a release PR.  This makes releases self-healing:
+# if a publish fails partway through, the next push to main retries
+# automatically.  Safe because release-plz is idempotent — it skips versions
+# that are already on the registry.
+release_always = true
 
 # ── CLI crate: the project-wide tag + changelog owner ────────────────────────
 

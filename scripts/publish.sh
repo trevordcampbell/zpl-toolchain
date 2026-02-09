@@ -5,7 +5,7 @@
 # Usage:
 #   ./scripts/publish.sh crates           # dry-run publish 6 crates to crates.io
 #   ./scripts/publish.sh crates --live    # actually publish to crates.io
-#   ./scripts/publish.sh npm              # dry-run publish WASM package to npm
+#   ./scripts/publish.sh npm              # dry-run publish TS packages to npm
 #   ./scripts/publish.sh npm --live       # actually publish to npm
 #   ./scripts/publish.sh pypi             # dry-run publish Python wheel to PyPI
 #   ./scripts/publish.sh pypi --live      # actually publish to PyPI
@@ -28,6 +28,7 @@ TIER1_CRATES=(
     zpl_toolchain_diagnostics
     zpl_toolchain_spec_tables
     zpl_toolchain_profile
+    zpl_toolchain_print_client
 )
 # Tier 2: depend on tier 1
 TIER2_CRATES=(
@@ -184,34 +185,55 @@ cmd_npm() {
     preflight wasm-pack npm
     require_token npmjs_api_key "npm"
 
+    local npm_flags=("--access" "public")
+    if [[ "$LIVE" != "true" ]]; then
+        npm_flags+=("--dry-run")
+    fi
+
+    # ── @zpl-toolchain/core (WASM) ────────────────────────────────────────────
+
     step "Building WASM package"
     info "wasm-pack build crates/wasm --target bundler ..."
     (cd "$ROOT_DIR" && wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg)
     success "WASM build complete"
 
-    step "Installing dependencies & building TypeScript wrapper"
+    step "Installing dependencies & building @zpl-toolchain/core"
     (cd "$ROOT_DIR/packages/ts/core" && npm install && npm run build)
     success "TypeScript build complete"
 
-    step "Configuring npm auth"
-    local npmrc_file="$ROOT_DIR/packages/ts/core/.npmrc"
-    echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$npmrc_file"
-    success "Wrote .npmrc (token via \$NPM_TOKEN env var)"
+    step "Configuring npm auth (@zpl-toolchain/core)"
+    local npmrc_core="$ROOT_DIR/packages/ts/core/.npmrc"
+    echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$npmrc_core"
 
-    step "Publishing to npm"
-    local npm_flags=("--access" "public")
+    step "Publishing @zpl-toolchain/core to npm"
     if [[ "$LIVE" != "true" ]]; then
-        npm_flags+=("--dry-run")
         info "(dry-run) npm publish ${npm_flags[*]}"
     else
         info "npm publish ${npm_flags[*]}"
     fi
-
     (cd "$ROOT_DIR/packages/ts/core" && NPM_TOKEN="$npmjs_api_key" npm publish "${npm_flags[@]}")
-
-    # Clean up .npmrc so tokens don't linger on disk
-    rm -f "$npmrc_file"
+    rm -f "$npmrc_core"
     success "@zpl-toolchain/core published to npm!"
+
+    # ── @zpl-toolchain/print (pure TS) ────────────────────────────────────────
+
+    step "Building @zpl-toolchain/print"
+    (cd "$ROOT_DIR/packages/ts/print" && npm install && npm run build)
+    success "@zpl-toolchain/print build complete"
+
+    step "Configuring npm auth (@zpl-toolchain/print)"
+    local npmrc_print="$ROOT_DIR/packages/ts/print/.npmrc"
+    echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$npmrc_print"
+
+    step "Publishing @zpl-toolchain/print to npm"
+    if [[ "$LIVE" != "true" ]]; then
+        info "(dry-run) npm publish ${npm_flags[*]}"
+    else
+        info "npm publish ${npm_flags[*]}"
+    fi
+    (cd "$ROOT_DIR/packages/ts/print" && NPM_TOKEN="$npmjs_api_key" npm publish "${npm_flags[@]}")
+    rm -f "$npmrc_print"
+    success "@zpl-toolchain/print published to npm!"
 }
 
 cmd_pypi() {
@@ -254,8 +276,8 @@ usage() {
 Usage: $(basename "$0") <command> [--live]
 
 Commands:
-  crates    Publish Rust crates to crates.io (6 crates, dependency-ordered)
-  npm       Build WASM + publish @zpl-toolchain/core to npm
+  crates    Publish Rust crates to crates.io (7 crates, dependency-ordered)
+  npm       Build WASM + publish @zpl-toolchain/core and @zpl-toolchain/print to npm
   pypi      Build Python wheel + publish zpl-toolchain to PyPI
   all       Publish to all registries (crates -> npm -> pypi)
 

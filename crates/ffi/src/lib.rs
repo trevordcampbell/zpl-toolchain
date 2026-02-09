@@ -153,6 +153,71 @@ pub unsafe extern "C" fn zpl_explain(id: *const c_char) -> *mut c_char {
     }
 }
 
+// ── Print (non-WASM only) ────────────────────────────────────────────
+
+/// Send ZPL to a network printer. Returns a JSON result string.
+///
+/// `profile_json` is optional (pass NULL to skip). When `validate` is true
+/// the ZPL is validated before sending — validation errors are returned
+/// as JSON instead of printing.
+///
+/// The caller MUST free the returned pointer with `zpl_free()`.
+///
+/// # Safety
+///
+/// `zpl`, `printer_addr`, and `profile_json` must be valid, null-terminated
+/// C string pointers (or NULL for `profile_json`).
+#[cfg(not(target_arch = "wasm32"))]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn zpl_print(
+    zpl: *const c_char,
+    printer_addr: *const c_char,
+    profile_json: *const c_char,
+    validate: bool,
+) -> *mut c_char {
+    let Some(zpl) = (unsafe { cstr_to_str(zpl) }) else {
+        return ptr::null_mut();
+    };
+    let Some(addr) = (unsafe { cstr_to_str(printer_addr) }) else {
+        return ptr::null_mut();
+    };
+    let profile_str = unsafe { cstr_to_str(profile_json) };
+
+    match common::print_zpl(zpl, addr, profile_str, validate) {
+        Ok(json) => to_c_string(&json),
+        Err(e) => {
+            let out = serde_json::json!({"error": e});
+            to_json_c(&out)
+        }
+    }
+}
+
+/// Query printer status via `~HS`. Returns a JSON string with the parsed
+/// host-status fields.
+///
+/// The caller MUST free the returned pointer with `zpl_free()`.
+///
+/// # Safety
+///
+/// `printer_addr` must be a valid, null-terminated C string pointer (or NULL).
+#[cfg(not(target_arch = "wasm32"))]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn zpl_query_status(printer_addr: *const c_char) -> *mut c_char {
+    let Some(addr) = (unsafe { cstr_to_str(printer_addr) }) else {
+        return ptr::null_mut();
+    };
+
+    match common::query_printer_status(addr) {
+        Ok(json) => to_c_string(&json),
+        Err(e) => {
+            let out = serde_json::json!({"error": e});
+            to_json_c(&out)
+        }
+    }
+}
+
+// ── Free ─────────────────────────────────────────────────────────────
+
 /// Free a string previously returned by any `zpl_*` function.
 ///
 /// Passing NULL is safe (no-op).

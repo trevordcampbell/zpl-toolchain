@@ -39,6 +39,17 @@ public static class Zpl
         [MarshalAs(UnmanagedType.LPUTF8Str)] string id);
 
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    private static extern IntPtr zpl_print(
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string zpl,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string printerAddr,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string? profileJson,
+        [MarshalAs(UnmanagedType.I1)] bool validate);
+
+    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
+    private static extern IntPtr zpl_query_status(
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string printerAddr);
+
+    [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
     private static extern void zpl_free(IntPtr ptr);
 
     // ── Helpers ─────────────────────────────────────────────────────────
@@ -105,6 +116,7 @@ public static class Zpl
     /// <param name="profileJson">Optional printer profile JSON string.</param>
     public static ValidationResult Validate(string input, string? profileJson = null)
     {
+        if (string.IsNullOrEmpty(profileJson)) profileJson = null;
         var json = ConsumePtr(zpl_validate(input, profileJson))
             ?? throw new InvalidOperationException("zpl_validate returned NULL");
         CheckForError(json);
@@ -129,5 +141,44 @@ public static class Zpl
     public static string? Explain(string id)
     {
         return ConsumePtr(zpl_explain(id));
+    }
+
+    /// <summary>
+    /// Send ZPL to a network printer via TCP (port 9100).
+    /// </summary>
+    /// <param name="zpl">ZPL source code to print.</param>
+    /// <param name="printerAddr">Printer IP address, hostname, or IP:port.</param>
+    /// <param name="profileJson">Optional printer profile JSON string for pre-print validation.</param>
+    /// <param name="validate">Whether to validate ZPL before sending (default: true).</param>
+    public static PrintResult Print(string zpl, string printerAddr, string? profileJson = null, bool validate = true)
+    {
+        if (string.IsNullOrEmpty(profileJson)) profileJson = null;
+        var json = ConsumePtr(zpl_print(zpl, printerAddr, profileJson, validate))
+            ?? throw new InvalidOperationException("zpl_print returned NULL");
+        // Don't use CheckForError here — print_zpl returns
+        // {"success": false, "error": "validation_failed", "issues": [...]}
+        // for validation failures, which is a valid PrintResult (not an FFI error).
+        // Only treat as FFI error when there's no "success" field.
+        using var doc = JsonDocument.Parse(json);
+        if (!doc.RootElement.TryGetProperty("success", out _)
+            && doc.RootElement.TryGetProperty("error", out var errElem))
+        {
+            throw new InvalidOperationException(
+                errElem.GetString() ?? "Unknown error from native library");
+        }
+        return Deserialize<PrintResult>(json);
+    }
+
+    /// <summary>
+    /// Query a printer's host status via ~HS.
+    /// </summary>
+    /// <param name="printerAddr">Printer IP address, hostname, or IP:port.</param>
+    /// <returns>Raw JSON string with the printer's host status fields.</returns>
+    public static string QueryStatus(string printerAddr)
+    {
+        var json = ConsumePtr(zpl_query_status(printerAddr))
+            ?? throw new InvalidOperationException("zpl_query_status returned NULL");
+        CheckForError(json);
+        return json;
     }
 }

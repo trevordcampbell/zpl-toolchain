@@ -69,8 +69,9 @@ jobs:
 
           gh pr checkout "$PR_NUMBER"
 
-          # npm: package.json
+          # npm: package.json (both TS packages)
           (cd packages/ts/core && npm version "$VERSION" --no-git-tag-version)
+          (cd packages/ts/print && npm version "$VERSION" --no-git-tag-version)
 
           # PyPI: pyproject.toml
           sed -i "s/^version = \".*\"/version = \"$VERSION\"/" crates/python/pyproject.toml
@@ -78,7 +79,7 @@ jobs:
           if git diff --quiet; then
             echo "Versions already in sync"
           else
-            git add packages/ts/core/package.json crates/python/pyproject.toml
+            git add packages/ts/core/package.json packages/ts/print/package.json crates/python/pyproject.toml
             git commit -m "chore: sync npm/PyPI versions to $VERSION"
             git push
             echo "Committed version sync to PR #$PR_NUMBER"
@@ -122,7 +123,7 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Release tag: $TAG"
 
-  # ── Publish WASM package to npm ───────────────────────────────────────
+  # ── Publish TypeScript packages to npm ─────────────────────────────────
   publish-npm:
     name: Publish to npm
     needs: [release]
@@ -146,15 +147,27 @@ jobs:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
 
+      # ── @zpl-toolchain/core (WASM) ──────────────────────────────────
       - name: Build WASM
         run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
 
-      - name: Install dependencies & build TypeScript wrapper
+      - name: Install dependencies & build @zpl-toolchain/core
         working-directory: packages/ts/core
         run: npm install && npm run build
 
-      - name: Publish to npm
+      - name: Publish @zpl-toolchain/core to npm
         working-directory: packages/ts/core
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # ── @zpl-toolchain/print (pure TS) ──────────────────────────────
+      - name: Install dependencies & build @zpl-toolchain/print
+        working-directory: packages/ts/print
+        run: npm install && npm run build
+
+      - name: Publish @zpl-toolchain/print to npm
+        working-directory: packages/ts/print
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

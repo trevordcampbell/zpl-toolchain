@@ -6,7 +6,9 @@ Releases are fully automated via [release-plz](https://release-plz.ieni.dev/) an
 
 ### Day-to-day flow
 
-1. Push conventional commits to `main` (enforced by git hooks — see below)
+1. Push conventional commits to a new feature branch (enforced by git hooks — see below)
+2. Open a PR for merging these changes into `main`.
+3. Review and merge the PR
 2. release-plz opens a **Release PR** with version bumps + CHANGELOG updates
 3. Review and merge the PR
 4. release-plz automatically:
@@ -73,9 +75,10 @@ release-plz handles ordering automatically. For manual publishing, follow this o
 | 1 | `zpl_toolchain_diagnostics` | — |
 | 2 | `zpl_toolchain_spec_tables` | — |
 | 3 | `zpl_toolchain_profile` | — |
-| 4 | `zpl_toolchain_core` | diagnostics, spec-tables, profile |
-| 5 | `zpl_toolchain_spec_compiler` | spec-tables |
-| 6 | `zpl_toolchain_cli` | core, diagnostics, profile |
+| 4 | `zpl_toolchain_print_client` | — |
+| 5 | `zpl_toolchain_core` | diagnostics, spec-tables, profile |
+| 6 | `zpl_toolchain_spec_compiler` | spec-tables |
+| 7 | `zpl_toolchain_cli` | core, diagnostics, profile, print-client |
 
 Binding crates (`bindings-common`, `wasm`, `python`, `ffi`) have `publish = false` —
 they are distributed through npm, PyPI, and binary downloads instead.
@@ -91,7 +94,7 @@ they are distributed through npm, PyPI, and binary downloads instead.
 |--------|---------|---------|
 | `RELEASE_PLZ_TOKEN` | GitHub PAT (contents + PRs) | release-plz.yml |
 | `CARGO_REGISTRY_TOKEN` | crates.io | release-plz.yml |
-| `NPM_TOKEN` | npmjs.com | release-plz.yml |
+| `NPM_TOKEN` | npmjs.com (`@zpl-toolchain/core` + `@zpl-toolchain/print`) | release-plz.yml |
 | `PYPI_TOKEN` | pypi.org | release-plz.yml |
 
 ## Git hooks

@@ -17,6 +17,12 @@ serde_json = { workspace = true }
 zpl_toolchain_core = { path = "../core", version = "0.1.1" }
 zpl_toolchain_profile = { path = "../profile", version = "0.1.1" }
 zpl_toolchain_diagnostics = { path = "../diagnostics", version = "0.1.1" }
+zpl_toolchain_print_client = { path = "../print-client", version = "0.1.0", features = ["tcp", "usb", "serial"] }
+
+[dev-dependencies]
+assert_cmd = "2"
+tempfile = "3"
+serde_json = { workspace = true }
 
 [[bin]]
 name = "zpl"

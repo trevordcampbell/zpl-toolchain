@@ -43,6 +43,7 @@ changelog_include = [
     "zpl_toolchain_profile",
     "zpl_toolchain_core",
     "zpl_toolchain_spec_compiler",
+    "zpl_toolchain_print_client",
 ]
 
 # ── Crates published to crates.io (inherit workspace defaults) ───────────────

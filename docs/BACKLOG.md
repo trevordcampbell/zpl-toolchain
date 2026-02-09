@@ -1,8 +1,8 @@
 # ZPL Toolchain — Project Backlog
 
-> Single source of truth for all known work items. Original MVP plan archived at `docs/research/archive/z.plan.md`.
+> Single source of truth for tactical work items. For the strategic roadmap (phases, priorities, and architectural decisions), see [ROADMAP.md](ROADMAP.md). Original plans archived at `docs/research/archive/`.
 >
-> Last updated: 2026-02-07
+> Last updated: 2026-02-08
 
 ---
 
@@ -98,6 +98,67 @@ All Tier 1 items completed. See "Completed Work" below.
 - [ ] **Performance optimizations** — slice-based args, lazy `^FH` decode, raw/field streaming, fixed-point rounding; needs profiling data first
 - [ ] **Test decoupling from generated files** — high effort (200+ test cases), low urgency; use in-memory fixtures or build-script dependency ordering
 
+#### Print Client — Follow-up Items
+
+- [x] **Integration tests with mock TCP server** — 10 tests: connect, send, multi-label, raw bytes, ~HS query/parse, ~HI query/parse, reconnect, connection error, empty send, large payload (100KB)
+- [x] **TypeScript unit tests** — 71 tests across 6 suites: browser (19), proxy (22), printValidated (13), batch (7), status (6), types (4)
+- [x] **CLI print tests** — 11 tests via `assert_cmd`: help output, required args, dry-run (pretty + JSON for TCP/USB/serial), serial-USB conflict, missing file, validation with/without tables
+- [x] **Proxy wildcard allowlist** — `isPrinterAllowed` now supports `*` glob patterns (e.g., `"192.168.1.*"`); exact match fast path, regex conversion for patterns
+- [x] **`RetryPrinter` reconnection** — added `Reconnectable` trait, `ReconnectRetryPrinter<P>` wrapper that calls `reconnect()` between retry attempts; `TcpPrinter` implements `Reconnectable`; 4 tests
+- [x] **WebSocket proxy endpoint** — `createPrintProxy` accepts WebSocket connections on the same port for persistent bidirectional communication; JSON message protocol with `print` and `status` message types
+- [x] **WebSocket security hardening** — `wsSend()` readyState guard prevents crashes from sends to closed connections; `maxPayload` enforcement matches HTTP limits; `verifyClient` origin validation; 30s ping/pong keepalive with `terminate()` for idle connections
+- [x] **`printValidated` unit tests** — `_processValidationResult()` extracted for testability; 13 validation-logic unit tests
+- [x] **Go print bindings** — `Print()` and `QueryStatus()` functions in `packages/go/zpltoolchain/` for sending ZPL over TCP and querying `~HS` printer status via the C FFI
+- [x] **.NET print bindings** — `Zpl.Print()` and `Zpl.QueryStatus()` in `packages/dotnet/ZplToolchain/` for sending ZPL over TCP and querying `~HS` printer status via P/Invoke
+- [x] **TypeScript batch API** — `printBatch()` standalone function and `TcpPrinter.printBatch(labels, opts?, onProgress?)` / `TcpPrinter.waitForCompletion()` methods; `BatchOptions`, `BatchProgress`, `BatchResult` types; 7 unit tests
+- [x] **Preflight diagnostics** — ZPL2308 (graphics bounds — `^GF` exceeds printable area), ZPL2309 (graphics memory — total `^GF` memory exceeds printer RAM), ZPL2310 (missing explicit `^PW`/`^LL` label dimension commands); 10 new validator tests
+- [x] **TcpPrinter write queue** — `print()` serializes concurrent writes through an internal promise-chain mutex; `close()` drains the queue before teardown
+- [x] **Proxy `allowedPorts`** — new `ProxyConfig.allowedPorts` option (default `[9100]`) restricts destination ports; empty array = deny all
+- [x] **Proxy `maxConnections`** — new `ProxyConfig.maxConnections` option (default `50`) limits concurrent WebSocket connections; rejected with 503 at capacity
+- [x] **Proxy CORS single-string fix** — `verifyClient` and `setCorsHeaders` now correctly handle single-string CORS configurations
+- [x] **Proxy allowlist pre-compilation** — glob-to-regex patterns compiled once at startup; `[^.]*` prevents ReDoS
+- [x] **`^MU` unit normalization** — `^FO`/`^FT` positions and `^PW`/`^LL` dimensions normalized to dots for correct ZPL2302/ZPL2308 bounds checks with non-dot units
+- [x] **`#[non_exhaustive]` on structs** — `HostStatus`, `PrinterInfo`, `BatchProgress`, `BatchResult` for semver safety
+- [x] **`SockRef` keepalive** — replaced `Socket::from(stream.try_clone()?)` with `SockRef::from()` for robustness
+- [x] **Socket resource cleanup** — `tcpQuery` socket leak fix; `TcpPrinter.close()` 2s force-destroy; `isReachable()` 1s force-destroy
+- [x] **`^GF` math hardening** — `saturating_mul` for `bytes_per_row * 8`; `div_ceil` for `graphic_field_count / bytes_per_row`
+- [x] **Zebra Browser Print tests** — 19 unit tests covering `isAvailable()`, `discover()`, `print()`, `getStatus()`
+- [x] **Rust batch/completion tests** — 8 tests for `send_batch_with_status` and `wait_for_completion` (including timeout and formats_in_buffer)
+
+#### Print Client — Future Items
+
+- [ ] **mDNS/Bonjour printer discovery** (Phase 5c) — discover network printers via mDNS/Bonjour service advertising; zero-configuration printer finding for local networks
+- [ ] **Virtual printer emulator** (Phase 5c) — listen on port 9100, accept ZPL, render via the native renderer; useful for testing and development without physical hardware
+- [ ] **BLE transport** (deferred) — Bluetooth Low Energy is designed for status monitoring, not bulk data transfer; low throughput makes it unsuitable for label printing; SPP (serial) remains the recommended Bluetooth transport
+- [x] **`RetryPrinter` accessor methods** — added `inner()` / `inner_mut()` for symmetry with `ReconnectRetryPrinter`
+- [x] **CLI `--timeout 0` rejection** — `value_parser` range constraint rejects zero-value timeout at the argument level
+- [x] **TS input validation** — `resolveConfig()` validates `host`, `port` (1–65535), and `timeout` for clear error messages
+- [x] **Proxy HTTP connection limits** — `server.maxConnections` set to match the WebSocket `maxConnections` limit
+- [x] **Proxy error message sanitization** — HTTP and WebSocket error paths return generic messages, not internal TCP error details
+- [x] **Proxy body-read timeout** — 30s deadline on `readBody()` to mitigate slow-loris attacks
+- [x] **C# `NodeJsonConverter.Write` fix** — serializes via `NodeDto` to prevent `StackOverflowException` from infinite recursion
+- [ ] **FFI `catch_unwind` guard** — wrap all `extern "C"` FFI functions in `std::panic::catch_unwind` to prevent undefined behavior if Rust code panics across the FFI boundary
+- [ ] **FFI configurable timeouts** — add optional `timeout_ms` / `config_json` parameters to `print_zpl` / `query_printer_status` for Go/C#/.NET consumers who need to tune connection settings
+- [ ] **FFI `query_info` exposure** — expose `~HI` (printer identification) query in bindings-common, FFI, Go, and C# (currently only `~HS` is exposed)
+- [ ] **Go/C# typed `HostStatus`** — `QueryStatus()` currently returns raw JSON string; add typed struct matching the 24-field Rust `HostStatus`
+- [ ] **Proxy body-read timeout** — add a deadline to `readBody()` to mitigate slow-loris attacks; configure `server.requestTimeout` / `server.headersTimeout`
+- [ ] **Proxy HTTP connection limits** — set `server.maxConnections` to match the WebSocket `maxConnections` limit
+- [ ] **Proxy per-client WS rate limiting** — add per-connection concurrency cap to prevent a single WebSocket client from flooding the proxy with requests
+- [ ] **Proxy WS correlation IDs** — accept optional `id` field in WS messages and echo it back for request-response correlation on concurrent WS usage
+- [ ] **Proxy error message sanitization** — avoid leaking internal IP addresses and error details to HTTP/WS clients; return generic messages on TCP errors
+- [ ] **TS `AbortSignal` support** — accept `AbortSignal` on `print()`, `printBatch()`, `waitForCompletion()` for cooperative cancellation (Node.js 18+)
+- [ ] **TS `BatchResult` with partial error** — when `printBatch` fails mid-batch, include `{ sent, total, error }` so callers know which labels were sent
+- [ ] **TS input validation** — validate `host`, `port`, `timeout` in `resolveConfig()` for clear error messages instead of raw Node.js socket errors
+- [ ] **CLI stdin support** — accept `-` as a file path to read ZPL from stdin (common CLI convention)
+- [ ] **CLI `--timeout 0` rejection** — reject zero-value timeout at the argument level to prevent confusing immediate-failure behavior
+- [ ] **CLI JSON error envelope consistency** — ensure all error paths (`anyhow::bail!`, file-read `?`, tables loading) produce JSON error envelopes when `--output json` is active
+- [ ] **Preflight `^MU` + bounds tests** — add tests for `^MUI`/`^MUM` interaction with ZPL2302 position bounds and ZPL2308 graphic bounds checks
+- [ ] **Preflight `^FT` bounds test** — add test for `^FT` position bounds (currently only `^FO` is tested)
+- [ ] **Preflight boundary comparison** — evaluate changing ZPL2302 from `>` to `>=` at exact boundary (position == label dimension)
+- [ ] **Feature-gated `serde`** — make `serde` an optional feature on print-client for users who only need the transport layer
+- [ ] **Mock TCP server for TS tests** — create a mock TCP server to enable happy-path testing of `print()`, `TcpPrinter`, retry logic, and proxy forwarding
+- [ ] **Proxy security test coverage** — add tests for `allowedPorts`, `maxConnections`, CORS origin filtering, `maxPayloadSize`, and `/status` HTTP endpoint
+
 ### Tier 5: Tech Debt & Future Considerations
 
 - [x] `ConstraintKind` Display impl — completed in Pre-Release Foundation Hardening (Tier A)
@@ -109,11 +170,11 @@ All Tier 1 items completed. See "Completed Work" below.
 - [x] `LazyLock` for `load_tables()` in snapshot tests — already done (uses `std::sync::LazyLock` in `tests/common/mod.rs`)
 - [ ] Cross-target parity test — native vs WASM parse/validate outputs
 - [x] Document `^CI` variable-length remap limitation — documented in `^CI.jsonc` constraint note
-- [ ] Schema v2 refactor — normalized param schemas, command maps, structured effects, DSL-based constraints (see `docs/research/schema-v2-proposal.md`)
+- [ ] Schema v2 refactor — normalized param schemas, command maps, structured effects, DSL-based constraints (see `docs/research/schema-v2-proposal.md`). *Deferred in ROADMAP.md — revisit when current schema becomes a bottleneck.*
 - [ ] Schema parity gaps — `argUnion` examples, richer constraints
-- [ ] Query/response schemas for tilde commands (`~HM`, `~HS`, `~HQES`)
+- ~~Query/response schemas for tilde commands (`~HM`, `~HS`, `~HQES`)~~ — *Dropped per ROADMAP.md. The print client (Phase 5a) can send `~HS` and parse the response without a formal schema system.*
 - [ ] Signature builder for exact `Format:` string emission
-- [ ] RenderContract constants (stub)
+- ~~RenderContract constants (stub)~~ — *Archived. Vestige of original plan; superseded by the renderer's direct AST consumption approach (ROADMAP Phase 3).*
 
 ---
 

@@ -247,6 +247,16 @@ struct LabelState {
     /// Track effective print width (from ^PW) and label length (from ^LL)
     effective_width: Option<f64>,
     effective_height: Option<f64>,
+    /// Whether ^PW was explicitly set in this label (vs inherited from profile).
+    has_explicit_pw: bool,
+    /// Whether ^LL was explicitly set in this label (vs inherited from profile).
+    has_explicit_ll: bool,
+    /// Last ^FO x position (for graphic bounds checking).
+    last_fo_x: Option<f64>,
+    /// Last ^FO y position (for graphic bounds checking).
+    last_fo_y: Option<f64>,
+    /// Accumulated total graphic bytes from ^GF commands (for memory estimation).
+    gf_total_bytes: u32,
 }
 
 impl LabelState {
@@ -1347,16 +1357,58 @@ fn validate_position_bounds(
         && w.is_finite()
         && w > 0.0
     {
-        label_state.effective_width = Some(w);
+        // Normalize to dots for consistent bounds checking.
+        label_state.effective_width = Some(if let Some(dpi) = vctx.device_state.dpi {
+            convert_to_dots(w, vctx.device_state.units, dpi)
+        } else {
+            w
+        });
+        label_state.has_explicit_pw = true;
     }
     if cmd_ctx.code == "^LL"
         && let Some(h) = first_arg_f64(cmd_ctx.args)
         && h.is_finite()
         && h > 0.0
     {
-        label_state.effective_height = Some(h);
+        // Normalize to dots for consistent bounds checking.
+        label_state.effective_height = Some(if let Some(dpi) = vctx.device_state.dpi {
+            convert_to_dots(h, vctx.device_state.units, dpi)
+        } else {
+            h
+        });
+        label_state.has_explicit_ll = true;
         // Profile height check is handled by the generic profileConstraint
         // mechanism in validate_command_args() — no hardcoded check here.
+    }
+
+    // Track ^FO position for graphic bounds checking (ZPL2308)
+    if cmd_ctx.code == "^FO" || cmd_ctx.code == "^FT" {
+        // Reset to defaults before parsing — ZPL defaults to (0,0)
+        label_state.last_fo_x = Some(0.0);
+        label_state.last_fo_y = Some(0.0);
+        if let Some(x_slot) = cmd_ctx.args.first()
+            && let Some(x_val) = x_slot.value.as_ref()
+            && let Ok(x) = x_val.parse::<f64>()
+        {
+            // Normalize to dots for consistent bounds comparison (ZPL2308).
+            // When ^MU sets inches/mm, ^FO values are in those units, but
+            // ^GF dimensions and profile bounds are always in dots.
+            label_state.last_fo_x = Some(if let Some(dpi) = vctx.device_state.dpi {
+                convert_to_dots(x, vctx.device_state.units, dpi)
+            } else {
+                x
+            });
+        }
+        if let Some(y_slot) = cmd_ctx.args.get(1)
+            && let Some(y_val) = y_slot.value.as_ref()
+            && let Ok(y) = y_val.parse::<f64>()
+        {
+            label_state.last_fo_y = Some(if let Some(dpi) = vctx.device_state.dpi {
+                convert_to_dots(y, vctx.device_state.units, dpi)
+            } else {
+                y
+            });
+        }
     }
 
     if cmd_ctx.code != "^FO" && cmd_ctx.code != "^FT" {
@@ -1373,10 +1425,8 @@ fn validate_position_bounds(
             .and_then(|p| resolve_profile_field(p, "page.height_dots"))
     });
 
-    if let Some(x_slot) = cmd_ctx.args.first()
-        && let Some(x_val) = x_slot.value.as_ref()
-        && let (Ok(x), Some(w)) = (x_val.parse::<f64>(), max_x)
-        && x > w
+    if let (Some(fo_x), Some(w)) = (label_state.last_fo_x, max_x)
+        && fo_x > w
     {
         issues.push(
             Diagnostic::warn(
@@ -1384,7 +1434,7 @@ fn validate_position_bounds(
                 format!(
                     "{} x position {} exceeds label width {}",
                     cmd_ctx.code,
-                    x_val,
+                    trim_f64(fo_x),
                     trim_f64(w)
                 ),
                 cmd_ctx.span,
@@ -1392,15 +1442,13 @@ fn validate_position_bounds(
             .with_context(ctx!(
                 "command" => cmd_ctx.code,
                 "axis" => "x",
-                "value" => x_val.clone(),
+                "value" => trim_f64(fo_x),
                 "limit" => trim_f64(w),
             )),
         );
     }
-    if let Some(y_slot) = cmd_ctx.args.get(1)
-        && let Some(y_val) = y_slot.value.as_ref()
-        && let (Ok(y), Some(h)) = (y_val.parse::<f64>(), max_y)
-        && y > h
+    if let (Some(fo_y), Some(h)) = (label_state.last_fo_y, max_y)
+        && fo_y > h
     {
         issues.push(
             Diagnostic::warn(
@@ -1408,7 +1456,7 @@ fn validate_position_bounds(
                 format!(
                     "{} y position {} exceeds label height {}",
                     cmd_ctx.code,
-                    y_val,
+                    trim_f64(fo_y),
                     trim_f64(h)
                 ),
                 cmd_ctx.span,
@@ -1416,7 +1464,7 @@ fn validate_position_bounds(
             .with_context(ctx!(
                 "command" => cmd_ctx.code,
                 "axis" => "y",
-                "value" => y_val.clone(),
+                "value" => trim_f64(fo_y),
                 "limit" => trim_f64(h),
             )),
         );
@@ -1651,6 +1699,96 @@ fn validate_gf_data_length(
     }
 }
 
+/// ZPL2308: ^GF graphic bounds check + ZPL2309: accumulate graphic bytes.
+///
+/// When a `^GF` command is encountered:
+/// - Accumulates `graphic_field_count` (arg[2]) into `label_state.gf_total_bytes`
+///   for memory estimation (ZPL2309 checked in `validate_preflight`).
+/// - If position tracking data is available (`last_fo_x`/`last_fo_y`), calculates
+///   the graphic dimensions and checks against effective label bounds.
+fn validate_gf_preflight_tracking(
+    cmd_ctx: &CommandCtx,
+    vctx: &ValidationContext,
+    label_state: &mut LabelState,
+    issues: &mut Vec<Diagnostic>,
+) {
+    if cmd_ctx.code != "^GF" || cmd_ctx.args.len() < 4 {
+        return;
+    }
+
+    // arg[2] = graphic_field_count (total bytes), arg[3] = bytes_per_row
+    let gfc_val = cmd_ctx.args.get(2).and_then(|s| s.value.as_deref());
+    let bpr_val = cmd_ctx.args.get(3).and_then(|s| s.value.as_deref());
+
+    if let Some(gfc_str) = gfc_val
+        && let Ok(graphic_field_count) = gfc_str.parse::<u32>()
+    {
+        // Accumulate for ZPL2309 memory check
+        label_state.gf_total_bytes = label_state
+            .gf_total_bytes
+            .saturating_add(graphic_field_count);
+
+        // ZPL2308: bounds check
+        if let Some(bpr_str) = bpr_val
+            && let Ok(bytes_per_row) = bpr_str.parse::<u32>()
+            && bytes_per_row > 0
+        {
+            let graphic_width = bytes_per_row.saturating_mul(8);
+            let graphic_height = graphic_field_count.div_ceil(bytes_per_row);
+
+            // Determine effective bounds: label ^PW/^LL > profile > none
+            let max_x = label_state.effective_width.or_else(|| {
+                vctx.profile
+                    .and_then(|p| resolve_profile_field(p, "page.width_dots"))
+            });
+            let max_y = label_state.effective_height.or_else(|| {
+                vctx.profile
+                    .and_then(|p| resolve_profile_field(p, "page.height_dots"))
+            });
+
+            // Skip bounds check when units are non-dots and DPI is unknown —
+            // we can't reliably compare since graphic dimensions are in dots
+            // but ^PW/^LL values would be in non-dot units.
+            let can_check_bounds =
+                vctx.device_state.dpi.is_some() || vctx.device_state.units == Units::Dots;
+
+            if can_check_bounds
+                && let (Some(fo_x), Some(fo_y)) = (label_state.last_fo_x, label_state.last_fo_y)
+            {
+                let overflows_x = max_x.is_some_and(|w| fo_x + graphic_width as f64 > w);
+                let overflows_y = max_y.is_some_and(|h| fo_y + graphic_height as f64 > h);
+
+                if overflows_x || overflows_y {
+                    let ew = max_x.map_or("?".to_string(), trim_f64);
+                    let eh = max_y.map_or("?".to_string(), trim_f64);
+                    issues.push(
+                        Diagnostic::warn(
+                            codes::GF_BOUNDS_OVERFLOW,
+                            format!(
+                                "Graphic field at ({}, {}) extends beyond label bounds ({}×{} dots)",
+                                trim_f64(fo_x),
+                                trim_f64(fo_y),
+                                ew,
+                                eh,
+                            ),
+                            cmd_ctx.span,
+                        )
+                        .with_context(ctx!(
+                            "command" => cmd_ctx.code,
+                            "x" => trim_f64(fo_x),
+                            "y" => trim_f64(fo_y),
+                            "graphic_width" => graphic_width.to_string(),
+                            "graphic_height" => graphic_height.to_string(),
+                            "label_width" => ew,
+                            "label_height" => eh,
+                        )),
+                    );
+                }
+            }
+        }
+    }
+}
+
 /// Validate semantic state: cross-command references, field numbers, positions, fonts, data.
 fn validate_semantic_state(
     cmd_ctx: &CommandCtx,
@@ -1687,6 +1825,82 @@ fn validate_semantic_state(
 
     // ZPL2307: ^GF data length validation
     validate_gf_data_length(cmd_ctx, vctx, issues);
+
+    // ZPL2308/2309: ^GF bounds check + memory accumulation
+    validate_gf_preflight_tracking(cmd_ctx, vctx, label_state, issues);
+}
+
+// ─── Post-label preflight checks ────────────────────────────────────────────
+
+/// Preflight validation that runs after all nodes in a label have been processed.
+///
+/// Checks:
+/// - **ZPL2309**: Total graphic memory exceeds available RAM (profile-gated)
+/// - **ZPL2310**: Label lacks explicit ^PW/^LL when profile provides dimensions
+fn validate_preflight(
+    vctx: &ValidationContext,
+    label_state: &LabelState,
+    label_span: Option<Span>,
+    issues: &mut Vec<Diagnostic>,
+) {
+    // ZPL2309: Graphics memory estimation
+    if label_state.gf_total_bytes > 0
+        && let Some(profile) = vctx.profile
+        && let Some(ram_kb) = resolve_profile_field(profile, "memory.ram_kb")
+    {
+        let ram_bytes = ram_kb as u64 * 1024;
+        if label_state.gf_total_bytes as u64 > ram_bytes {
+            issues.push(
+                Diagnostic::warn(
+                    codes::GF_MEMORY_EXCEEDED,
+                    format!(
+                        "Total graphic data ({} bytes) exceeds available RAM ({} bytes / {} KB)",
+                        label_state.gf_total_bytes, ram_bytes, ram_kb as u64,
+                    ),
+                    label_span,
+                )
+                .with_context(ctx!(
+                    "command" => "^GF",
+                    "total_bytes" => label_state.gf_total_bytes.to_string(),
+                    "ram_bytes" => ram_bytes.to_string(),
+                )),
+            );
+        }
+    }
+
+    // ZPL2310: Missing explicit dimensions
+    if let Some(profile) = vctx.profile {
+        let profile_has_width = resolve_profile_field(profile, "page.width_dots").is_some();
+        let profile_has_height = resolve_profile_field(profile, "page.height_dots").is_some();
+
+        if (profile_has_width || profile_has_height)
+            && (!label_state.has_explicit_pw || !label_state.has_explicit_ll)
+        {
+            let mut missing = Vec::new();
+            if !label_state.has_explicit_pw && profile_has_width {
+                missing.push("^PW");
+            }
+            if !label_state.has_explicit_ll && profile_has_height {
+                missing.push("^LL");
+            }
+            if !missing.is_empty() {
+                let missing_str = missing.join(", ");
+                issues.push(
+                    Diagnostic::info(
+                        codes::MISSING_EXPLICIT_DIMENSIONS,
+                        format!(
+                            "Label relies on profile for dimensions but does not contain explicit {} — consider adding for portability",
+                            missing_str,
+                        ),
+                        label_span,
+                    )
+                    .with_context(ctx!(
+                        "missing_commands" => missing_str,
+                    )),
+                );
+            }
+        }
+    }
 }
 
 // ─── Main validation entry points ──────────────────────────────────────────
@@ -1880,6 +2094,24 @@ pub fn validate_with_profile(
                 "field opened but never closed with ^FS before end of label".to_string(),
                 dspan,
             ));
+        }
+
+        // ─── Preflight validation (post-label) ──────────────────────
+        {
+            let label_span = label.nodes.first().and_then(|n| {
+                if let crate::grammar::ast::Node::Command { span, .. } = n {
+                    Some(*span)
+                } else {
+                    None
+                }
+            });
+            let vctx = ValidationContext {
+                profile,
+                label_nodes: &label.nodes,
+                label_codes: &label_codes,
+                device_state: &device_state,
+            };
+            validate_preflight(&vctx, &label_state, label_span, &mut issues);
         }
 
         // ZPL2202: Empty label check (no printable content)

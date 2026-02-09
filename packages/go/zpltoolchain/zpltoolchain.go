@@ -3,6 +3,7 @@ package zpltoolchain
 /*
 #cgo LDFLAGS: -lzpl_toolchain_ffi
 #include <stdlib.h>
+#include <stdbool.h>
 
 // ZPL toolchain C FFI functions.
 extern char* zpl_parse(const char* input);
@@ -10,6 +11,8 @@ extern char* zpl_parse_with_tables(const char* input, const char* tables_json);
 extern char* zpl_validate(const char* input, const char* profile_json);
 extern char* zpl_format(const char* input, const char* indent);
 extern char* zpl_explain(const char* id);
+extern char* zpl_print(const char* zpl, const char* printer_addr, const char* profile_json, _Bool validate);
+extern char* zpl_query_status(const char* printer_addr);
 extern void  zpl_free(char* ptr);
 */
 import "C"
@@ -140,4 +143,68 @@ func Explain(id string) string {
 	defer C.zpl_free(cResult)
 
 	return C.GoString(cResult)
+}
+
+// Print sends ZPL to a network printer via TCP (port 9100).
+//
+// If validate is true, the ZPL is validated first using the optional profileJSON.
+// printerAddr can be an IP address, hostname, or IP:port (default port 9100).
+// profileJSON is an optional printer profile JSON string (pass "" for none).
+func Print(zpl string, printerAddr string, profileJSON string, validate bool) (*PrintResult, error) {
+	cZpl := C.CString(zpl)
+	defer C.free(unsafe.Pointer(cZpl))
+
+	cAddr := C.CString(printerAddr)
+	defer C.free(unsafe.Pointer(cAddr))
+
+	var cProfile *C.char
+	if profileJSON != "" {
+		cProfile = C.CString(profileJSON)
+		defer C.free(unsafe.Pointer(cProfile))
+	}
+
+	cValidate := C._Bool(validate)
+
+	cResult := C.zpl_print(cZpl, cAddr, cProfile, cValidate)
+	if cResult == nil {
+		return nil, fmt.Errorf("zpl_print returned NULL")
+	}
+	defer C.zpl_free(cResult)
+
+	jsonStr := C.GoString(cResult)
+	// Don't use checkFFIError here — print_zpl returns {"success": false, "error": "validation_failed", "issues": [...]}
+	// for validation failures, which is a valid PrintResult, not an FFI error.
+	// Only treat as FFI error when there's no "success" field (pure error response).
+	var probe struct {
+		Success *bool  `json:"success"`
+		Error   string `json:"error"`
+	}
+	if err := json.Unmarshal([]byte(jsonStr), &probe); err == nil && probe.Success == nil && probe.Error != "" {
+		return nil, fmt.Errorf("zpl_print: %s", probe.Error)
+	}
+	var result PrintResult
+	if err := json.Unmarshal([]byte(jsonStr), &result); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal print result: %w", err)
+	}
+	return &result, nil
+}
+
+// QueryStatus queries a printer's host status via ~HS and returns the raw JSON response.
+//
+// printerAddr can be an IP address, hostname, or IP:port (default port 9100).
+func QueryStatus(printerAddr string) (string, error) {
+	cAddr := C.CString(printerAddr)
+	defer C.free(unsafe.Pointer(cAddr))
+
+	cResult := C.zpl_query_status(cAddr)
+	if cResult == nil {
+		return "", fmt.Errorf("zpl_query_status returned NULL")
+	}
+	defer C.zpl_free(cResult)
+
+	jsonStr := C.GoString(cResult)
+	if err := checkFFIError(jsonStr); err != nil {
+		return "", fmt.Errorf("zpl_query_status: %w", err)
+	}
+	return jsonStr, nil
 }

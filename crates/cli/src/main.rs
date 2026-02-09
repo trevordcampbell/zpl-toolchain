@@ -15,6 +15,10 @@ use zpl_toolchain_core::grammar::{
 };
 use zpl_toolchain_core::validate;
 use zpl_toolchain_diagnostics::{self as diag, Diagnostic, Severity};
+use zpl_toolchain_print_client::{
+    PrinterConfig, SerialPrinter, StatusQuery, TcpPrinter, UsbPrinter, resolve_printer_addr,
+    wait_for_completion,
+};
 
 use crate::render::{Format, print_summary, render_diagnostics};
 
@@ -31,7 +35,7 @@ const EMBEDDED_TABLES_JSON: &str = include_str!(concat!(env!("OUT_DIR"), "/parse
 #[command(
     name = "zpl",
     version,
-    about = "ZPL toolchain — parse, lint, format, and validate Zebra Programming Language files"
+    about = "ZPL toolchain — parse, lint, format, validate, and print Zebra Programming Language files"
 )]
 struct Cli {
     /// Output mode: "pretty" for coloured terminal output, "json" for
@@ -93,6 +97,53 @@ enum Cmd {
         indent: IndentStyle,
     },
 
+    // ── Printing ─────────────────────────────────────────────────────
+    /// Send a ZPL file to a printer. Validates first (unless --no-lint).
+    Print {
+        /// ZPL file(s) to print.
+        #[arg(required = true)]
+        files: Vec<String>,
+        /// Printer address: IP, hostname, "usb", "usb:VID:PID", or serial port path (with --serial). TCP port defaults to 9100.
+        #[arg(long, short)]
+        printer: String,
+        /// Printer profile for pre-print validation.
+        #[arg(long)]
+        profile: Option<String>,
+        /// Path to parser tables JSON.
+        #[arg(long)]
+        tables: Option<String>,
+        /// Skip validation and send raw ZPL directly.
+        #[arg(long)]
+        no_lint: bool,
+        /// Treat warnings as errors (abort printing on warnings).
+        #[arg(long)]
+        strict: bool,
+        /// Validate and resolve address, but don't actually send.
+        #[arg(long)]
+        dry_run: bool,
+        /// Query printer status (~HS) after sending.
+        #[arg(long)]
+        status: bool,
+        /// Query printer info (~HI) and display model/firmware/DPI/memory.
+        #[arg(long)]
+        info: bool,
+        /// Wait for printer to finish processing all labels.
+        #[arg(long)]
+        wait: bool,
+        /// Connection timeout in seconds (scales connect/write/read proportionally).
+        #[arg(long, value_parser = clap::value_parser!(u64).range(1..))]
+        timeout: Option<u64>,
+        /// Timeout in seconds for --wait polling (default 120s).
+        #[arg(long, default_value_t = 120, requires = "wait")]
+        wait_timeout: u64,
+        /// Use serial/Bluetooth SPP transport (printer address is a serial port path).
+        #[arg(long)]
+        serial: bool,
+        /// Baud rate for serial connections (default: 9600).
+        #[arg(long, default_value_t = 9600, requires = "serial")]
+        baud: u32,
+    },
+
     // ── Reference / informational ───────────────────────────────────
     /// Show human-readable summary of generated/coverage.json.
     Coverage {
@@ -150,6 +201,38 @@ fn main() -> Result<()> {
             check,
             indent,
         } => cmd_format(&file, tables.as_deref(), write, check, indent, format)?,
+        Cmd::Print {
+            files,
+            printer,
+            profile,
+            tables,
+            no_lint,
+            strict,
+            dry_run,
+            status,
+            info,
+            wait,
+            timeout,
+            wait_timeout,
+            serial,
+            baud,
+        } => cmd_print(PrintOpts {
+            files: &files,
+            printer_addr: &printer,
+            profile_path: profile.as_deref(),
+            tables_path: tables.as_deref(),
+            no_lint,
+            strict,
+            dry_run,
+            status,
+            info,
+            wait,
+            timeout,
+            wait_timeout,
+            serial,
+            baud,
+            format,
+        })?,
         Cmd::Coverage {
             coverage,
             show_issues,
@@ -233,8 +316,12 @@ fn cmd_lint(
 
     let prof = match profile_path {
         Some(p) => {
-            let s = fs::read_to_string(p)?;
-            Some(serde_json::from_str::<zpl_toolchain_profile::Profile>(&s)?)
+            let s =
+                fs::read_to_string(p).with_context(|| format!("failed to read profile '{}'", p))?;
+            Some(
+                serde_json::from_str::<zpl_toolchain_profile::Profile>(&s)
+                    .with_context(|| format!("failed to parse profile '{}'", p))?,
+            )
         }
         None => None,
     };
@@ -337,6 +424,459 @@ fn status_message(format: Format, condition: bool, if_true: &str, if_false: &str
             eprintln!("{}: {}", msg, file);
         }
     }
+}
+
+/// Bundled options for the `print` subcommand.
+struct PrintOpts<'a> {
+    files: &'a [String],
+    printer_addr: &'a str,
+    profile_path: Option<&'a str>,
+    tables_path: Option<&'a str>,
+    no_lint: bool,
+    strict: bool,
+    dry_run: bool,
+    status: bool,
+    info: bool,
+    wait: bool,
+    timeout: Option<u64>,
+    wait_timeout: u64,
+    serial: bool,
+    baud: u32,
+    format: Format,
+}
+
+fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
+    use std::time::Duration;
+
+    let PrintOpts {
+        files,
+        printer_addr,
+        profile_path,
+        tables_path,
+        no_lint,
+        strict,
+        dry_run,
+        status,
+        info,
+        wait,
+        timeout,
+        wait_timeout,
+        serial,
+        baud,
+        format,
+    } = opts;
+
+    // ── Read all files ──────────────────────────────────────────────
+    let mut file_contents: Vec<(String, String)> = Vec::new();
+    for path in files {
+        let content =
+            fs::read_to_string(path).with_context(|| format!("failed to read '{}'", path))?;
+        file_contents.push((path.clone(), content));
+    }
+
+    // ── Validate (unless --no-lint) ─────────────────────────────────
+    let mut all_diagnostics: Vec<Diagnostic> = Vec::new();
+
+    if !no_lint {
+        let tables = resolve_tables(tables_path).context(
+            "parser tables are required for pre-print validation; use --tables, rebuild with embedded tables, or pass --no-lint to skip",
+        )?;
+
+        let prof = match profile_path {
+            Some(p) => {
+                let s = fs::read_to_string(p)
+                    .with_context(|| format!("failed to read profile '{}'", p))?;
+                Some(
+                    serde_json::from_str::<zpl_toolchain_profile::Profile>(&s)
+                        .with_context(|| format!("failed to parse profile '{}'", p))?,
+                )
+            }
+            None => None,
+        };
+
+        let mut has_errors = false;
+        let mut has_warnings = false;
+
+        for (path, content) in &file_contents {
+            let res = parse_with_tables(content, Some(&tables));
+            let mut vr = validate::validate_with_profile(&res.ast, &tables, prof.as_ref());
+            vr.issues.extend(res.diagnostics);
+
+            if format == Format::Pretty && !vr.issues.is_empty() {
+                render_diagnostics(content, path, &vr.issues, format);
+                print_summary(&vr.issues);
+            }
+
+            if vr
+                .issues
+                .iter()
+                .any(|d| matches!(d.severity, Severity::Error))
+            {
+                has_errors = true;
+            }
+            if vr
+                .issues
+                .iter()
+                .any(|d| matches!(d.severity, Severity::Warn))
+            {
+                has_warnings = true;
+            }
+
+            all_diagnostics.extend(vr.issues);
+        }
+
+        if has_errors {
+            if format == Format::Json {
+                let out = serde_json::json!({
+                    "error": "validation_failed",
+                    "message": "aborting print due to validation errors",
+                    "diagnostics": all_diagnostics,
+                });
+                println!("{}", serde_json::to_string_pretty(&out)?);
+            } else {
+                eprintln!("error: aborting print due to validation errors");
+            }
+            process::exit(1);
+        }
+        if strict && has_warnings {
+            if format == Format::Json {
+                let out = serde_json::json!({
+                    "error": "validation_warnings",
+                    "message": "aborting print due to warnings (--strict)",
+                    "diagnostics": all_diagnostics,
+                });
+                println!("{}", serde_json::to_string_pretty(&out)?);
+            } else {
+                eprintln!("error: aborting print due to warnings (--strict)");
+            }
+            process::exit(1);
+        }
+
+        // Note: all_diagnostics (warnings) are included in the final result JSON below.
+    }
+
+    // ── Dry run: resolve address and report ─────────────────────────
+    if dry_run {
+        // Determine transport and display address for dry-run output.
+        let (transport, display_addr) = if serial {
+            ("serial", printer_addr.to_string())
+        } else if printer_addr == "usb" {
+            ("usb", "usb (auto-discover Zebra)".to_string())
+        } else if printer_addr.starts_with("usb:") {
+            ("usb", printer_addr.to_string())
+        } else {
+            // TCP: resolve to verify the address is valid.
+            let resolved = resolve_printer_addr(printer_addr).map_err(|e| {
+                anyhow::anyhow!(
+                    "failed to resolve printer address '{}': {}",
+                    printer_addr,
+                    e
+                )
+            })?;
+            ("tcp", resolved.to_string())
+        };
+
+        match format {
+            Format::Json => {
+                let mut out = serde_json::json!({
+                    "dry_run": true,
+                    "transport": transport,
+                    "resolved_address": display_addr,
+                    "files": files,
+                    "validation": if no_lint { "skipped" } else { "passed" },
+                });
+                if !all_diagnostics.is_empty() {
+                    out["diagnostics"] = serde_json::to_value(all_diagnostics).unwrap_or_default();
+                }
+                println!("{}", serde_json::to_string_pretty(&out)?);
+            }
+            Format::Pretty => {
+                eprintln!(
+                    "dry run: would print {} file(s) to {} ({})",
+                    files.len(),
+                    display_addr,
+                    transport,
+                );
+                for (path, _) in &file_contents {
+                    eprintln!("  {}", path);
+                }
+                if no_lint {
+                    eprintln!("  validation: skipped (--no-lint)");
+                } else {
+                    eprintln!("  validation: passed");
+                }
+            }
+        }
+        return Ok(());
+    }
+
+    // ── Build printer config ────────────────────────────────────────
+    let config = if let Some(secs) = timeout {
+        let base = Duration::from_secs(secs);
+        let mut cfg = PrinterConfig::default();
+        cfg.timeouts.connect = base;
+        cfg.timeouts.write = base.mul_f64(6.0); // 6× connect
+        cfg.timeouts.read = base.mul_f64(2.0); // 2× connect
+        cfg
+    } else {
+        PrinterConfig::default()
+    };
+
+    // ── Connect and run print session ─────────────────────────────
+    let connection_err = |e: zpl_toolchain_print_client::PrintError| {
+        if format == Format::Json {
+            let out = serde_json::json!({
+                "error": "connection_failed",
+                "message": format!("failed to connect to printer '{}': {}", printer_addr, e),
+            });
+            println!("{}", serde_json::to_string_pretty(&out).unwrap());
+            process::exit(1);
+        }
+        anyhow::anyhow!("failed to connect to printer '{}': {}", printer_addr, e)
+    };
+
+    let session = SessionOpts {
+        file_contents: &file_contents,
+        all_diagnostics: &all_diagnostics,
+        info,
+        status,
+        wait,
+        wait_timeout,
+        format,
+    };
+
+    if serial && (printer_addr == "usb" || printer_addr.starts_with("usb:")) {
+        anyhow::bail!(
+            "--serial cannot be used with USB printer address '{}'",
+            printer_addr
+        );
+    }
+
+    if serial {
+        let mut printer =
+            SerialPrinter::open(printer_addr, baud, config).map_err(connection_err)?;
+        if format == Format::Pretty {
+            eprintln!("connected to {} (serial, {} baud)", printer_addr, baud);
+        }
+        run_print_session(&mut printer, printer_addr, &session)
+    } else if printer_addr == "usb" {
+        let mut printer = UsbPrinter::find_zebra(config).map_err(connection_err)?;
+        if format == Format::Pretty {
+            eprintln!("connected to USB Zebra printer");
+        }
+        run_print_session(&mut printer, "usb", &session)
+    } else if let Some(vidpid) = printer_addr.strip_prefix("usb:") {
+        let (vid, pid) = parse_usb_vidpid(vidpid)?;
+        let mut printer = UsbPrinter::find(vid, pid, config).map_err(connection_err)?;
+        if format == Format::Pretty {
+            eprintln!("connected to USB printer {:04X}:{:04X}", vid, pid);
+        }
+        run_print_session(&mut printer, printer_addr, &session)
+    } else {
+        let mut printer = TcpPrinter::connect(printer_addr, config).map_err(connection_err)?;
+        let remote = printer.remote_addr();
+        if format == Format::Pretty {
+            eprintln!("connected to {}", remote);
+        }
+        run_print_session(&mut printer, &remote.to_string(), &session)
+    }
+}
+
+/// Parse a USB VID:PID string like "0A5F:0100".
+fn parse_usb_vidpid(s: &str) -> Result<(u16, u16)> {
+    let (v, p) = s
+        .split_once(':')
+        .ok_or_else(|| anyhow::anyhow!("invalid USB address '{}': expected usb:VID:PID", s))?;
+    let vid =
+        u16::from_str_radix(v, 16).with_context(|| format!("invalid USB vendor ID '{}'", v))?;
+    let pid =
+        u16::from_str_radix(p, 16).with_context(|| format!("invalid USB product ID '{}'", p))?;
+    Ok((vid, pid))
+}
+
+/// Options passed to the transport-agnostic print session.
+struct SessionOpts<'a> {
+    file_contents: &'a [(String, String)],
+    all_diagnostics: &'a [Diagnostic],
+    info: bool,
+    status: bool,
+    wait: bool,
+    wait_timeout: u64,
+    format: Format,
+}
+
+/// Run the print session (info → send → status → wait → result).
+///
+/// Generic over any transport that implements both [`Printer`] and [`StatusQuery`].
+fn run_print_session<P: StatusQuery>(
+    printer: &mut P,
+    printer_display: &str,
+    opts: &SessionOpts<'_>,
+) -> Result<()> {
+    use std::time::Duration;
+
+    let SessionOpts {
+        file_contents,
+        all_diagnostics,
+        info,
+        status,
+        wait,
+        wait_timeout,
+        format,
+    } = *opts;
+
+    // Accumulate JSON data into a single envelope for `--output json`.
+    let mut json_result = serde_json::json!({
+        "success": true,
+        "files_sent": file_contents.iter().map(|(p, _)| p.as_str()).collect::<Vec<_>>(),
+        "printer": printer_display,
+    });
+
+    // ── Pre-send: printer info query ────────────────────────────────
+    if info {
+        match printer.query_info() {
+            Ok(pi) => {
+                if format == Format::Pretty {
+                    eprintln!("printer info:");
+                    eprintln!("  model:    {}", pi.model);
+                    eprintln!("  firmware: {}", pi.firmware);
+                    eprintln!("  dpi:      {}", pi.dpi);
+                    eprintln!("  memory:   {} KB", pi.memory_kb);
+                }
+                if format == Format::Json {
+                    json_result["printer_info"] = serde_json::to_value(&pi).unwrap_or_default();
+                }
+            }
+            Err(e) => {
+                eprintln!("warning: failed to query printer info: {}", e);
+            }
+        }
+    }
+
+    // ── Send each file ──────────────────────────────────────────────
+    let mut files_sent: Vec<&str> = Vec::new();
+    for (path, content) in file_contents {
+        if let Err(e) = printer.send_zpl(content) {
+            if format == Format::Json {
+                let out = serde_json::json!({
+                    "error": "send_failed",
+                    "message": format!("failed to send '{}': {}", path, e),
+                    "file": path,
+                    "files_sent": files_sent,
+                });
+                println!("{}", serde_json::to_string_pretty(&out).unwrap());
+                process::exit(1);
+            }
+            return Err(anyhow::anyhow!("failed to send '{}': {}", path, e));
+        }
+        files_sent.push(path);
+        if format == Format::Pretty {
+            eprintln!("sent: {}", path);
+        }
+    }
+
+    // ── Post-send: status query ─────────────────────────────────────
+    if status {
+        match printer.query_status() {
+            Ok(hs) => {
+                if format == Format::Pretty {
+                    use ariadne::Fmt;
+
+                    eprintln!("printer status:");
+                    eprintln!("  mode:             {:?}", hs.print_mode);
+                    eprintln!("  labels remaining: {}", hs.labels_remaining);
+                    eprintln!("  formats queued:   {}", hs.formats_in_buffer);
+                    eprintln!("  label length:     {} dots", hs.label_length_dots);
+
+                    let mut alerts: Vec<String> = Vec::new();
+                    if hs.paper_out {
+                        alerts.push(format!("{}", "paper_out".fg(ariadne::Color::Red)));
+                    }
+                    if hs.ribbon_out {
+                        alerts.push(format!("{}", "ribbon_out".fg(ariadne::Color::Red)));
+                    }
+                    if hs.head_up {
+                        alerts.push(format!("{}", "head_up".fg(ariadne::Color::Red)));
+                    }
+                    if hs.paused {
+                        alerts.push(format!("{}", "paused".fg(ariadne::Color::Yellow)));
+                    }
+                    if hs.over_temperature {
+                        alerts.push(format!("{}", "over_temp".fg(ariadne::Color::Red)));
+                    }
+                    if hs.under_temperature {
+                        alerts.push(format!("{}", "under_temp".fg(ariadne::Color::Yellow)));
+                    }
+                    if hs.corrupt_ram {
+                        alerts.push(format!("{}", "corrupt_ram".fg(ariadne::Color::Red)));
+                    }
+                    if hs.buffer_full {
+                        alerts.push(format!("{}", "buffer_full".fg(ariadne::Color::Yellow)));
+                    }
+                    if !alerts.is_empty() {
+                        eprintln!("  alerts:           {}", alerts.join(", "));
+                    }
+                }
+                if format == Format::Json {
+                    json_result["printer_status"] = serde_json::to_value(&hs).unwrap_or_default();
+                }
+            }
+            Err(e) => {
+                eprintln!("warning: failed to query printer status: {}", e);
+            }
+        }
+    }
+
+    // ── Post-send: wait for completion ──────────────────────────────
+    if wait {
+        let poll_interval = Duration::from_millis(500);
+        let wt = Duration::from_secs(wait_timeout);
+        if format == Format::Pretty {
+            eprintln!("waiting for printer to finish...");
+        }
+        match wait_for_completion(printer, poll_interval, wt) {
+            Ok(()) => {
+                if format == Format::Pretty {
+                    eprintln!("printer finished");
+                }
+            }
+            Err(e) => {
+                if format == Format::Json {
+                    json_result["success"] = serde_json::json!(false);
+                    json_result["error"] = serde_json::json!("wait_timeout");
+                    json_result["message"] =
+                        serde_json::json!(format!("wait for completion failed: {}", e));
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&json_result)
+                            .expect("JSON serialization cannot fail")
+                    );
+                } else {
+                    eprintln!("error: wait for completion failed: {}", e);
+                }
+                process::exit(1);
+            }
+        }
+    }
+
+    // ── Final result ────────────────────────────────────────────────
+    match format {
+        Format::Json => {
+            if !all_diagnostics.is_empty() {
+                json_result["diagnostics"] =
+                    serde_json::to_value(all_diagnostics).unwrap_or_default();
+            }
+            println!("{}", serde_json::to_string_pretty(&json_result)?);
+        }
+        Format::Pretty => {
+            eprintln!(
+                "print complete: {} file(s) sent to {}",
+                file_contents.len(),
+                printer_display
+            );
+        }
+    }
+    Ok(())
 }
 
 fn cmd_coverage(coverage_path: &str, show_issues: bool, json: bool) -> Result<()> {

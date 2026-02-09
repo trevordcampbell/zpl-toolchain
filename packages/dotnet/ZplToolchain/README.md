@@ -31,6 +31,18 @@ Console.WriteLine($"OK: {validation.Ok}");
 
 // Explain a diagnostic code
 var explanation = Zpl.Explain("ZPL1201");
+
+// Print ZPL to a network printer
+var printResult = Zpl.Print("^XA^FDHello^FS^XZ", "192.168.1.100");
+Console.WriteLine($"Sent {printResult.BytesSent} bytes");
+
+// Print with profile-based validation
+string profileJson = File.ReadAllText("my-printer-profile.json");
+var result2 = Zpl.Print("^XA^FDHello^FS^XZ", "192.168.1.100", profileJson: profileJson);
+
+// Query printer status
+string statusJson = Zpl.QueryStatus("192.168.1.100");
+Console.WriteLine(statusJson);
 ```
 
 ## API
@@ -42,6 +54,8 @@ var explanation = Zpl.Explain("ZPL1201");
 | `Zpl.Validate` | `(string input, string? profileJson) → ValidationResult` | Parse + validate |
 | `Zpl.Format` | `(string input, string? indent) → string` | Format ZPL |
 | `Zpl.Explain` | `(string id) → string?` | Explain a diagnostic code |
+| `Zpl.Print` | `(string zpl, string printerAddr, string? profileJson, bool validate) → PrintResult` | Send ZPL to a network printer |
+| `Zpl.QueryStatus` | `(string printerAddr) → string` | Query printer host status |
 
 ## Types
 
@@ -51,4 +65,4 @@ See `Types.cs` for full type definitions.
 
 ## Target Framework
 
-Targets .NET Standard 2.0 for broad compatibility (works with .NET Framework 4.6.1+, .NET Core 2.0+, .NET 5+).
+Targets .NET Standard 2.0. Requires .NET Core 3.1+ or .NET 5+ at runtime (uses `UnmanagedType.LPUTF8Str` for UTF-8 string marshalling, which is not supported on .NET Framework).

@@ -147,3 +147,11 @@ type ValidationResult struct {
 	OK     bool         `json:"ok"`
 	Issues []Diagnostic `json:"issues"`
 }
+
+// PrintResult is the result of sending ZPL to a printer.
+type PrintResult struct {
+	Success  bool         `json:"success"`
+	BytesSent int         `json:"bytes_sent"`
+	Error    string       `json:"error,omitempty"`
+	Issues   []Diagnostic `json:"issues,omitempty"`
+}

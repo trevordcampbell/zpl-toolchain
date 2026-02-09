@@ -298,6 +298,30 @@ Common context keys include:
 - **Fix**: Ensure the graphic data length matches the declared binary_byte_count.
 - **Context keys**: `command`, `format`, `declared`, `actual`, `expected`
 
+#### ZPL2308 — Graphic Field Exceeds Label Bounds
+- **Severity**: Warn
+- **Category**: Semantic Validation
+- **Description**: The ^GF graphic at the current ^FO position would extend beyond the effective label dimensions. This may cause truncated or misaligned output.
+- **Example**: `^PW400^FO300,0^GFA,100,100,10,data` — Graphic width (10×8=80 dots) at x=300 exceeds label width of 400
+- **Fix**: Adjust the ^FO position or reduce the graphic size to fit within label bounds.
+- **Context keys**: `command`, `x`, `y`, `graphic_width`, `graphic_height`, `label_width`, `label_height`
+
+#### ZPL2309 — Graphic Memory Usage Exceeds Available RAM
+- **Severity**: Warn
+- **Category**: Semantic Validation
+- **Description**: Total graphic field data in this label exceeds the printer's available RAM. This may cause print failures or data loss.
+- **Example**: Multiple `^GF` commands whose combined `graphic_field_count` exceeds `memory.ram_kb * 1024`
+- **Fix**: Reduce the number or size of graphic fields, or use a printer with more memory.
+- **Context keys**: `command`, `total_bytes`, `ram_bytes`
+
+#### ZPL2310 — Missing Explicit Label Dimensions
+- **Severity**: Info
+- **Category**: Semantic Validation
+- **Description**: Label uses profile-provided dimensions but does not contain explicit ^PW or ^LL commands. Adding explicit dimension commands makes the label self-contained and portable across printers.
+- **Example**: A label validated with a profile that has `page.width_dots` but no `^PW` command in the label
+- **Fix**: Add explicit `^PW` and/or `^LL` commands to the label for portability.
+- **Context keys**: `missing_commands`
+
 ### 24xx: Barcode Field Data Validation
 
 #### ZPL2401 — Invalid Barcode Data Character

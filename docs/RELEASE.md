@@ -156,7 +156,7 @@ The `.githooks/` directory contains three hooks, activated via `git config core.
 | Hook | Trigger | Checks |
 |------|---------|--------|
 | `commit-msg` | Every commit | Conventional Commits format |
-| `pre-commit` | Every commit | `cargo fmt --check` |
+| `pre-commit` | Every commit | Parser tables sync + `cargo fmt --check` |
 | `pre-push` | Every push | `cargo clippy -D warnings` + full test suite |
 
 Skip any hook when needed: `git commit --no-verify` or `git push --no-verify`.

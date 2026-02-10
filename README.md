@@ -342,9 +342,8 @@ cargo test --workspace
 # Run the CLI
 cargo run -p zpl_toolchain_cli -- lint samples/usps_surepost_sample.zpl
 
-# If you modify spec files, regenerate tables and update the committed copy:
+# If you modify spec files, regenerate tables (pre-commit hook syncs the CLI copy automatically):
 cargo run -p zpl_toolchain_spec_compiler -- build --spec-dir spec --out-dir generated
-cp generated/parser_tables.json crates/cli/data/parser_tables.json
 ```
 
 ## Documentation

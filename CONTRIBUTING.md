@@ -22,11 +22,9 @@ Thanks for your interest in contributing to zpl-toolchain! This project is dual-
    > **Note:** A committed copy of the tables lives at `crates/cli/data/parser_tables.json`.
    > This is embedded into the CLI binary at build time via `build.rs`, so `cargo install`
    > produces a fully working binary without a separate generation step.
-   > When specs change, regenerate tables and update the committed copy:
-   > ```bash
-   > cp generated/parser_tables.json crates/cli/data/parser_tables.json
-   > ```
-   > CI verifies the committed copy matches what the spec-compiler generates (freshness check).
+   > The pre-commit hook automatically syncs this copy when it detects the
+   > generated file differs from the committed copy, so no manual step is needed.
+   > CI also verifies freshness as a safety net.
 
 4. Run tests:
    ```bash
@@ -57,10 +55,9 @@ Thanks for your interest in contributing to zpl-toolchain! This project is dual-
    - Mark params with `"optional": true` when they have defaults
    - For state-producing commands, add `"effects": { "sets": [...] }`
    - `scope`, `category`, and `stability` are typed enums (not free-form strings). Valid values — scope: `document`, `field`, `job`, `session`, `label`; category: `text`, `barcode`, `graphics`, `media`, `format`, `device`, `host`, `config`, `network`, `rfid`, `wireless`, `storage`, `kdu`, `misc`; stability: `stable`, `experimental`, `deprecated`
-4. Rebuild tables and update the committed copy:
+4. Rebuild tables (the pre-commit hook syncs `crates/cli/data/` automatically when you commit):
    ```bash
    cargo run -p zpl_toolchain_spec_compiler -- build --spec-dir spec --out-dir generated
-   cp generated/parser_tables.json crates/cli/data/parser_tables.json
    ```
 5. Run tests to confirm nothing broke
 
@@ -88,7 +85,7 @@ Thanks for your interest in contributing to zpl-toolchain! This project is dual-
 - `crates/bindings-common/` — shared logic for all language bindings (embedded tables, parse/validate/format/explain)
 - `crates/print-client/` — TCP/USB/serial print client (`zpl_toolchain_print_client`)
 - `crates/cli/` — `zpl` command-line tool (parse, lint, format, print, etc.)
-- `crates/cli/data/` — committed copy of `parser_tables.json` (embedded at build time; kept in sync with `generated/` by CI)
+- `crates/cli/data/` — committed copy of `parser_tables.json` (embedded at build time; auto-synced by pre-commit hook, verified by CI)
 - `crates/wasm/` — WASM bindings (thin wrapper over bindings-common)
 - `crates/python/` — Python bindings (thin wrapper over bindings-common)
 - `crates/ffi/` — C FFI (thin wrapper over bindings-common, foundation for Go/.NET)

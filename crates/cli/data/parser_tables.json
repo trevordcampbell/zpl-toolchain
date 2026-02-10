@@ -13842,7 +13842,7 @@
         {
           "expr": null,
           "kind": "note",
-          "message": "Up to 256 source/destination remapping pairs can follow (s1,d1,s2,d2,...). Remapping is only valid when a = 0-13.",
+          "message": "Up to 256 source/destination remapping pairs can follow (s1,d1,s2,d2,...). Remapping is only valid when a = 0-13. The spec models only the first 3 parameters (a, s1, d1); additional pairs are accepted by the parser but not individually validated. Full variable-length pair validation is a known limitation.",
           "severity": null
         },
         {

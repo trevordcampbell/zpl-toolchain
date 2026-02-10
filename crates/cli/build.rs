@@ -4,8 +4,8 @@
 //! commands work out of the box — no `--tables` flag needed (ADR 0005).
 //!
 //! Table resolution order:
-//!   1. `data/parser_tables.json` — committed in-crate copy (works from crates.io tarball)
-//!   2. `../../generated/parser_tables.json` — workspace-level generated copy (dev convenience)
+//!   1. `../../generated/parser_tables.json` — workspace-level generated copy (freshest during dev)
+//!   2. `data/parser_tables.json` — committed in-crate copy (works from crates.io tarball)
 //!
 //! If neither exists the binary is built without tables; `lint` and `print`
 //! will require `--tables <PATH>` at runtime.
@@ -16,19 +16,21 @@ fn main() {
     // Declare the custom cfg so cargo check-cfg doesn't warn.
     println!("cargo::rustc-check-cfg=cfg(has_embedded_tables)");
 
-    // 1. In-crate copy — always present in the crates.io tarball.
-    let in_crate = Path::new("data/parser_tables.json");
-    // 2. Workspace-level generated copy — present during local development.
+    // 1. Workspace-level generated copy — preferred during local development
+    //    because it reflects the latest spec-compiler output.
     let workspace = Path::new("../../generated/parser_tables.json");
+    // 2. In-crate copy — fallback for crates.io installs where the workspace
+    //    path doesn't exist.
+    let in_crate = Path::new("data/parser_tables.json");
 
     // Watch both locations for changes.
-    println!("cargo:rerun-if-changed=data/parser_tables.json");
     println!("cargo:rerun-if-changed=../../generated/parser_tables.json");
+    println!("cargo:rerun-if-changed=data/parser_tables.json");
 
-    let tables_path = if in_crate.exists() {
-        in_crate
-    } else if workspace.exists() {
+    let tables_path = if workspace.exists() {
         workspace
+    } else if in_crate.exists() {
+        in_crate
     } else {
         // Neither source available — build without embedded tables.
         return;

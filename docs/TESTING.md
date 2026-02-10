@@ -72,21 +72,24 @@ cargo nextest run -p zpl_toolchain_print_client
 
 ### USB and serial transport features
 
-The CLI and print-client support optional USB and serial/Bluetooth transports,
-gated behind Cargo features. To test with all transports enabled:
+All transports (TCP, USB, serial/Bluetooth) are **enabled by default** for the CLI.
+No extra `--features` flags are needed:
+
+```bash
+cargo nextest run -p zpl_toolchain_cli -p zpl_toolchain_print_client
+```
+
+If you explicitly built with `--no-default-features`, you can re-enable them:
 
 ```bash
 cargo nextest run -p zpl_toolchain_cli -p zpl_toolchain_print_client \
   --features zpl_toolchain_cli/usb,zpl_toolchain_cli/serial
 ```
 
-**Linux dependency:** USB support requires `libudev-dev`:
-
-```bash
-sudo apt-get install -y libudev-dev
-```
-
-These feature-gated tests are run in CI on Linux only (see `ci.yml`).
+> **Note:** The `serialport` dependency is built with `default-features = false` to
+> avoid requiring `libudev-dev` on Linux. Port enumeration (`list_ports()`) still
+> works via a sysfs fallback but may return less metadata than the libudev backend.
+> The `nusb` crate (USB) is pure Rust and has no system dependencies.
 
 ## TypeScript tests
 
@@ -169,7 +172,7 @@ Tests run automatically on every push and PR via GitHub Actions:
 | Job | What it does |
 |-----|-------------|
 | `Build & Test (ubuntu/macos/windows)` | `cargo fmt`, `cargo build`, `cargo clippy`, `cargo nextest run` across 3 OS |
-| `Test CLI with all transport features` | Runs print-client + CLI tests with `--features usb,serial` (Linux only) |
+| `Build & Test` | Runs CLI + print-client tests with all transports (TCP, USB, serial are default) |
 | `TypeScript Print Tests` | `npm install` → `tsc --noEmit` → `npm run build` → `npm test` |
 | `Spec Validation & Coverage` | `zpl-spec-compiler check` + `build` + coverage report |
 | `WASM Build` | `wasm-pack build` + size check |
@@ -194,13 +197,12 @@ cargo nextest run --workspace --exclude zpl_toolchain_print_client ...
 The TS tests run compiled JavaScript from `dist/`, not TypeScript source.
 Run `npm run build` before `npm test`.
 
-### `libudev-dev` not found
+### `libudev-dev` not found (historical)
 
-USB transport tests require the `libudev-dev` system package on Linux:
-
-```bash
-sudo apt-get update && sudo apt-get install -y libudev-dev
-```
+Previous versions required `libudev-dev` on Linux for serial port support.
+With the current configuration (`serialport` built with `default-features = false`),
+`libudev-dev` is **no longer required**. If you see this error from an older build,
+update to the latest version.
 
 ### Slow proxy test
 

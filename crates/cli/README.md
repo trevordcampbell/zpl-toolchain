@@ -7,14 +7,15 @@ Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) pr
 ## Installation
 
 ```bash
-# From crates.io (TCP printing included by default)
+# From crates.io (all transports: TCP, USB, serial/Bluetooth)
 cargo install zpl_toolchain_cli
-
-# With USB and serial/Bluetooth support
-cargo install zpl_toolchain_cli --features usb,serial
+# Or use cargo-binstall for a pre-built binary (no compile wait):
+cargo binstall zpl_toolchain_cli
 ```
 
 Pre-built binaries with all transports are available from [GitHub Releases](https://github.com/trevordcampbell/zpl-toolchain/releases).
+
+> For a minimal TCP-only build: `cargo install zpl_toolchain_cli --no-default-features --features tcp`.
 
 ## Commands
 
@@ -37,24 +38,20 @@ zpl print label.zpl -p 192.168.1.55
 # Print with validation and status query
 zpl print label.zpl -p 192.168.1.55 --profile profiles/zebra-generic-203.json --status --info
 
-# Print via USB (requires --features usb or release binary)
+# Print via USB
 zpl print label.zpl -p usb
 
-# Print via serial/Bluetooth (requires --features serial or release binary)
+# Print via serial/Bluetooth
 zpl print label.zpl -p /dev/rfcomm0 --serial --baud 115200
 
 # Explain a diagnostic code
 zpl explain ZPL1201
-
-# Check spec coverage
-zpl coverage --coverage generated/coverage.json
 ```
 
 ## Global Options
 
 | Flag | Description |
 |------|-------------|
-| `--tables <PATH>` | Path to `parser_tables.json` (default: embedded at compile time) |
 | `--output pretty\|json` | Output format (default: auto-detect TTY) |
 
 ## Print Command Flags
@@ -68,9 +65,10 @@ zpl coverage --coverage generated/coverage.json
 | `--dry-run` | Validate and resolve address without sending |
 | `--status` | Query `~HS` host status after printing |
 | `--info` | Query `~HI` printer info after printing |
-| `--wait [TIMEOUT]` | Wait for print completion (default: 30s) |
-| `--timeout <MS>` | Connection timeout in milliseconds (default: 5000) |
-| `--serial` | Use serial/Bluetooth SPP transport (requires `--features serial`) |
+| `--wait` | Wait for printer to finish all labels |
+| `--wait-timeout <SECS>` | Timeout for --wait polling (default: 120s) |
+| `--timeout <SECS>` | Connection timeout in seconds, minimum 1 (default: 5) |
+| `--serial` | Use serial/Bluetooth SPP transport |
 | `--baud <RATE>` | Baud rate for serial connections (default: 9600) |
 
 ## Printer Address Formats
@@ -81,7 +79,21 @@ zpl coverage --coverage generated/coverage.json
 | IP:port | TCP (custom port) | `192.168.1.55:6101` |
 | `usb` | USB (auto-discover Zebra) | `usb` |
 | `usb:VID:PID` | USB (specific device) | `usb:0A5F:0100` |
-| Serial path | Serial/BT SPP | `/dev/ttyUSB0`, `COM3` |
+| Serial path | Serial/BT SPP (with `--serial`) | `/dev/ttyUSB0`, `COM3` |
+
+> **Note:** Serial/Bluetooth addresses require the `--serial` flag. Without it, the CLI assumes TCP.
+
+## Troubleshooting
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| `USB device not found` | Printer not connected or powered off | Check cable/power; on Linux, add [udev rules](https://github.com/trevordcampbell/zpl-toolchain/blob/main/docs/PRINT_CLIENT.md#linux-udev-rules) |
+| `failed to open device: Access denied` | Insufficient USB permissions | Linux: add udev rule or run with `sudo`; macOS: grant USB access |
+| `serial port error: Permission denied` | Insufficient serial port permissions | Add user to `dialout` group (`sudo usermod -aG dialout $USER`) or `chmod 666` the device |
+| DNS error on a serial path | Missing `--serial` flag | Add `--serial`: `zpl print label.zpl -p /dev/ttyUSB0 --serial` |
+| `no parser tables available` | Binary built without embedded tables | Use `cargo install zpl_toolchain_cli` or download from [Releases](https://github.com/trevordcampbell/zpl-toolchain/releases) |
+
+See the full [Print Client Guide](https://github.com/trevordcampbell/zpl-toolchain/blob/main/docs/PRINT_CLIENT.md) for detailed transport setup and troubleshooting.
 
 ## License
 

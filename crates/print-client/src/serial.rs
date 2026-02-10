@@ -1,6 +1,6 @@
 //! Serial/Bluetooth SPP transport for Zebra printers using the `serialport` crate.
 //!
-//! Feature-gated behind `serial` — only compiled when `--features serial` is active.
+//! Feature-gated behind the `serial` Cargo feature (enabled by default in the CLI).
 //!
 //! Serial connections are always bidirectional, so `SerialPrinter` implements
 //! both `Printer` and `StatusQuery` traits.
@@ -62,6 +62,10 @@ impl SerialPrinter {
     ///
     /// Returns port paths like `/dev/ttyUSB0`, `/dev/tty.usbserial-*`, or `COM3`.
     /// This is useful for discovery and user-facing port selection.
+    ///
+    /// **Note:** On Linux, this crate is built with `serialport`'s default features
+    /// disabled (no `libudev`). Port enumeration still works via a sysfs fallback
+    /// but may return fewer details than the libudev backend.
     pub fn list_ports() -> Vec<String> {
         serialport::available_ports()
             .unwrap_or_default()

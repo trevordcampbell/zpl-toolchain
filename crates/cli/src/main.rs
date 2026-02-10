@@ -58,38 +58,46 @@ enum Cmd {
     // ── File analysis commands (progressive: parse → check → lint) ───
     /// Parse a ZPL file and print its AST.
     Parse {
+        /// ZPL source file to parse.
+        #[arg(value_name = "FILE")]
         file: String,
-        /// Path to parser tables JSON. When omitted, uses tables embedded at
-        /// compile time (if available) or falls back to table-less parsing.
-        #[arg(long)]
+        /// Override the embedded parser tables with a custom JSON file.
+        #[arg(long, value_name = "PATH", hide = true)]
         tables: Option<String>,
     },
 
-    /// Syntax-check a ZPL file.
+    /// Syntax-check a ZPL file (parse only, no validation).
     SyntaxCheck {
+        /// ZPL source file to check.
+        #[arg(value_name = "FILE")]
         file: String,
-        /// Path to parser tables JSON (see `parse --help`).
-        #[arg(long)]
+        /// Override the embedded parser tables with a custom JSON file.
+        #[arg(long, value_name = "PATH", hide = true)]
         tables: Option<String>,
     },
 
-    /// Lint: parse and validate a ZPL file with spec tables and an optional
+    /// Lint: parse and validate a ZPL file against the spec and an optional
     /// printer profile.
     Lint {
+        /// ZPL source file to lint.
+        #[arg(value_name = "FILE")]
         file: String,
-        /// Path to parser tables JSON (see `parse --help`).
-        #[arg(long)]
+        /// Override the embedded parser tables with a custom JSON file.
+        #[arg(long, value_name = "PATH", hide = true)]
         tables: Option<String>,
-        #[arg(long)]
+        /// Printer profile JSON for hardware-specific validation (see profiles/).
+        #[arg(long, value_name = "PATH")]
         profile: Option<String>,
     },
 
     // ── File transformation ─────────────────────────────────────────
     /// Format a ZPL file (normalize whitespace, one command per line).
     Format {
+        /// ZPL source file to format.
+        #[arg(value_name = "FILE")]
         file: String,
-        /// Path to parser tables JSON (see `parse --help`).
-        #[arg(long)]
+        /// Override the embedded parser tables with a custom JSON file.
+        #[arg(long, value_name = "PATH", hide = true)]
         tables: Option<String>,
         /// Write formatted output back to the file (in-place).
         #[arg(long, short, conflicts_with = "check")]
@@ -106,16 +114,16 @@ enum Cmd {
     /// Send a ZPL file to a printer. Validates first (unless --no-lint).
     Print {
         /// ZPL file(s) to print.
-        #[arg(required = true)]
+        #[arg(required = true, value_name = "FILE")]
         files: Vec<String>,
-        /// Printer address: IP or hostname (TCP port defaults to 9100). With --features usb: "usb" or "usb:VID:PID". With --features serial and --serial: serial port path.
+        /// Printer address (IP/hostname, port defaults to 9100).
         #[arg(long, short)]
         printer: String,
-        /// Printer profile for pre-print validation.
-        #[arg(long)]
+        /// Printer profile JSON for hardware-specific validation (see profiles/).
+        #[arg(long, value_name = "PATH")]
         profile: Option<String>,
-        /// Path to parser tables JSON.
-        #[arg(long)]
+        /// Override the embedded parser tables with a custom JSON file.
+        #[arg(long, value_name = "PATH", hide = true)]
         tables: Option<String>,
         /// Skip validation and send raw ZPL directly.
         #[arg(long)]
@@ -152,12 +160,16 @@ enum Cmd {
     },
 
     // ── Reference / informational ───────────────────────────────────
-    /// Show human-readable summary of generated/coverage.json.
+    /// Show spec coverage summary (developer tool — requires generated/coverage.json).
+    #[command(hide = true)]
     Coverage {
-        #[arg(long, default_value = "generated/coverage.json")]
+        /// Path to coverage JSON file.
+        #[arg(long, value_name = "PATH", default_value = "generated/coverage.json")]
         coverage: String,
+        /// Show all issues (not just top 5).
         #[arg(long)]
         show_issues: bool,
+        /// Output as JSON.
         #[arg(long)]
         json: bool,
     },
@@ -321,7 +333,9 @@ fn cmd_lint(
 ) -> Result<()> {
     let input = fs::read_to_string(file)?;
     let tables = resolve_tables(tables_path).context(
-        "parser tables are required for lint; use --tables or rebuild with embedded tables",
+        "no parser tables available — this binary was built without embedded tables. \
+         Download a release build from https://github.com/trevordcampbell/zpl-toolchain/releases, \
+         reinstall via `cargo install zpl_toolchain_cli`, or pass --tables <PATH> to a tables JSON file",
     )?;
     let res = parse_with_tables(&input, Some(&tables));
 
@@ -494,7 +508,8 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
 
     if !no_lint {
         let tables = resolve_tables(tables_path).context(
-            "parser tables are required for pre-print validation; use --tables, rebuild with embedded tables, or pass --no-lint to skip",
+            "no parser tables available for pre-print validation — pass --no-lint to skip, \
+             or reinstall via `cargo install zpl_toolchain_cli` which includes embedded tables",
         )?;
 
         let prof = match profile_path {
@@ -580,17 +595,43 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
 
         let is_usb_addr = printer_addr == "usb" || printer_addr.starts_with("usb:");
 
+        // Reject --serial with USB address (matches live-print validation).
+        #[cfg(feature = "serial")]
+        if is_serial && is_usb_addr {
+            anyhow::bail!(
+                "--serial cannot be used with USB printer address '{}'",
+                printer_addr
+            );
+        }
+
         let (transport, display_addr) = if is_serial {
             ("serial", printer_addr.to_string())
         } else if is_usb_addr {
             #[cfg(not(feature = "usb"))]
-            anyhow::bail!("USB transport not available — rebuild with `--features usb` to enable");
+            anyhow::bail!(
+                "USB transport not available — this binary was compiled without USB support. \
+                 Reinstall with default features: cargo install zpl_toolchain_cli"
+            );
             #[cfg(feature = "usb")]
             if printer_addr == "usb" {
                 ("usb", "usb (auto-discover Zebra)".to_string())
             } else {
                 ("usb", printer_addr.to_string())
             }
+        } else if looks_like_serial_port(printer_addr) {
+            #[cfg(feature = "serial")]
+            anyhow::bail!(
+                "'{}' looks like a serial port — add --serial to use serial transport.\n  \
+                 Example: zpl print <FILE> -p {} --serial",
+                printer_addr,
+                printer_addr
+            );
+            #[cfg(not(feature = "serial"))]
+            anyhow::bail!(
+                "'{}' looks like a serial port, but this binary was compiled without serial support. \
+                 Reinstall with default features: cargo install zpl_toolchain_cli",
+                printer_addr
+            );
         } else {
             // TCP: resolve to verify the address is valid.
             let resolved = resolve_printer_addr(printer_addr).map_err(|e| {
@@ -716,7 +757,27 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
 
     #[cfg(not(feature = "usb"))]
     if printer_addr == "usb" || printer_addr.starts_with("usb:") {
-        anyhow::bail!("USB transport not available — rebuild with `--features usb` to enable");
+        anyhow::bail!(
+            "USB transport not available — this binary was compiled without USB support. \
+             Reinstall with default features: cargo install zpl_toolchain_cli"
+        );
+    }
+
+    // ── Detect likely serial port paths before falling through to TCP ─
+    if looks_like_serial_port(printer_addr) {
+        #[cfg(feature = "serial")]
+        anyhow::bail!(
+            "'{}' looks like a serial port — add --serial to use serial transport.\n  \
+             Example: zpl print <FILE> -p {} --serial",
+            printer_addr,
+            printer_addr
+        );
+        #[cfg(not(feature = "serial"))]
+        anyhow::bail!(
+            "'{}' looks like a serial port, but this binary was compiled without serial support. \
+             Reinstall with default features: cargo install zpl_toolchain_cli",
+            printer_addr
+        );
     }
 
     // ── TCP transport (default) ──────────────────────────────────
@@ -1136,4 +1197,22 @@ fn parse_with_resolved_tables(
         Some(t) => parse_with_tables(input, Some(t)),
         None => parse_str(input),
     })
+}
+
+/// Detect printer address strings that look like serial port paths.
+///
+/// Catches common patterns across platforms so the CLI can suggest
+/// `--serial` instead of letting TCP resolution produce a confusing error.
+fn looks_like_serial_port(addr: &str) -> bool {
+    // Linux: /dev/ttyUSB0, /dev/ttyACM0, /dev/ttyS0, /dev/ttyAMA0, /dev/rfcomm0,
+    //        /dev/serial/by-id/*, /dev/serial/by-path/*
+    // macOS: /dev/tty.*, /dev/cu.*
+    // Windows: COM1, COM3, COM10, etc.
+    addr.starts_with("/dev/tty")
+        || addr.starts_with("/dev/cu.")
+        || addr.starts_with("/dev/rfcomm")
+        || addr.starts_with("/dev/serial/")
+        || (addr.len() >= 4
+            && addr.get(..3).is_some_and(|p| p.eq_ignore_ascii_case("COM"))
+            && addr[3..].chars().all(|c| c.is_ascii_digit()))
 }

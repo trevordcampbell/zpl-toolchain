@@ -50,10 +50,6 @@ jobs:
       - name: Test
         run: cargo nextest run --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
 
-      - name: Test CLI with all transport features (Linux)
-        if: runner.os == 'Linux'
-        run: cargo nextest run -p zpl_toolchain_cli -p zpl_toolchain_print_client --locked --features zpl_toolchain_cli/usb,zpl_toolchain_cli/serial
-
   # ── Spec-compiler: validate spec files ────────────────────────────────
   spec-check:
     name: Spec Validation & Coverage
@@ -77,6 +73,11 @@ jobs:
 
       - name: Build tables + coverage
         run: cargo run -p zpl_toolchain_spec_compiler --locked -- build --spec-dir spec --out-dir generated
+
+      - name: Verify committed tables are fresh
+        run: |
+          diff -q generated/parser_tables.json crates/cli/data/parser_tables.json \
+            || { echo "::error::crates/cli/data/parser_tables.json is stale — run spec-compiler and copy to crates/cli/data/"; exit 1; }
 
       - name: Report coverage
         run: |

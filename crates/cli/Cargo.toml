@@ -12,7 +12,7 @@ keywords = ["zpl", "zebra", "label", "cli", "printing"]
 categories = ["command-line-utilities", "text-processing"]
 
 [features]
-default = ["tcp"]
+default = ["tcp", "usb", "serial"]
 tcp = ["zpl_toolchain_print_client/tcp"]
 usb = ["zpl_toolchain_print_client/usb"]
 serial = ["zpl_toolchain_print_client/serial"]
@@ -39,3 +39,7 @@ path = "src/main.rs"
 
 [lints]
 workspace = true
+
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/zpl-{ target }{ archive-suffix }"
+bin-dir = "{ bin }{ binary-ext }"

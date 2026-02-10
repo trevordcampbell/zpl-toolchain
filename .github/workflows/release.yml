@@ -86,8 +86,8 @@ jobs:
           targets: ${{ matrix.target }}
           cache-key: release-cli-${{ matrix.target }}
 
-      - name: Build CLI (release, all transports)
-        run: cargo build -p zpl_toolchain_cli --release --locked --target ${{ matrix.target }} --features usb,serial
+      - name: Build CLI (release)
+        run: cargo build -p zpl_toolchain_cli --release --locked --target ${{ matrix.target }}
 
       - name: Package (Unix)
         if: matrix.archive == 'tar.gz'

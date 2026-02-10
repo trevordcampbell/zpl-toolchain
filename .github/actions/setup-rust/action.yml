@@ -38,3 +38,10 @@ runs:
       run: |
         cargo build -p zpl_toolchain_spec_compiler --locked
         cargo run -p zpl_toolchain_spec_compiler --locked -- build --spec-dir spec --out-dir generated
+
+    - name: Sync tables into CLI crate
+      if: inputs.build-tables == 'true'
+      shell: bash
+      run: |
+        mkdir -p crates/cli/data
+        cp generated/parser_tables.json crates/cli/data/parser_tables.json

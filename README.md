@@ -50,7 +50,7 @@ ZPL II is the standard language for Zebra thermal label printers, used across lo
 
 ### Developer Experience
 
-- **CLI** — `parse`, `syntax-check`, `lint`, `format`, `print`, `coverage`, `explain` with `--output pretty|json` auto-detection
+- **CLI** — `parse`, `syntax-check`, `lint`, `format`, `print`, `explain` with `--output pretty|json` auto-detection
 - **Language bindings** — unified API across WASM, Python, C FFI, Go, and .NET
 - **Zero clippy warnings, 465+ passing tests** — parser, validator, emitter, print client, preflight, batch API, browser SDK, and more
 
@@ -61,10 +61,10 @@ ZPL II is the standard language for Zebra thermal label printers, used across lo
 ### Install
 
 ```bash
-# CLI (Rust) — TCP printing included by default
+# CLI (Rust) — all transports included (TCP, USB, serial/Bluetooth)
 cargo install zpl_toolchain_cli
-# With USB and serial/Bluetooth support:
-cargo install zpl_toolchain_cli --features usb,serial
+# Or use cargo-binstall for a pre-built binary (no compile wait):
+cargo binstall zpl_toolchain_cli
 
 # TypeScript
 npm install @zpl-toolchain/core     # parsing, validation, formatting (WASM)
@@ -77,7 +77,7 @@ pip install zpl-toolchain
 go get github.com/trevordcampbell/zpl-toolchain/packages/go/zpltoolchain
 ```
 
-> **Note:** Pre-built release binaries from [GitHub Releases](https://github.com/trevordcampbell/zpl-toolchain/releases) include all transports (TCP, USB, and serial) out of the box.
+> Pre-built binaries are also available from [GitHub Releases](https://github.com/trevordcampbell/zpl-toolchain/releases).
 
 ### Lint a label
 
@@ -98,19 +98,19 @@ zpl lint label.zpl --profile profiles/ZD421-300dpi.json
 ### Print a label
 
 ```bash
-zpl print label.zpl --printer 192.168.1.55
+zpl print label.zpl -p 192.168.1.55
 ```
 
 ```
-connected to 192.168.1.55:9100 (TCP)
+connected to 192.168.1.55:9100
 sent: label.zpl
-print complete
+print complete: 1 file(s) sent to 192.168.1.55:9100
 ```
 
 ### Validate then print (strict mode)
 
 ```bash
-zpl print label.zpl --printer 192.168.1.55 --strict --profile profiles/ZT411-203dpi.json
+zpl print label.zpl -p 192.168.1.55 --strict --profile profiles/ZT411-203dpi.json
 ```
 
 Aborts with a non-zero exit code if the validator finds any errors — no wasted labels.
@@ -128,12 +128,10 @@ COMMANDS:
   lint           Parse + validate with optional printer profile
   format         Auto-format ZPL files
   print          Send ZPL to a printer (TCP, USB, or serial)
-  coverage       Spec coverage report
   explain        Explain a diagnostic code (e.g., ZPL1401)
 
 GLOBAL OPTIONS:
   --output <pretty|json>   Output format (default: auto-detect TTY)
-  --tables <PATH>          Override embedded parser tables
 ```
 
 ### Print command
@@ -156,22 +154,25 @@ OPTIONS:
   --info                   Query ~HI printer info (model, firmware, DPI)
   --wait                   Poll until the printer finishes all labels
   --wait-timeout <SECS>    Timeout for --wait polling (default: 120)
-  --timeout <SECS>         Connection timeout, minimum 1 (default: 5)
-  --serial                 Use serial/Bluetooth SPP transport (requires --features serial)
+  --timeout <SECS>         Connection timeout in seconds (default: 5)
+  --serial                 Use serial/Bluetooth SPP transport
   --baud <RATE>            Serial baud rate (default: 9600, requires --serial)
 ```
 
 **Printer address formats:**
 
-| Format | Transport | Feature | Example |
-|--------|-----------|---------|---------|
-| IP or hostname | TCP (port 9100) | default | `192.168.1.55`, `printer.local` |
-| IP:port | TCP (custom port) | default | `192.168.1.55:6101` |
-| `usb` | USB (auto-discover) | `--features usb` | `usb` |
-| `usb:VID:PID` | USB (specific device, hex) | `--features usb` | `usb:0A5F:0100` |
-| Serial port path | Serial/BT SPP (with `--serial`) | `--features serial` | `/dev/ttyUSB0`, `COM3` |
+| Format | Transport | Example |
+|--------|-----------|---------|
+| IP or hostname | TCP (port 9100) | `192.168.1.55`, `printer.local` |
+| IP:port | TCP (custom port) | `192.168.1.55:6101` |
+| `usb` | USB (auto-discover) | `usb` |
+| `usb:VID:PID` | USB (specific device, hex) | `usb:0A5F:0100` |
+| Serial port path | Serial/BT SPP (with `--serial`) | `/dev/ttyUSB0`, `COM3` |
 
-> USB and serial transports are opt-in via cargo features. Pre-built release binaries include all transports.
+> All transports (TCP, USB, serial/Bluetooth) are included by default in every install method.
+> For a minimal TCP-only build: `cargo install zpl_toolchain_cli --no-default-features --features tcp`.
+
+> **Note:** Serial/Bluetooth addresses require the `--serial` flag. USB printing on Linux may require [udev rules](docs/PRINT_CLIENT.md#linux-udev-rules). See the [Print Client Guide](docs/PRINT_CLIENT.md) for transport setup details.
 
 ### Examples
 
@@ -191,10 +192,10 @@ zpl explain ZPL1401
 # Print via TCP
 zpl print label.zpl -p 192.168.1.55
 
-# Print via USB with status query (requires --features usb or release binary)
+# Print via USB with status query
 zpl print label.zpl -p usb --status --info
 
-# Print via serial/Bluetooth (requires --features serial or release binary)
+# Print via serial/Bluetooth
 zpl print label.zpl -p /dev/ttyUSB0 --serial --baud 115200
 
 # Dry-run: validate without sending
@@ -334,15 +335,15 @@ zpl-toolchain/
 ## Building from Source
 
 ```bash
-# 1. Build parser tables (required once)
-cargo run -p zpl_toolchain_spec_compiler -- build --spec-dir spec --out-dir generated
-
-# 2. Build and test
+# Build and test (parser tables are committed at crates/cli/data/ — no generation needed)
 cargo build --workspace
 cargo test --workspace
 
-# 3. Run the CLI
+# Run the CLI
 cargo run -p zpl_toolchain_cli -- lint samples/usps_surepost_sample.zpl
+
+# If you modify spec files, regenerate tables (pre-commit hook syncs the CLI copy automatically):
+cargo run -p zpl_toolchain_spec_compiler -- build --spec-dir spec --out-dir generated
 ```
 
 ## Documentation

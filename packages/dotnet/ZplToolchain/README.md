@@ -4,14 +4,26 @@
 
 ## Prerequisites
 
-Build the C FFI shared library first:
+You need the FFI shared library (`zpl_toolchain_ffi.dll` / `.so` / `.dylib`).
+
+**Option 1: Download prebuilt** (recommended)
+
+Download the FFI library for your platform from the latest
+[GitHub Release](https://github.com/trevordcampbell/zpl-toolchain/releases),
+then place it in your application's runtime directory or system library path
+(e.g. `LD_LIBRARY_PATH` on Linux, `DYLD_LIBRARY_PATH` on macOS, or alongside
+your executable on Windows).
+
+**Option 2: Build from source** (requires Rust toolchain)
 
 ```bash
 cargo run -p zpl_toolchain_spec_compiler -- build --spec-dir spec --out-dir generated
 cargo build -p zpl_toolchain_ffi --release
 ```
 
-Ensure `zpl_toolchain_ffi.dll` / `.so` / `.dylib` is in the application's runtime directory or system library path.
+The library will be at `target/release/libzpl_toolchain_ffi.{so,dylib,dll}`.
+Copy it to your application's runtime directory or add its location to your
+system library path.
 
 ## Usage
 
@@ -66,3 +78,7 @@ See `Types.cs` for full type definitions.
 ## Target Framework
 
 Targets .NET Standard 2.0. Requires .NET Core 3.1+ or .NET 5+ at runtime (uses `UnmanagedType.LPUTF8Str` for UTF-8 string marshalling, which is not supported on .NET Framework).
+
+---
+
+Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain).

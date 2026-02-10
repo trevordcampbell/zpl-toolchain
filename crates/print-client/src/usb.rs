@@ -1,6 +1,6 @@
 //! USB transport for Zebra printers using the `nusb` crate.
 //!
-//! Feature-gated behind `usb` — only compiled when `--features usb` is active.
+//! Feature-gated behind the `usb` Cargo feature (enabled by default in the CLI).
 //!
 //! Zebra printers expose a USB Printer class (bInterfaceClass = 7) interface
 //! with a bulk OUT endpoint for sending ZPL and an optional bulk IN endpoint

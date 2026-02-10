@@ -1,9 +1,21 @@
 #!/usr/bin/env bash
 #
 # pre-commit — Fast checks before every commit.
-# Only runs formatting check (< 1 second). Heavier checks go in pre-push.
+# Runs: parser-tables sync + formatting check (< 1 second total).
+# Heavier checks (clippy, tests) go in pre-push.
 
 set -e
+
+# Keep the embedded parser tables in sync with the generated copy.
+# generated/ is gitignored, so we compare the on-disk files directly.
+# If the developer has run the spec-compiler and the generated file differs
+# from the committed copy, auto-sync and stage the update.
+if [ -f generated/parser_tables.json ] && [ -f crates/cli/data/parser_tables.json ] \
+   && ! diff -q generated/parser_tables.json crates/cli/data/parser_tables.json >/dev/null 2>&1; then
+    echo "pre-commit: syncing parser tables to crates/cli/data/..."
+    cp generated/parser_tables.json crates/cli/data/parser_tables.json
+    git add crates/cli/data/parser_tables.json
+fi
 
 echo "pre-commit: checking formatting..."
 if ! cargo fmt --all -- --check; then

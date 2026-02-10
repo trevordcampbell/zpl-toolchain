@@ -2,7 +2,7 @@
 
 > Single source of truth for tactical work items. For the strategic roadmap (phases, priorities, and architectural decisions), see [ROADMAP.md](ROADMAP.md). Original plans archived at `docs/research/archive/`.
 >
-> Last updated: 2026-02-09
+> Last updated: 2026-02-10
 
 ---
 
@@ -98,6 +98,15 @@ All Tier 1 items completed. See "Completed Work" below.
 - [ ] **Performance optimizations** — slice-based args, lazy `^FH` decode, raw/field streaming, fixed-point rounding; needs profiling data first
 - [ ] **Test decoupling from generated files** — high effort (200+ test cases), low urgency; use in-memory fixtures or build-script dependency ordering
 
+#### Deferred (Usability Review — Distribution & DX)
+
+- [ ] **Shell installer script** — `curl -fsSL https://… | sh` one-liner for Linux/macOS; detect architecture, download from GitHub Releases
+- [ ] **Homebrew formula/tap** — `brew install zpl-toolchain` via a custom tap
+- [ ] **`zpl doctor` diagnostic command** — check environment (Rust version, tables freshness, printer reachability, profile validity) and report issues with suggested fixes
+- [ ] **`zpl check` / `zpl validate` command aliases** — more intuitive names for `syntax-check` and `lint`; aliases or renames
+- [ ] **Python bindings: return native dicts** — currently return JSON strings; should return native Python dicts/lists for ergonomic usage
+- [ ] **`npx @zpl-toolchain/cli` wrapper** — npm package that downloads the correct pre-built binary so Node.js users can run the CLI without Rust
+
 #### Print Client — Follow-up Items
 
 - [x] **Integration tests with mock TCP server** — 10 tests: connect, send, multi-label, raw bytes, ~HS query/parse, ~HI query/parse, reconnect, connection error, empty send, large payload (100KB)
@@ -141,16 +150,11 @@ All Tier 1 items completed. See "Completed Work" below.
 - [ ] **FFI configurable timeouts** — add optional `timeout_ms` / `config_json` parameters to `print_zpl` / `query_printer_status` for Go/C#/.NET consumers who need to tune connection settings
 - [ ] **FFI `query_info` exposure** — expose `~HI` (printer identification) query in bindings-common, FFI, Go, and C# (currently only `~HS` is exposed)
 - [ ] **Go/C# typed `HostStatus`** — `QueryStatus()` currently returns raw JSON string; add typed struct matching the 24-field Rust `HostStatus`
-- [ ] **Proxy body-read timeout** — add a deadline to `readBody()` to mitigate slow-loris attacks; configure `server.requestTimeout` / `server.headersTimeout`
-- [ ] **Proxy HTTP connection limits** — set `server.maxConnections` to match the WebSocket `maxConnections` limit
 - [ ] **Proxy per-client WS rate limiting** — add per-connection concurrency cap to prevent a single WebSocket client from flooding the proxy with requests
 - [ ] **Proxy WS correlation IDs** — accept optional `id` field in WS messages and echo it back for request-response correlation on concurrent WS usage
-- [ ] **Proxy error message sanitization** — avoid leaking internal IP addresses and error details to HTTP/WS clients; return generic messages on TCP errors
 - [ ] **TS `AbortSignal` support** — accept `AbortSignal` on `print()`, `printBatch()`, `waitForCompletion()` for cooperative cancellation (Node.js 18+)
 - [ ] **TS `BatchResult` with partial error** — when `printBatch` fails mid-batch, include `{ sent, total, error }` so callers know which labels were sent
-- [ ] **TS input validation** — validate `host`, `port`, `timeout` in `resolveConfig()` for clear error messages instead of raw Node.js socket errors
 - [ ] **CLI stdin support** — accept `-` as a file path to read ZPL from stdin (common CLI convention)
-- [ ] **CLI `--timeout 0` rejection** — reject zero-value timeout at the argument level to prevent confusing immediate-failure behavior
 - [ ] **CLI JSON error envelope consistency** — ensure all error paths (`anyhow::bail!`, file-read `?`, tables loading) produce JSON error envelopes when `--output json` is active
 - [ ] **Preflight `^MU` + bounds tests** — add tests for `^MUI`/`^MUM` interaction with ZPL2302 position bounds and ZPL2308 graphic bounds checks
 - [ ] **Preflight `^FT` bounds test** — add test for `^FT` position bounds (currently only `^FO` is tested)

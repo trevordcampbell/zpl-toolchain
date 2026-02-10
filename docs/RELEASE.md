@@ -24,6 +24,29 @@ Releases are fully automated via [release-plz](https://release-plz.ieni.dev/) an
 > the next push to main automatically retries the unpublished crates. This is safe
 > because release-plz is idempotent — it skips versions already on the registry.
 
+### Install channels
+
+| Channel | Command |
+|---------|---------|
+| Build from source | `cargo install zpl_toolchain_cli` |
+| Pre-built binary (binstall) | `cargo binstall zpl_toolchain_cli` |
+| Pre-built binary (download) | [GitHub Releases](https://github.com/trevordcampbell/zpl-toolchain/releases) |
+
+`cargo binstall` metadata is configured in the CLI's `Cargo.toml` so that
+[`cargo-binstall`](https://github.com/cargo-bins/cargo-binstall) can download
+pre-built binaries directly from GitHub Releases instead of compiling from source.
+
+### Parser tables
+
+The compiled parser tables are committed at `crates/cli/data/parser_tables.json`
+and embedded into the CLI binary at build time via `build.rs`. This means
+`cargo install` (and `cargo binstall`) produce a fully working binary without
+requiring users to run the spec-compiler first.
+
+CI includes a **freshness check** that regenerates the tables from specs and
+verifies the committed copy matches. If specs change without updating the
+committed tables, CI will fail.
+
 ### Manual fallback
 
 For emergencies or manual one-off publishes, use `scripts/publish.sh`:
@@ -133,7 +156,7 @@ The `.githooks/` directory contains three hooks, activated via `git config core.
 | Hook | Trigger | Checks |
 |------|---------|--------|
 | `commit-msg` | Every commit | Conventional Commits format |
-| `pre-commit` | Every commit | `cargo fmt --check` |
+| `pre-commit` | Every commit | Parser tables sync + `cargo fmt --check` |
 | `pre-push` | Every push | `cargo clippy -D warnings` + full test suite |
 
 Skip any hook when needed: `git commit --no-verify` or `git push --no-verify`.

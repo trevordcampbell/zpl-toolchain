@@ -62,6 +62,14 @@ pub fn load_spec_files(spec_dir: &Path) -> Result<LoadResult> {
         }
     }
 
+    // Sort commands by canonical code for deterministic output regardless of
+    // filesystem readdir ordering (WalkDir does not guarantee order).
+    commands.sort_by(|a, b| {
+        a.canonical_code()
+            .unwrap_or_default()
+            .cmp(&b.canonical_code().unwrap_or_default())
+    });
+
     Ok(LoadResult {
         commands,
         schema_versions,

@@ -24,14 +24,14 @@ zpl print label.zpl --printer 192.168.1.55 --status
 # Print multiple files and wait for completion
 zpl print *.zpl --printer printer01.local --wait
 
-# Print via USB (requires --features usb or release binary)
+# Print via USB
 zpl print label.zpl --printer usb
 
-# Print via serial / Bluetooth SPP (requires --features serial or release binary)
+# Print via serial / Bluetooth SPP
 zpl print label.zpl --printer /dev/rfcomm0 --serial
 ```
 
-> **Transport features:** TCP is included by default. USB and serial/Bluetooth require opt-in cargo features when building from source: `cargo install zpl_toolchain_cli --features usb,serial`. Pre-built [release binaries](https://github.com/trevordcampbell/zpl-toolchain/releases) include all transports.
+> **All transports** (TCP, USB, serial/Bluetooth) are included by default in every install method. For a minimal TCP-only build: `cargo install zpl_toolchain_cli --no-default-features --features tcp`.
 
 ### Rust
 
@@ -199,8 +199,8 @@ zpl print <FILES>... --printer <ADDR> [OPTIONS]
 | `--info` | Query printer info (`~HI`) and display model, firmware, DPI, and memory. |
 | `--timeout <SECS>` | Connection timeout in seconds (minimum 1). Write timeout scales to 6× and read to 2×. Default: connect=5s, write=30s, read=10s. |
 | `--wait-timeout <SECS>` | Timeout in seconds for `--wait` polling (default: 120). Requires `--wait`. |
-| `--serial` | Use serial/Bluetooth SPP transport (printer address is a serial port path). Requires `--features serial`. |
-| `--baud <RATE>` | Baud rate for serial connections (default: 9600). Requires `--serial` and `--features serial`. |
+| `--serial` | Use serial/Bluetooth SPP transport (printer address is a serial port path). |
+| `--baud <RATE>` | Baud rate for serial connections (default: 9600). Requires `--serial`. |
 | `--output <FORMAT>` | Output format: `pretty` or `json`. Defaults to `pretty` when stdout is a TTY, `json` when piped. Global flag. |
 
 ### Address Formats
@@ -215,9 +215,9 @@ The `--printer` flag accepts these formats:
 | Hostname:PORT | `printer01.local:6101` | TCP (explicit port) |
 | IPv6 | `::1` | TCP (port 9100) |
 | IPv6:PORT | `[::1]:9100` | TCP (explicit port) |
-| `usb` | `usb` | USB (first Zebra printer, VID 0x0A5F). Requires `--features usb`. |
-| `usb:VID:PID` | `usb:0A5F:00A0` | USB (specific device). Requires `--features usb`. |
-| Serial path | `/dev/ttyUSB0` | Serial (requires `--serial` and `--features serial`). |
+| `usb` | `usb` | USB (first Zebra printer, VID 0x0A5F). |
+| `usb:VID:PID` | `usb:0A5F:00A0` | USB (specific device). |
+| Serial path | `/dev/ttyUSB0` | Serial (use with `--serial` flag). |
 
 ### Examples
 
@@ -286,7 +286,7 @@ Features:
 
 ### USB
 
-Direct USB connection to Zebra printers. Feature-gated — requires `--features usb` when building the library.
+Direct USB connection to Zebra printers.
 
 ```bash
 # Auto-discover first Zebra printer (VID 0x0A5F)
@@ -315,7 +315,7 @@ for (vid, pid, desc) in devices {
 
 ### Serial / Bluetooth SPP
 
-Serial port connection for RS-232, USB-serial adapters, and Bluetooth SPP. Feature-gated — requires `--features serial` when building the library.
+Serial port connection for RS-232, USB-serial adapters, and Bluetooth SPP.
 
 ```bash
 # Default baud rate (9600)

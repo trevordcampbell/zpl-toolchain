@@ -21,7 +21,7 @@
     "build": "npx tsc",
     "typecheck": "npx tsc --noEmit",
     "test": "node --test",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "test -f wasm/pkg/zpl_toolchain_wasm_bg.wasm || (echo 'Error: WASM not built. Run npm run build:wasm first.' && exit 1) && npm run build"
   },
   "keywords": [
     "zpl",

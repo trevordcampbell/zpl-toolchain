@@ -66,8 +66,8 @@ zpl explain ZPL1201
 | `--status` | Query `~HS` host status after printing |
 | `--info` | Query `~HI` printer info after printing |
 | `--wait` | Wait for printer to finish all labels |
-| `--wait-timeout <SECS>` | Timeout for --wait polling (default: 120s) |
-| `--timeout <SECS>` | Connection timeout in seconds, minimum 1 (default: 5) |
+| `--wait-timeout <SECS>` | Timeout for `--wait` polling (default: 120s; requires `--wait`) |
+| `--timeout <SECS>` | Connection timeout in seconds, minimum 1 (default: 5). Also sets write timeout to 6× and read timeout to 2× this value |
 | `--serial` | Use serial/Bluetooth SPP transport |
 | `--baud <RATE>` | Baud rate for serial connections (default: 9600) |
 

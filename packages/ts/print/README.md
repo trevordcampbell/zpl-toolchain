@@ -13,21 +13,21 @@ npm install @zpl-toolchain/print
 ## Quick Start
 
 ```ts
-import { print, TcpPrinter, isReachable } from "@zpl-toolchain/print";
+import { print, TcpPrinter } from "@zpl-toolchain/print";
 
 // One-shot: send ZPL and disconnect
-const result = await print({ host: "192.168.1.55" }, "^XA^FDHello^FS^XZ");
+const result = await print("^XA^FDHello^FS^XZ", { host: "192.168.1.55" });
 console.log(result); // { success: true, bytesWritten: 21 }
-
-// Check if a printer is reachable
-if (await isReachable({ host: "192.168.1.55" })) {
-  console.log("Printer is online");
-}
 
 // Persistent connection: reuse for multiple labels
 const printer = new TcpPrinter({ host: "192.168.1.55" });
 await printer.print("^XA^FDLabel 1^FS^XZ");
 await printer.print("^XA^FDLabel 2^FS^XZ");
+
+// Check if a printer is reachable
+if (await printer.isReachable()) {
+  console.log("Printer is online");
+}
 
 // Query printer status
 const status = await printer.getStatus();
@@ -54,9 +54,8 @@ await printer.close();
 
 | Function | Description |
 |----------|-------------|
-| `print(config, zpl)` | Send ZPL and disconnect |
-| `printValidated(config, zpl, opts?)` | Validate then print (requires `@zpl-toolchain/core`) |
-| `isReachable(config)` | Check if a printer accepts TCP connections |
+| `print(zpl, config)` | Send ZPL and disconnect |
+| `printValidated(zpl, config, opts?)` | Validate then print (requires `@zpl-toolchain/core`) |
 
 ### `TcpPrinter` — persistent connection
 
@@ -64,6 +63,7 @@ await printer.close();
 |--------|-------------|
 | `new TcpPrinter(config)` | Create a printer (connects lazily on first call) |
 | `print(zpl)` | Send ZPL over the persistent connection |
+| `isReachable()` | Check if the printer accepts TCP connections |
 | `getStatus()` | Query `~HS` host status (paper out, paused, labels remaining, etc.) |
 | `printBatch(labels, opts?, onProgress?)` | Send multiple labels with optional status polling and progress callbacks |
 | `waitForCompletion(timeoutMs?)` | Poll until all labels are printed or timeout |

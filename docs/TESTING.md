@@ -171,8 +171,7 @@ Tests run automatically on every push and PR via GitHub Actions:
 
 | Job | What it does |
 |-----|-------------|
-| `Build & Test (ubuntu/macos/windows)` | `cargo fmt`, `cargo build`, `cargo clippy`, `cargo nextest run` across 3 OS |
-| `Build & Test` | Runs CLI + print-client tests with all transports (TCP, USB, serial are default) |
+| `Build & Test (ubuntu/macos/windows)` | `cargo fmt`, `cargo build`, `cargo clippy`, `cargo nextest run` across 3 OS (all transports are default) |
 | `TypeScript Print Tests` | `npm install` → `tsc --noEmit` → `npm run build` → `npm test` |
 | `Spec Validation & Coverage` | `zpl-spec-compiler check` + `build` + coverage report |
 | `WASM Build` | `wasm-pack build` + size check |
@@ -201,8 +200,9 @@ Run `npm run build` before `npm test`.
 
 Previous versions required `libudev-dev` on Linux for serial port support.
 With the current configuration (`serialport` built with `default-features = false`),
-`libudev-dev` is **no longer required**. If you see this error from an older build,
-update to the latest version.
+`libudev-dev` is **no longer required** for building. CI workflows still install it
+as a precaution, but it is not a build dependency. If you see this error from an
+older build, update to the latest version.
 
 ### Slow proxy test
 

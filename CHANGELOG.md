@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.5...v0.1.6) - 2026-02-10
+
+### Fixed
+
+- *(cli)* prefer workspace-generated tables over committed copy in build.rs
+- make spec-compiler output deterministic, fix pre-commit table sync
+- regenerate committed parser tables to match spec-compiler output
+- *(cli)* embed parser tables, make all transports default, improve UX
+
+### Other
+
+- fix API examples in TS print README, clarify CLI flags
+
 ## [0.1.5](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.4...v0.1.5) - 2026-02-09
 
 ### Fixed

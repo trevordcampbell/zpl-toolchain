@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.7](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.6...v0.1.7) - 2026-02-11
+
+### Added
+
+- *(spec)* expand schema-driven command metadata and linkage checks
+
+### Fixed
+
+- *(ci)* keep committed parser tables in sync
+- *(cli)* improve print verification flow and output consistency
+- *(core)* tighten parser spacing and validator behavioral correctness
+
+### Other
+
+- align references with diagnostics and print behavior updates
+- *(tests)* apply clippy-preferred patterns in test code
+
 ## [0.1.6](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.5...v0.1.6) - 2026-02-10
 
 ### Fixed

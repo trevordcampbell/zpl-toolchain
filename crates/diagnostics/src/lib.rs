@@ -415,6 +415,7 @@ mod tests {
             codes::PARSER_MISSING_FIELD_SEPARATOR,
             codes::PARSER_FIELD_DATA_INTERRUPTED,
             codes::PARSER_STRAY_CONTENT,
+            codes::PARSER_NON_ASCII_ARG,
         ];
         for code in &all {
             assert!(

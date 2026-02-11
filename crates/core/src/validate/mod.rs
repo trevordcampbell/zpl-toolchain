@@ -4,7 +4,9 @@ use serde::Serialize;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::OnceLock;
 use zpl_toolchain_profile::Profile;
-use zpl_toolchain_spec_tables::{ComparisonOp, ConstraintKind, RoundingMode};
+use zpl_toolchain_spec_tables::{
+    CommandScope, ComparisonOp, ConstraintKind, ConstraintScope, Plane, RoundingMode,
+};
 
 /// Shorthand for building a `BTreeMap<String, String>` context from key-value pairs.
 ///
@@ -298,9 +300,10 @@ struct FieldTracker {
     has_serial: bool,
     /// Node index of the field-opening command.
     start_idx: usize,
-    /// Active barcode command and its field data rules.
-    /// Set when a barcode command (^B*) is seen, used at ^FS to validate ^FD content.
-    active_barcode: Option<(String, zpl_toolchain_spec_tables::FieldDataRules)>,
+    /// Barcode commands seen in this field, in order, with their node index.
+    /// Used to attribute ^FD/^FV segments to the correct barcode when multiple
+    /// barcode commands appear in a single field.
+    active_barcodes: Vec<(usize, String, zpl_toolchain_spec_tables::FieldDataRules)>,
 }
 
 impl Default for FieldTracker {
@@ -312,7 +315,7 @@ impl Default for FieldTracker {
             has_fn: false,
             has_serial: false,
             start_idx: 0,
-            active_barcode: None,
+            active_barcodes: Vec::new(),
         }
     }
 }
@@ -324,7 +327,7 @@ impl FieldTracker {
         self.fh_indicator = b'_';
         self.has_fn = false;
         self.has_serial = false;
-        self.active_barcode = None;
+        self.active_barcodes.clear();
     }
 
     /// Process a command's structural flags and emit diagnostics.
@@ -393,11 +396,13 @@ impl FieldTracker {
         if let Some(rules) = &cmd_ctx.cmd.field_data_rules
             && (rules.character_set.is_some()
                 || rules.exact_length.is_some()
+                || rules.allowed_lengths.is_some()
                 || rules.min_length.is_some()
                 || rules.max_length.is_some()
                 || rules.length_parity.is_some())
         {
-            self.active_barcode = Some((cmd_ctx.code.to_string(), rules.clone()));
+            self.active_barcodes
+                .push((cmd_ctx.node_idx, cmd_ctx.code.to_string(), rules.clone()));
         }
     }
 
@@ -429,19 +434,27 @@ impl FieldTracker {
         if self.has_fh {
             let indicator = self.fh_indicator;
             for field_node in &vctx.label_nodes[self.start_idx..cmd_ctx.node_idx] {
-                if let crate::grammar::ast::Node::FieldData {
-                    content,
-                    span: fd_span,
-                    ..
-                } = field_node
-                {
-                    let fd_dspan = Some(*fd_span);
+                let content_and_span = match field_node {
+                    crate::grammar::ast::Node::FieldData { content, span, .. } => {
+                        Some((content.as_str(), Some(*span)))
+                    }
+                    crate::grammar::ast::Node::Command {
+                        code, args, span, ..
+                    } if code == "^FD" || code == "^FV" => args
+                        .first()
+                        .and_then(|slot| slot.value.as_deref())
+                        .map(|val| (val, Some(*span))),
+                    _ => None,
+                };
+                if let Some((content, dspan)) = content_and_span {
                     for err in crate::hex_escape::validate_hex_escapes(content, indicator) {
-                        issues.push(Diagnostic::error(
-                            codes::INVALID_HEX_ESCAPE,
-                            err.message,
-                            fd_dspan,
-                        ).with_context(ctx!("command" => "^FH", "indicator" => String::from(indicator as char))));
+                        issues.push(
+                            Diagnostic::error(codes::INVALID_HEX_ESCAPE, err.message, dspan)
+                                .with_context(ctx!(
+                                    "command" => "^FH",
+                                    "indicator" => String::from(indicator as char)
+                                )),
+                        );
                     }
                 }
             }
@@ -463,44 +476,59 @@ impl FieldTracker {
         // Skip when ^FH (hex escape) is active — raw content contains escape
         // sequences that alter the actual byte values, making character-set
         // validation against the raw text incorrect.
+        //
         // Field data can live in two places:
         // 1. Inline: the first arg (key="data") of a ^FD/^FV command node
         // 2. Multi-line: a FieldData node following the ^FD/^FV command
-        if !self.has_fh
-            && let Some((barcode_code, rules)) = &self.active_barcode
-        {
-            for field_node in &vctx.label_nodes[self.start_idx..cmd_ctx.node_idx] {
-                match field_node {
-                    crate::grammar::ast::Node::Command { code, args, span }
-                        if code == "^FD" || code == "^FV" =>
-                    {
-                        if let Some(slot) = args.first()
-                            && let Some(val) = slot.value.as_deref()
-                            && !val.is_empty()
-                        {
-                            validate_barcode_field_data(
-                                barcode_code,
-                                val,
-                                rules,
-                                Some(*span),
-                                issues,
-                            );
+        //
+        // Validate the combined payload for the field once, so split data like
+        // "^FD123<newline>456^FS" is evaluated as "123456" instead of two
+        // separate fragments.
+        if !self.has_fh && !self.active_barcodes.is_empty() {
+            for (i, (barcode_idx, barcode_code, rules)) in self.active_barcodes.iter().enumerate() {
+                let seg_start = *barcode_idx;
+                let seg_end = self
+                    .active_barcodes
+                    .get(i + 1)
+                    .map(|(next_idx, _, _)| *next_idx)
+                    .unwrap_or(cmd_ctx.node_idx);
+
+                let mut combined_fd = String::new();
+                let mut has_any_fd = false;
+                let mut first_fd_span: Option<Span> = None;
+                for field_node in &vctx.label_nodes[seg_start..seg_end] {
+                    match field_node {
+                        crate::grammar::ast::Node::Command {
+                            code, args, span, ..
+                        } if code == "^FD" || code == "^FV" => {
+                            if let Some(slot) = args.first()
+                                && let Some(val) = slot.value.as_deref()
+                            {
+                                has_any_fd = true;
+                                combined_fd.push_str(val);
+                                if first_fd_span.is_none() {
+                                    first_fd_span = Some(*span);
+                                }
+                            }
                         }
+                        crate::grammar::ast::Node::FieldData { content, span, .. } => {
+                            has_any_fd = true;
+                            combined_fd.push_str(content);
+                            if first_fd_span.is_none() {
+                                first_fd_span = Some(*span);
+                            }
+                        }
+                        _ => {}
                     }
-                    crate::grammar::ast::Node::FieldData {
-                        content,
-                        span: fd_span,
-                        ..
-                    } => {
-                        validate_barcode_field_data(
-                            barcode_code,
-                            content,
-                            rules,
-                            Some(*fd_span),
-                            issues,
-                        );
-                    }
-                    _ => {}
+                }
+                if has_any_fd {
+                    validate_barcode_field_data(
+                        barcode_code,
+                        &combined_fd,
+                        rules,
+                        first_fd_span.or(cmd_ctx.span),
+                        issues,
+                    );
                 }
             }
         }
@@ -545,10 +573,34 @@ fn validate_barcode_field_data(
     }
 
     // Length validation
-    let len = fd_content.len();
+    let len = fd_content.chars().count();
 
-    // exactLength takes precedence
-    if let Some(exact) = rules.exact_length {
+    // allowedLengths takes precedence over exact/min/max.
+    if let Some(allowed) = &rules.allowed_lengths {
+        if !allowed.contains(&len) {
+            let expected = allowed
+                .iter()
+                .map(|v| v.to_string())
+                .collect::<Vec<_>>()
+                .join(", ");
+            issues.push(
+                Diagnostic::warn(
+                    codes::BARCODE_DATA_LENGTH,
+                    format!(
+                        "{} field data length {} (expected one of [{}])",
+                        barcode_code, len, expected
+                    ),
+                    dspan,
+                )
+                .with_context(ctx!(
+                    "command" => barcode_code,
+                    "actual" => len.to_string(),
+                    "expected" => expected,
+                )),
+            );
+        }
+    // exactLength takes precedence over min/max.
+    } else if let Some(exact) = rules.exact_length {
         if len != exact {
             issues.push(
                 Diagnostic::warn(
@@ -883,8 +935,23 @@ fn validate_arg_profile_constraint(
         && let Some(p) = vctx.profile
         && let Ok(n) = val.parse::<f64>()
         && let Some(limit) = resolve_profile_field(p, &pc.field)
-        && !check_profile_op(n, &pc.op, limit)
     {
+        let effective_n =
+            if spec_arg.unit.as_deref() == Some("dots") && vctx.device_state.units != Units::Dots {
+                if let Some(dpi) = vctx.device_state.dpi {
+                    convert_to_dots(n, vctx.device_state.units, dpi)
+                } else {
+                    // Without DPI we cannot reliably compare against dot-based profile limits.
+                    return;
+                }
+            } else {
+                n
+            };
+
+        if check_profile_op(effective_n, &pc.op, limit) {
+            return;
+        }
+
         let op_desc = match pc.op {
             ComparisonOp::Lte => "exceeds",
             ComparisonOp::Gte => "below",
@@ -911,7 +978,7 @@ fn validate_arg_profile_constraint(
                 "field" => pc.field.clone(),
                 "op" => format!("{:?}", pc.op),
                 "limit" => trim_f64(limit),
-                "actual" => val,
+                "actual" => trim_f64(effective_n),
             )),
         );
     }
@@ -1184,7 +1251,9 @@ fn validate_command_args(
 fn validate_command_constraints(
     cmd_ctx: &CommandCtx,
     vctx: &ValidationContext,
-    seen_codes: &HashSet<&str>,
+    seen_label_codes: &HashSet<&str>,
+    seen_field_codes: &HashSet<&str>,
+    current_field_codes: Option<&HashSet<&str>>,
     issues: &mut Vec<Diagnostic>,
 ) {
     let Some(constraints) = cmd_ctx.cmd.constraints.as_ref() else {
@@ -1195,6 +1264,22 @@ fn validate_command_constraints(
         match c.kind {
             ConstraintKind::Order => {
                 if let Some(expr) = c.expr.as_ref() {
+                    // Constraint scope precedence:
+                    // 1) explicit constraint scope
+                    // 2) command scope fallback (field commands default to field-local ordering)
+                    // 3) label-wide default
+                    let eval_scope = c.scope.unwrap_or_else(|| {
+                        if cmd_ctx.cmd.scope == Some(CommandScope::Field) {
+                            ConstraintScope::Field
+                        } else {
+                            ConstraintScope::Label
+                        }
+                    });
+                    let seen_codes = if eval_scope == ConstraintScope::Field {
+                        seen_field_codes
+                    } else {
+                        seen_label_codes
+                    };
                     if let Some(targets) = expr.strip_prefix("before:") {
                         if any_target_in_set(targets, seen_codes) {
                             issues.push(
@@ -1208,6 +1293,7 @@ fn validate_command_constraints(
                                     "command" => cmd_ctx.code,
                                     "target" => targets,
                                     "kind" => "order",
+                                    "scope" => if eval_scope == ConstraintScope::Field { "field" } else { "label" },
                                 )),
                             );
                         }
@@ -1225,59 +1311,92 @@ fn validate_command_constraints(
                                 "command" => cmd_ctx.code,
                                 "target" => targets,
                                 "kind" => "order",
+                                "scope" => if eval_scope == ConstraintScope::Field { "field" } else { "label" },
                             )),
                         );
                     }
                 }
             }
             ConstraintKind::Requires => {
-                if let Some(expr) = c.expr.as_ref()
-                    && !any_target_in_set(expr, vctx.label_codes)
-                {
-                    issues.push(
-                        Diagnostic::new(
-                            codes::REQUIRED_COMMAND,
-                            map_sev(c.severity.as_ref()),
-                            c.message.clone(),
-                            cmd_ctx.span,
-                        )
-                        .with_context(ctx!(
-                            "command" => cmd_ctx.code,
-                            "target" => expr.clone(),
-                            "kind" => "requires",
-                        )),
-                    );
+                if let Some(expr) = c.expr.as_ref() {
+                    // Keep requires label-scoped by default for backward compatibility.
+                    // Authors can opt into field-local semantics via constraint.scope.
+                    let eval_scope = c.scope.unwrap_or(ConstraintScope::Label);
+                    let empty_field_codes: HashSet<&str> = HashSet::new();
+                    let target_codes = if eval_scope == ConstraintScope::Field {
+                        current_field_codes.unwrap_or(&empty_field_codes)
+                    } else {
+                        vctx.label_codes
+                    };
+                    if !any_target_in_set(expr, target_codes) {
+                        issues.push(
+                            Diagnostic::new(
+                                codes::REQUIRED_COMMAND,
+                                map_sev(c.severity.as_ref()),
+                                c.message.clone(),
+                                cmd_ctx.span,
+                            )
+                            .with_context(ctx!(
+                                "command" => cmd_ctx.code,
+                                "target" => expr.clone(),
+                                "kind" => "requires",
+                                "scope" => if eval_scope == ConstraintScope::Field { "field" } else { "label" },
+                            )),
+                        );
+                    }
                 }
             }
             ConstraintKind::Incompatible => {
-                if let Some(expr) = c.expr.as_ref()
-                    && any_target_in_set(expr, vctx.label_codes)
-                {
-                    issues.push(
-                        Diagnostic::new(
-                            codes::INCOMPATIBLE_COMMAND,
-                            map_sev(c.severity.as_ref()),
-                            c.message.clone(),
-                            cmd_ctx.span,
-                        )
-                        .with_context(ctx!(
-                            "command" => cmd_ctx.code,
-                            "target" => expr.clone(),
-                            "kind" => "incompatible",
-                        )),
-                    );
+                if let Some(expr) = c.expr.as_ref() {
+                    // Keep incompatible label-scoped by default for backward compatibility.
+                    // Authors can opt into field-local semantics via constraint.scope.
+                    let eval_scope = c.scope.unwrap_or(ConstraintScope::Label);
+                    let empty_field_codes: HashSet<&str> = HashSet::new();
+                    let target_codes = if eval_scope == ConstraintScope::Field {
+                        current_field_codes.unwrap_or(&empty_field_codes)
+                    } else {
+                        vctx.label_codes
+                    };
+                    if any_target_in_set(expr, target_codes) {
+                        issues.push(
+                            Diagnostic::new(
+                                codes::INCOMPATIBLE_COMMAND,
+                                map_sev(c.severity.as_ref()),
+                                c.message.clone(),
+                                cmd_ctx.span,
+                            )
+                            .with_context(ctx!(
+                                "command" => cmd_ctx.code,
+                                "target" => expr.clone(),
+                                "kind" => "incompatible",
+                                "scope" => if eval_scope == ConstraintScope::Field { "field" } else { "label" },
+                            )),
+                        );
+                    }
                 }
             }
             ConstraintKind::EmptyData => {
-                // Check both the command's args AND any following FieldData node
+                // Check both the command's args and any non-empty following
+                // FieldData content up to the next command boundary.
                 let fd_has_content = cmd_ctx
                     .args
                     .first()
                     .and_then(|a| a.value.as_ref())
                     .is_some_and(|s| !s.is_empty());
-                let next_is_field_data = vctx.label_nodes.get(cmd_ctx.node_idx + 1)
-                    .is_some_and(|n| matches!(n, crate::grammar::ast::Node::FieldData { content, .. } if !content.is_empty()));
-                if !fd_has_content && !next_is_field_data {
+                let mut trailing_fd_has_content = false;
+                for n in &vctx.label_nodes[(cmd_ctx.node_idx + 1).min(vctx.label_nodes.len())..] {
+                    match n {
+                        crate::grammar::ast::Node::FieldData { content, .. } => {
+                            if !content.is_empty() {
+                                trailing_fd_has_content = true;
+                                break;
+                            }
+                        }
+                        crate::grammar::ast::Node::Command { .. } => break,
+                        _ => {}
+                    }
+                }
+                if !fd_has_content && !trailing_fd_has_content {
                     issues.push(
                         Diagnostic::new(
                             codes::EMPTY_FIELD_DATA,
@@ -1928,6 +2047,8 @@ pub fn validate_with_profile(
         // Incrementally built set of command codes seen so far in this label,
         // used for O(1) order constraint checks instead of O(n) slice scans.
         let mut seen_codes: HashSet<&str> = HashSet::new();
+        // Field-local command set used by field-scoped order constraints.
+        let mut seen_field_codes: HashSet<&str> = HashSet::new();
 
         // Precomputed set of ALL command codes in this label — used for O(1)
         // Requires/Incompatible constraint checks instead of O(n) node scans.
@@ -1943,9 +2064,53 @@ pub fn validate_with_profile(
             })
             .collect();
 
+        // Precompute field memberships and full per-field command sets so
+        // constraint.scope=field can evaluate against the whole field (not
+        // only commands seen so far).
+        let mut field_id_by_node: Vec<Option<usize>> = vec![None; label.nodes.len()];
+        let mut field_codes: Vec<HashSet<&str>> = Vec::new();
+        let mut current_field_id: Option<usize> = None;
+        for (idx, node) in label.nodes.iter().enumerate() {
+            if let crate::grammar::ast::Node::Command { code, .. } = node {
+                if known.contains(code)
+                    && let Some(cmd) = tables.cmd_by_code(code)
+                    && cmd.opens_field
+                {
+                    let new_id = field_codes.len();
+                    field_codes.push(HashSet::new());
+                    current_field_id = Some(new_id);
+                }
+
+                if let Some(fid) = current_field_id {
+                    field_id_by_node[idx] = Some(fid);
+                    if let Some(set) = field_codes.get_mut(fid) {
+                        set.insert(code.as_str());
+                    }
+                }
+
+                if known.contains(code)
+                    && let Some(cmd) = tables.cmd_by_code(code)
+                    && cmd.closes_field
+                {
+                    current_field_id = None;
+                }
+            }
+        }
+
+        // Tracks whether the current node position is between ^XA and ^XZ.
+        // Parser labels may include pre-^XA commands, which should not be
+        // treated as "inside label" for scope diagnostics like ZPL2205.
+        let mut inside_format_bounds = false;
+
         for (node_idx, node) in label.nodes.iter().enumerate() {
             if let crate::grammar::ast::Node::Command { code, args, span } = node {
                 let dspan = Some(*span);
+
+                if code == "^XA" {
+                    inside_format_bounds = true;
+                } else if code == "^XZ" {
+                    inside_format_bounds = false;
+                }
 
                 // Track printable content for empty-label detection (ZPL2202)
                 if !matches!(code.as_str(), "^XA" | "^XZ") {
@@ -1956,6 +2121,9 @@ pub fn validate_with_profile(
                 if known.contains(code)
                     && let Some(cmd) = tables.cmd_by_code(code)
                 {
+                    if cmd.opens_field {
+                        seen_field_codes.clear();
+                    }
                     // ZPL2305: Redundant state-setting detection (check BEFORE recording)
                     if cmd.effects.is_some()
                         && let Some(&consumed) = label_state.producer_consumed.get(code.as_str())
@@ -2009,7 +2177,14 @@ pub fn validate_with_profile(
                     };
 
                     validate_command_args(&cmd_ctx, &vctx, &label_state, &mut issues);
-                    validate_command_constraints(&cmd_ctx, &vctx, &seen_codes, &mut issues);
+                    validate_command_constraints(
+                        &cmd_ctx,
+                        &vctx,
+                        &seen_codes,
+                        &seen_field_codes,
+                        field_id_by_node[node_idx].and_then(|fid| field_codes.get(fid)),
+                        &mut issues,
+                    );
                     validate_semantic_state(&cmd_ctx, &vctx, &mut label_state, &mut issues);
 
                     // ─── Printer gate enforcement ────────────────────────
@@ -2035,20 +2210,53 @@ pub fn validate_with_profile(
                         }
                     }
 
-                    // ZPL2205: Scope validation — host/device plane commands inside labels
-                    if !matches!(code.as_str(), "^XA" | "^XZ")
-                        && let Some(plane) = &cmd.plane
-                        && matches!(
-                            plane,
-                            zpl_toolchain_spec_tables::Plane::Host
-                                | zpl_toolchain_spec_tables::Plane::Device
-                        )
+                    // ZPL2205: placement validation for commands inside ^XA/^XZ bounds
+                    if inside_format_bounds && !matches!(code.as_str(), "^XA" | "^XZ") && {
+                        let allowed_inside =
+                            cmd.placement.as_ref().and_then(|p| p.allowed_inside_label);
+                        match allowed_inside {
+                            Some(flag) => !flag,
+                            None => matches!(cmd.plane, Some(Plane::Host | Plane::Device)),
+                        }
+                    } {
+                        let plane = match cmd.plane {
+                            Some(Plane::Format) => "format",
+                            Some(Plane::Device) => "device",
+                            Some(Plane::Host) => "host",
+                            Some(Plane::Config) => "config",
+                            None => "unknown",
+                        };
+                        issues.push(
+                            Diagnostic::warn(
+                                codes::HOST_COMMAND_IN_LABEL,
+                                format!("{} should not appear inside a label (^XA/^XZ)", code),
+                                dspan,
+                            )
+                            .with_context(ctx!("command" => code, "plane" => plane)),
+                        );
+                    }
+
+                    // Enforce explicit outside-label placement restrictions when provided.
+                    if !inside_format_bounds
+                        && !matches!(code.as_str(), "^XA" | "^XZ")
+                        && cmd.placement.as_ref().and_then(|p| p.allowed_outside_label)
+                            == Some(false)
                     {
-                        issues.push(Diagnostic::warn(
-                            codes::HOST_COMMAND_IN_LABEL,
-                            format!("{} is a {} command and should not appear inside a label (^XA/^XZ)", code, plane),
-                            dspan,
-                        ).with_context(ctx!("command" => code, "plane" => format!("{}", plane))));
+                        let plane = match cmd.plane {
+                            Some(Plane::Format) => "format",
+                            Some(Plane::Device) => "device",
+                            Some(Plane::Host) => "host",
+                            Some(Plane::Config) => "config",
+                            None => "unknown",
+                        };
+                        issues.push(
+                            Diagnostic::warn(
+                                codes::HOST_COMMAND_IN_LABEL,
+                                format!("{} should not appear outside a label (^XA/^XZ)", code),
+                                dspan,
+                            )
+                            .with_context(ctx!("command" => code, "plane" => plane)),
+                        );
                     }
 
                     // ─── Structural validation (spec-driven) ─────────────
@@ -2057,24 +2265,49 @@ pub fn validate_with_profile(
                     // Track session-scoped state in DeviceState
                     // (placed after all validation so device_state isn't mutably
                     // borrowed while ValidationContext holds an immutable ref)
-                    if cmd.scope == Some(zpl_toolchain_spec_tables::CommandScope::Session) {
+                    if cmd.scope == Some(CommandScope::Session) {
                         // ^MU: update unit system
-                        if code == "^MU"
-                            && let Some(unit_arg) = args.first().and_then(|a| a.value.as_deref())
-                        {
-                            device_state.units = match unit_arg {
-                                "I" => Units::Inches,
-                                "M" => Units::Millimeters,
-                                _ => Units::Dots,
-                            };
+                        if code == "^MU" {
+                            if let Some(unit_arg) = args.first().and_then(|a| a.value.as_deref()) {
+                                device_state.units = match unit_arg.to_ascii_uppercase().as_str() {
+                                    "I" => Units::Inches,
+                                    "M" => Units::Millimeters,
+                                    _ => Units::Dots,
+                                };
+                            }
+                            // ^MU DPI conversion applies only when both b and c are provided.
+                            // For validator conversion, use desired_dpi (c) as the active DPI.
+                            let format_base_dpi = args
+                                .get(1)
+                                .and_then(|a| a.value.as_deref())
+                                .and_then(|s| s.parse::<u32>().ok());
+                            let desired_dpi = args
+                                .get(2)
+                                .and_then(|a| a.value.as_deref())
+                                .and_then(|s| s.parse::<u32>().ok());
+                            if format_base_dpi.is_some()
+                                && let Some(dpi) = desired_dpi
+                            {
+                                device_state.dpi = Some(dpi);
+                            }
                         }
                         device_state.session_producers.insert(code.to_string());
+                    }
+
+                    // Track field-local command order for field-scoped constraints.
+                    if cmd.closes_field {
+                        seen_field_codes.clear();
+                    } else if field_tracker.open || cmd.opens_field {
+                        seen_field_codes.insert(code.as_str());
                     }
                 }
 
                 // Update seen_codes for ALL commands (not just known ones)
                 // so order constraints can reference any command code.
                 seen_codes.insert(code.as_str());
+                if field_tracker.open {
+                    seen_field_codes.insert(code.as_str());
+                }
             }
         }
 
@@ -2087,11 +2320,17 @@ pub fn validate_with_profile(
                     None
                 }
             });
-            issues.push(Diagnostic::warn(
+            let mut diag = Diagnostic::warn(
                 codes::FIELD_NOT_CLOSED,
                 "field opened but never closed with ^FS before end of label".to_string(),
                 dspan,
-            ));
+            );
+            if let Some(crate::grammar::ast::Node::Command { code, .. }) =
+                label.nodes.get(field_tracker.start_idx)
+            {
+                diag = diag.with_context(ctx!("command" => code));
+            }
+            issues.push(diag);
         }
 
         // ─── Preflight validation (post-label) ──────────────────────

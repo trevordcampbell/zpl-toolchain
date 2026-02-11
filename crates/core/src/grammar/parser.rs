@@ -131,6 +131,15 @@ impl<'a> Parser<'a> {
         self.tables.is_some()
     }
 
+    fn effective_signature(&self, code: &str) -> Option<&'a zpl_toolchain_spec_tables::Signature> {
+        self.lookup_command(code).and_then(|ce| {
+            ce.signature_overrides
+                .as_ref()
+                .and_then(|ov| ov.get(code))
+                .or(ce.signature.as_ref())
+        })
+    }
+
     // ── Token navigation ────────────────────────────────────────────────
 
     fn at_end(&self) -> bool {
@@ -373,11 +382,14 @@ impl<'a> Parser<'a> {
             // Apply the prefix/delimiter change (only ASCII characters allowed)
             if let Some(ch) = arg_char {
                 if !ch.is_ascii() {
-                    self.diags.push(Diagnostic::error(
-                        codes::PARSER_NON_ASCII_ARG,
-                        format!("{} argument must be an ASCII character, got '{}'", code, ch),
-                        Some(cmd_span),
-                    ));
+                    self.diags.push(
+                        Diagnostic::error(
+                            codes::PARSER_NON_ASCII_ARG,
+                            format!("{} argument must be an ASCII character, got '{}'", code, ch),
+                            Some(cmd_span),
+                        )
+                        .with_context(ctx!("command" => code.clone())),
+                    );
                 } else {
                     match code.as_str() {
                         "^CC" | "~CC" => {
@@ -537,8 +549,45 @@ impl<'a> Parser<'a> {
             self.fh_active = true;
         }
 
-        // ── Handle field data commands (^FD, ^FV): entire raw content is a single arg ──
+        // ── Enforce signature noSpaceAfterOpcode semantics (schema-driven) ─────
         let is_field_data = self.is_field_data_command(&code);
+        let raw_payload = !is_field_data && self.is_raw_payload_command(&code);
+        if !raw_payload {
+            let raw_non_empty = !raw.trim().is_empty();
+            if raw_non_empty {
+                let starts_with_ws = raw.chars().next().is_some_and(|c| c.is_whitespace());
+                let no_space_after_opcode = self
+                    .effective_signature(&code)
+                    .map(|s| s.no_space_after_opcode)
+                    .unwrap_or(true);
+                if no_space_after_opcode && starts_with_ws {
+                    self.diags.push(
+                        Diagnostic::error(
+                            codes::PARSER_INVALID_COMMAND,
+                            format!(
+                                "{} should not include a space between opcode and arguments",
+                                code
+                            ),
+                            Some(cmd_span),
+                        )
+                        .with_context(
+                            ctx!("command" => code.clone(), "spacing" => "noSpaceAfterOpcode=true"),
+                        ),
+                    );
+                } else if !no_space_after_opcode && !starts_with_ws {
+                    self.diags.push(
+                        Diagnostic::error(
+                            codes::PARSER_INVALID_COMMAND,
+                            format!("{} expects a space between opcode and arguments", code),
+                            Some(cmd_span),
+                        )
+                        .with_context(ctx!("command" => code.clone(), "spacing" => "noSpaceAfterOpcode=false")),
+                    );
+                }
+            }
+        }
+
+        // ── Handle field data commands (^FD, ^FV): entire raw content is a single arg ──
         let args = if is_field_data {
             // Field data: entire raw content is literal text, not comma-separated
             let trimmed = raw.trim();
@@ -562,7 +611,6 @@ impl<'a> Parser<'a> {
 
         // Determine the post-command mode before pushing the node, so we can
         // move `code` into either the node or the RawData mode without cloning.
-        let raw_payload = !is_field_data && self.is_raw_payload_command(&code);
 
         if raw_payload {
             // RawData mode needs ownership of `code`, so clone into the node.
@@ -755,7 +803,8 @@ impl<'a> Parser<'a> {
                 .lookup_command(code)
                 .and_then(|ce| ce.signature.as_ref())
                 .map(|s| s.allow_empty_trailing)
-                .unwrap_or(false);
+                // Schema default is allowEmptyTrailing=true when omitted.
+                .unwrap_or(true);
             if allow_trailing && parts.len() < param_keys.len() {
                 let missing = param_keys.len() - parts.len();
                 for _ in 0..missing {
@@ -785,9 +834,7 @@ impl<'a> Parser<'a> {
     }
 
     fn get_signature(&self, code: &str) -> (String, Vec<String>) {
-        if let Some(cmd) = self.lookup_command(code)
-            && let Some(sig) = cmd.signature.as_ref()
-        {
+        if let Some(sig) = self.effective_signature(code) {
             return (sig.joiner.clone(), sig.params.clone());
         }
         (",".into(), Vec::new())

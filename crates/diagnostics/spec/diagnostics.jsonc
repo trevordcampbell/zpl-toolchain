@@ -351,8 +351,8 @@
       "severity": "error",
       "category": "parser",
       "summary": "Invalid or missing command code",
-      "description": "Invalid or missing command code after leader (^ or ~).",
-      "contextKeys": ["command"]
+      "description": "Invalid or missing command code after leader (^ or ~), or a spacing violation between opcode and arguments based on noSpaceAfterOpcode semantics.",
+      "contextKeys": ["command", "spacing"]
     },
     {
       "id": "ZPL.PARSER.1002",

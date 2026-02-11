@@ -43,6 +43,7 @@ This guide describes how to author ZPL II command specifications under `spec/com
   - `signature`: canonical wire format representation.
     - `params`: ordered short keys or composite names, matching Zebra docs.
     - `joiner`: delimiter (`,` for ZPL).
+    - `noSpaceAfterOpcode`: spacing rule between opcode and args. `true` (default) means no space is allowed; `false` means a space is required.
     - `allowEmptyTrailing`: keep trailing empties to preserve positions.
   - `composites` (optional): declare path-like expansions (e.g. for `^XG d:o.x`).
   - `args`: richer per-arg metadata (name/type/rangeWhen/rounding); prefer this.

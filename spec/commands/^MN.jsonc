@@ -5,12 +5,12 @@
     {
       "codes": ["^MN"],
       "name": "Media Tracking",
-      "plane": "device",
+      "plane": "format",
       "scope": "document",
       "arity": 2,
       "signature": { "params": ["mode", "b"], "joiner": ",", "allowEmptyTrailing": true },
       "args": [
-        { "name": "mode", "key": "mode", "type": "enum",
+        { "name": "mode", "key": "mode", "type": "enum", "optional": true, "default": "N",
           "enum": ["N", "Y", "W", "M", "A", "V"],
           "doc": "N = continuous media, Y = non-continuous web sensing, W = non-continuous web sensing, M = non-continuous mark sensing, A = auto-detect (G-Series only), V = continuous variable length (KR403 only)." },
         { "name": "black_mark_offset", "key": "b", "type": "int",

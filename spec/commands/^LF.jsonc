@@ -5,7 +5,8 @@
     {
       "codes": ["^LF"],
       "name": "List Font Links",
-      "plane": "device",
+      "plane": "host",
+      "placement": { "allowedInsideLabel": false, "allowedOutsideLabel": true },
       "scope": "session",
       "arity": 0,
       "constraints": [],

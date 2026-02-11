@@ -404,12 +404,42 @@ fn validate_command_constraints_spec(
     }
 }
 
+/// Extract `{key}` placeholders from a composite template string.
+/// Returns placeholders in order of first occurrence.
+pub fn extract_template_placeholders(template: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut seen = HashSet::new();
+    let mut i = 0;
+    let bytes = template.as_bytes();
+    while i < bytes.len() {
+        if bytes[i] == b'{' {
+            let start = i + 1;
+            i += 1;
+            while i < bytes.len() && bytes[i] != b'}' {
+                i += 1;
+            }
+            if i < bytes.len() {
+                let key = String::from_utf8_lossy(&bytes[start..i]).to_string();
+                if !key.is_empty() && seen.insert(key.clone()) {
+                    out.push(key);
+                }
+                i += 1;
+            }
+        } else {
+            i += 1;
+        }
+    }
+    out
+}
+
 /// Validate composites linkage: composite names must appear in signature params,
-/// and exposed args must exist in the command's args.
+/// exposed args must exist in the command's args, and template placeholders
+/// must match exposesArgs bidirectionally.
 fn validate_composites_linkage(cmd: &SourceCommand, errors: &mut Vec<String>) {
     if let Some(comps) = &cmd.composites {
         let params = cmd.signature_params();
-        let arg_keys = cmd.arg_keys();
+        // Use all_arg_keys so OneOf alternatives are valid composite targets.
+        let all_arg_keys = cmd.all_arg_keys();
         for comp in comps {
             if !comp.name.is_empty() {
                 if !params.is_empty() && !params.iter().any(|p| p == &comp.name) {
@@ -419,9 +449,29 @@ fn validate_composites_linkage(cmd: &SourceCommand, errors: &mut Vec<String>) {
                     ));
                 }
                 for k in &comp.exposes_args {
-                    if !arg_keys.contains(k) {
+                    if !all_arg_keys.contains(k) {
                         errors.push(format!(
                             "composite '{}' exposes arg '{}' not present in args",
+                            comp.name, k
+                        ));
+                    }
+                }
+                // Template ↔ exposesArgs linkage
+                let placeholders = extract_template_placeholders(&comp.template);
+                let exposes_set: HashSet<&str> =
+                    comp.exposes_args.iter().map(|s| s.as_str()).collect();
+                for placeholder in &placeholders {
+                    if !exposes_set.contains(placeholder.as_str()) {
+                        errors.push(format!(
+                            "composite '{}' template placeholder '{{{}}}' not in exposesArgs",
+                            comp.name, placeholder
+                        ));
+                    }
+                }
+                for k in &comp.exposes_args {
+                    if !placeholders.contains(k) {
+                        errors.push(format!(
+                            "composite '{}' exposes arg '{}' not used in template",
                             comp.name, k
                         ));
                     }
@@ -608,6 +658,7 @@ pub fn generate_tables(
             effects: cmd.effects.clone(),
             plane: cmd.plane,
             scope: cmd.scope,
+            placement: cmd.placement.clone(),
             name: cmd.name.clone(),
             category: cmd.category,
             since: cmd.since.clone(),
@@ -620,6 +671,7 @@ pub fn generate_tables(
             printer_gates: cmd.printer_gates.clone(),
             signature_overrides: cmd.signature_overrides.clone(),
             field_data_rules: cmd.field_data_rules.clone(),
+            examples: cmd.examples.clone(),
         })
         .collect();
 
@@ -1092,6 +1144,94 @@ mod tests {
             "ConstraintKind::ALL and JSONC schema kind enum are out of sync.\n\
              Rust: {:?}\nSchema: {:?}",
             rust_kinds, schema_kinds
+        );
+    }
+
+    #[test]
+    fn extract_template_placeholders_empty() {
+        assert!(super::extract_template_placeholders("").is_empty());
+        assert!(super::extract_template_placeholders("no braces").is_empty());
+    }
+
+    #[test]
+    fn extract_template_placeholders_single() {
+        assert_eq!(
+            super::extract_template_placeholders("{d}"),
+            vec!["d".to_string()]
+        );
+    }
+
+    #[test]
+    fn extract_template_placeholders_multiple() {
+        assert_eq!(
+            super::extract_template_placeholders("{d}:{o}.{x}"),
+            vec!["d".to_string(), "o".to_string(), "x".to_string()]
+        );
+    }
+
+    #[test]
+    fn extract_template_placeholders_dedupe() {
+        assert_eq!(
+            super::extract_template_placeholders("{a}_{a}"),
+            vec!["a".to_string()]
+        );
+    }
+
+    #[test]
+    fn validate_composites_linkage_valid_template_exposes_args() {
+        use super::validate_composites_linkage;
+        use crate::source::SourceSpecFile;
+
+        let json = r#"{"schemaVersion":"1.1.1","commands":[{"codes":["^XG"],"arity":1,"signature":{"params":["path"],"joiner":","},"composites":[{"name":"path","template":"{d}:{o}.{x}","exposesArgs":["d","o","x"]}],"args":[{"key":"d","type":"string","name":"d"},{"key":"o","type":"string","name":"o"},{"key":"x","type":"string","name":"x"}]}]}"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let cmd = spec.commands.into_iter().next().unwrap();
+        let mut errors = Vec::new();
+        validate_composites_linkage(&cmd, &mut errors);
+        assert!(errors.is_empty(), "expected no errors: {:?}", errors);
+    }
+
+    #[test]
+    fn validate_composites_linkage_placeholder_not_in_exposes_args() {
+        use super::validate_cross_field;
+        use crate::source::SourceSpecFile;
+        use std::path::Path;
+
+        let json = r#"{"schemaVersion":"1.1.1","commands":[{"codes":["^XG"],"arity":2,"signature":{"params":["path","x"],"joiner":","},"composites":[{"name":"path","template":"{d}:{o}.{x}","exposesArgs":["d","o"]}],"args":[{"key":"d","type":"string","name":"d"},{"key":"o","type":"string","name":"o"},{"key":"x","type":"string","name":"x"}]}]}"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let cmd = spec.commands.into_iter().next().unwrap();
+        let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec");
+        let errs = validate_cross_field(&[cmd], &spec_dir);
+        assert!(!errs.is_empty(), "expected validation errors");
+        let err = errs.first().unwrap();
+        assert!(
+            err.errors.iter().any(|e| e.contains("not in exposesArgs")),
+            "expected 'not in exposesArgs' error: {:?}",
+            err.errors
+        );
+    }
+
+    #[test]
+    fn validate_composites_linkage_exposes_arg_missing_from_template() {
+        use super::validate_cross_field;
+        use crate::source::SourceSpecFile;
+        use std::path::Path;
+
+        let json = r#"{"schemaVersion":"1.1.1","commands":[{"codes":["^XG"],"arity":3,"signature":{"params":["path","mx","my"],"joiner":","},"composites":[{"name":"path","template":"{d}.{x}","exposesArgs":["d","o","x"]}],"args":[{"key":"d","type":"string","name":"d"},{"key":"o","type":"string","name":"o"},{"key":"x","type":"string","name":"x"}]}]}"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let cmd = spec.commands.into_iter().next().unwrap();
+        let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec");
+        let errs = validate_cross_field(&[cmd], &spec_dir);
+        assert!(!errs.is_empty(), "expected validation errors");
+        let err = errs.first().unwrap();
+        assert!(
+            err.errors
+                .iter()
+                .any(|e| e.contains("not used in template")),
+            "expected 'not used in template' error: {:?}",
+            err.errors
         );
     }
 }

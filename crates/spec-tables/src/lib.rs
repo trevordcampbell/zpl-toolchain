@@ -292,6 +292,9 @@ pub struct CommandEntry {
     /// Scope: field, label, session, document, job.
     #[serde(default)]
     pub scope: Option<CommandScope>,
+    /// Placement rules that refine where commands are allowed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub placement: Option<Placement>,
 
     // ── Metadata & versioning ───────────────────────────────────────────
     /// Human-readable command name (e.g., "Print Width").
@@ -334,6 +337,9 @@ pub struct CommandEntry {
     /// Validation rules for field data when this barcode command is active.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub field_data_rules: Option<FieldDataRules>,
+    /// Executable/documentation examples.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub examples: Option<Vec<Example>>,
 }
 
 /// Composite parameter group — combines multiple args into a single path-like
@@ -361,6 +367,18 @@ pub struct Effects {
     pub sets: Vec<String>,
 }
 
+/// Placement rules that refine command location semantics.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Placement {
+    /// Whether this command is allowed inside ^XA/^XZ label bounds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_inside_label: Option<bool>,
+    /// Whether this command is allowed outside ^XA/^XZ label bounds.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_outside_label: Option<bool>,
+}
+
 /// Validation rules for field data content associated with a barcode command.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -377,6 +395,9 @@ pub struct FieldDataRules {
     /// Shorthand for min_length == max_length.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub exact_length: Option<usize>,
+    /// Discrete allowed lengths (e.g., [2, 5]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_lengths: Option<Vec<usize>>,
     /// Required parity of data length ("even" or "odd").
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub length_parity: Option<String>,
@@ -404,8 +425,11 @@ pub struct Signature {
     /// Character(s) that separate arguments (default `","`).
     #[serde(default = "default_joiner")]
     pub joiner: String,
+    /// Whether an opcode is immediately followed by parameters with no space.
+    #[serde(default = "default_no_space_after_opcode")]
+    pub no_space_after_opcode: bool,
     /// Whether to pad the argument list with empty trailing slots.
-    #[serde(default)]
+    #[serde(default = "default_allow_empty_trailing")]
     pub allow_empty_trailing: bool,
     /// Optional rule for splitting a single raw parameter into multiple args.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -414,6 +438,14 @@ pub struct Signature {
 
 fn default_joiner() -> String {
     ",".to_string()
+}
+
+fn default_no_space_after_opcode() -> bool {
+    true
+}
+
+fn default_allow_empty_trailing() -> bool {
+    true
 }
 
 /// A node in the opcode trie used for longest-match command recognition.
@@ -446,6 +478,38 @@ pub enum ArgUnion {
     },
 }
 
+/// Declares how firmware interprets argument presence/emptiness.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ArgPresence {
+    /// Argument is absent.
+    #[serde(rename = "unset")]
+    Unset,
+    /// Argument is present but explicitly empty.
+    #[serde(rename = "empty")]
+    Empty,
+    /// Argument is present with a concrete value.
+    #[serde(rename = "value")]
+    Value,
+    /// Argument may be explicit value or firmware default.
+    #[serde(rename = "valueOrDefault")]
+    ValueOrDefault,
+    /// Empty argument means "use default".
+    #[serde(rename = "emptyMeansUseDefault")]
+    EmptyMeansUseDefault,
+}
+
+/// Resource family for `resourceRef` arguments.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum ResourceKind {
+    /// Graphic resource.
+    Graphic,
+    /// Font resource.
+    Font,
+    /// Any resource family.
+    Any,
+}
+
 /// Rich metadata for a single command argument.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -476,6 +540,9 @@ pub struct Arg {
     /// Whether this argument may be omitted.
     #[serde(default)]
     pub optional: bool,
+    /// Clarifies how empty vs missing args are interpreted by firmware.
+    #[serde(default)]
+    pub presence: Option<ArgPresence>,
     /// Static default value.
     #[serde(default)]
     pub default: Option<serde_json::Value>,
@@ -500,6 +567,9 @@ pub struct Arg {
     /// Conditional rounding policy overrides.
     #[serde(default)]
     pub rounding_policy_when: Option<Vec<ConditionalRounding>>,
+    /// Resource family when `type == "resourceRef"`.
+    #[serde(default)]
+    pub resource: Option<ResourceKind>,
 
     /// Allowed enum values (simple strings or rich objects with gates).
     #[serde(default)]
@@ -660,6 +730,16 @@ pub enum ConstraintSeverity {
     Info,
 }
 
+/// Evaluation scope for command-level constraints.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum ConstraintScope {
+    /// Evaluate the constraint across the full label.
+    Label,
+    /// Evaluate the constraint within the current field only.
+    Field,
+}
+
 /// Command plane — determines where in the ZPL hierarchy the command operates.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
@@ -722,4 +802,37 @@ pub struct Constraint {
     /// Severity override for the diagnostic (defaults to warn).
     #[serde(default)]
     pub severity: Option<ConstraintSeverity>,
+    /// Optional evaluation scope for this constraint.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<ConstraintScope>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Arg, ArgPresence, ResourceKind, Signature};
+
+    #[test]
+    fn signature_allow_empty_trailing_defaults_true() {
+        let sig: Signature =
+            serde_json::from_str(r#"{"params":["a"],"joiner":","}"#).expect("valid signature");
+        assert!(
+            sig.allow_empty_trailing,
+            "allow_empty_trailing should default to true to match schema"
+        );
+    }
+
+    #[test]
+    fn arg_presence_and_resource_deserialize() {
+        let arg: Arg = serde_json::from_str(
+            r#"{
+                "name":"obj",
+                "type":"resourceRef",
+                "presence":"valueOrDefault",
+                "resource":"font"
+            }"#,
+        )
+        .expect("valid arg");
+        assert_eq!(arg.presence, Some(ArgPresence::ValueOrDefault));
+        assert_eq!(arg.resource, Some(ResourceKind::Font));
+    }
 }

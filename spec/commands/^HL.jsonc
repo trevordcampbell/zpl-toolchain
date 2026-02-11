@@ -5,8 +5,9 @@
     {
       "codes": ["^HL", "~HL"],
       "name": "Return RFID Data Log to Host",
-      "plane": "device",
+      "plane": "host",
       "scope": "document",
+      "placement": { "allowedInsideLabel": false, "allowedOutsideLabel": true },
       "arity": 0,
       "constraints": [
         { "kind": "note", "message": "~HL is processed immediately; ^HL is processed after all previous formats. In firmware X.20.16Z and later, logging is disabled by default and ^HL clears the log and restarts recording; ~HL does not automatically clear the log." }

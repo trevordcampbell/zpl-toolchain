@@ -119,6 +119,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "f",
           "o",
@@ -247,6 +248,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -440,6 +442,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -598,6 +601,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "e",
@@ -776,6 +780,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -933,6 +938,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "e",
@@ -1073,6 +1079,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -1207,6 +1214,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -1383,6 +1391,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -1520,6 +1529,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -1676,6 +1686,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -1831,6 +1842,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -2008,6 +2020,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -2187,6 +2200,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -2294,6 +2308,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "m",
           "n",
@@ -2428,6 +2443,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -2541,6 +2557,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -2674,6 +2691,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -2808,6 +2826,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -3008,6 +3027,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "e",
@@ -3124,6 +3144,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -3303,6 +3324,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "e",
@@ -3492,6 +3514,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -3650,6 +3673,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "e",
@@ -3804,6 +3828,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -3980,6 +4005,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -4101,9 +4127,11 @@
       "effects": null,
       "fieldData": false,
       "fieldDataRules": {
+        "allowedLengths": [
+          2,
+          5
+        ],
         "characterSet": "0-9",
-        "maxLength": 5,
-        "minLength": 2,
         "notes": "Exactly 2 or 5 numeric digits required; ZPL auto-pads on the left with zeros or truncates to required length. Used with ^BU (UPC-A) or ^B9 (UPC-E)"
       },
       "fieldNumber": false,
@@ -4118,6 +4146,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -4294,6 +4323,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "w1",
@@ -4452,6 +4482,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -4666,6 +4697,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -4777,6 +4809,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "w",
           "r",
@@ -4934,6 +4967,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -4996,6 +5030,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "x"
         ]
@@ -5054,6 +5089,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -5148,6 +5184,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "f",
           "h",
@@ -5258,6 +5295,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "s1",
@@ -5353,6 +5391,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -5414,6 +5453,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -5518,6 +5558,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -5577,6 +5618,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -5635,6 +5677,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -5688,6 +5731,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d"
         ]
@@ -5791,6 +5835,10 @@
       "hexEscapeModifier": false,
       "name": "Font Identifier",
       "opensField": false,
+      "placement": {
+        "allowedInsideLabel": true,
+        "allowedOutsideLabel": true
+      },
       "plane": "device",
       "rawPayload": false,
       "requiresField": false,
@@ -5799,6 +5847,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "d",
@@ -5889,6 +5938,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -6016,6 +6066,7 @@
           "expr": "^FD|^FV",
           "kind": "requires",
           "message": "^FB is meaningful with a following ^FD/^FV",
+          "scope": "field",
           "severity": "info"
         },
         {
@@ -6039,6 +6090,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -6132,6 +6184,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -6216,6 +6269,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -6269,6 +6323,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "i"
         ]
@@ -6365,6 +6420,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "ext",
           "base",
@@ -6444,6 +6500,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "x1",
           "y1"
@@ -6512,6 +6569,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "n",
           "p"
@@ -6612,6 +6670,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "x",
           "y",
@@ -6685,6 +6744,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "g"
@@ -6831,6 +6891,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "x",
           "y",
@@ -6911,6 +6972,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "r",
           "z"
@@ -6958,6 +7020,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": "",
+        "noSpaceAfterOpcode": true,
         "params": [
           "c"
         ]
@@ -7098,6 +7161,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "w",
           "h",
@@ -7200,6 +7264,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "t",
@@ -7342,6 +7407,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "w",
           "h",
@@ -7465,6 +7531,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "w",
           "h",
@@ -7606,6 +7673,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -7710,6 +7778,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -7791,7 +7860,11 @@
       "hexEscapeModifier": false,
       "name": "Host Format",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -7799,6 +7872,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -7880,7 +7954,11 @@
       "hexEscapeModifier": false,
       "name": "Host Graphic",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -7888,6 +7966,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -7909,7 +7988,11 @@
       "hexEscapeModifier": false,
       "name": "Configuration Label Return",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -7938,7 +8021,11 @@
       "hexEscapeModifier": false,
       "name": "Return RFID Data Log to Host",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -8138,6 +8225,10 @@
       "hexEscapeModifier": false,
       "name": "Calibrate RFID Tag Position",
       "opensField": false,
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
       "plane": "device",
       "printerGates": [
         "rfid"
@@ -8149,6 +8240,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -8183,7 +8275,11 @@
       "hexEscapeModifier": false,
       "name": "Host Linked Fonts List",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -8304,7 +8400,11 @@
       "hexEscapeModifier": false,
       "name": "Host Verification",
       "opensField": false,
-      "plane": "format",
+      "placement": {
+        "allowedInsideLabel": true,
+        "allowedOutsideLabel": false
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "field",
@@ -8312,6 +8412,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "num",
           "n",
@@ -8403,7 +8504,11 @@
       "hexEscapeModifier": false,
       "name": "Host Directory List",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -8411,6 +8516,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -8502,7 +8608,11 @@
       "hexEscapeModifier": false,
       "name": "Upload Graphics",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -8510,6 +8620,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -8525,10 +8636,15 @@
           "defaultFrom": null,
           "enum": [
             "a",
+            "A",
             "f",
+            "F",
             "l",
+            "L",
             "o",
-            "r"
+            "O",
+            "r",
+            "R"
           ],
           "key": "b",
           "maxLength": null,
@@ -8542,9 +8658,48 @@
           "roundingPolicyWhen": null,
           "type": "enum",
           "unit": null
+        },
+        {
+          "default": null,
+          "defaultByDpi": null,
+          "defaultFrom": null,
+          "enum": null,
+          "key": "obj",
+          "maxLength": null,
+          "minLength": null,
+          "name": "object_spec",
+          "optional": true,
+          "profileConstraint": null,
+          "range": null,
+          "rangeWhen": null,
+          "roundingPolicy": null,
+          "roundingPolicyWhen": null,
+          "type": "string",
+          "unit": null
+        },
+        {
+          "default": "N",
+          "defaultByDpi": null,
+          "defaultFrom": null,
+          "enum": [
+            "Y",
+            "N"
+          ],
+          "key": "l",
+          "maxLength": null,
+          "minLength": null,
+          "name": "long_filename",
+          "optional": true,
+          "profileConstraint": null,
+          "range": null,
+          "rangeWhen": null,
+          "roundingPolicy": null,
+          "roundingPolicyWhen": null,
+          "type": "enum",
+          "unit": null
         }
       ],
-      "arity": 1,
+      "arity": 3,
       "closesField": false,
       "codes": [
         "^HZ"
@@ -8563,7 +8718,11 @@
       "hexEscapeModifier": false,
       "name": "Display Description Information",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -8571,8 +8730,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
-          "b"
+          "b",
+          "obj",
+          "l"
         ]
       }
     },
@@ -8658,6 +8820,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -8750,6 +8913,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -8849,6 +9013,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -8962,6 +9127,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -9015,6 +9181,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -9257,6 +9424,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -9419,6 +9587,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -9594,6 +9763,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -9659,6 +9829,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "n"
         ]
@@ -9713,6 +9884,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -9832,6 +10004,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "n",
           "a",
@@ -9887,6 +10060,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -9941,6 +10115,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "t"
         ]
@@ -9994,6 +10169,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -10115,6 +10291,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -10184,6 +10361,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -10258,6 +10436,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -10334,6 +10513,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
@@ -10419,6 +10599,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
@@ -10572,6 +10753,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -10595,7 +10777,11 @@
       "hexEscapeModifier": false,
       "name": "List Font Links",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "session",
@@ -10672,6 +10858,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "x",
           "y"
@@ -10742,7 +10929,7 @@
       "hexEscapeModifier": false,
       "name": "Label Length",
       "opensField": false,
-      "plane": "device",
+      "plane": "format",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -10750,6 +10937,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ".",
+        "noSpaceAfterOpcode": true,
         "params": [
           "h",
           "x"
@@ -10804,6 +10992,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "m"
         ]
@@ -10864,6 +11053,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -10924,6 +11114,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "x"
         ]
@@ -11073,6 +11264,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "type",
           "print",
@@ -11133,6 +11325,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "c"
         ]
@@ -11185,7 +11378,7 @@
       "hexEscapeModifier": false,
       "name": "Media Darkness",
       "opensField": false,
-      "plane": "device",
+      "plane": "format",
       "rawPayload": false,
       "requiresField": false,
       "scope": "session",
@@ -11193,6 +11386,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -11281,6 +11475,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "p",
           "h"
@@ -11360,6 +11555,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "type",
           "message"
@@ -11421,6 +11617,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -11544,7 +11741,7 @@
       "hexEscapeModifier": false,
       "name": "Print Mode",
       "opensField": false,
-      "plane": "device",
+      "plane": "format",
       "rawPayload": false,
       "requiresField": false,
       "scope": "session",
@@ -11552,6 +11749,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
@@ -11561,7 +11759,7 @@
     {
       "args": [
         {
-          "default": null,
+          "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
           "enum": [
@@ -11576,7 +11774,7 @@
           "maxLength": null,
           "minLength": null,
           "name": "mode",
-          "optional": false,
+          "optional": true,
           "profileConstraint": null,
           "range": null,
           "rangeWhen": null,
@@ -11631,7 +11829,7 @@
       "hexEscapeModifier": false,
       "name": "Media Tracking",
       "opensField": false,
-      "plane": "device",
+      "plane": "format",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -11639,6 +11837,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "mode",
           "b"
@@ -11707,6 +11906,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -11752,7 +11952,7 @@
       "hexEscapeModifier": false,
       "name": "Media Type",
       "opensField": false,
-      "plane": "device",
+      "plane": "format",
       "rawPayload": false,
       "requiresField": false,
       "scope": "session",
@@ -11760,6 +11960,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -11868,6 +12069,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -11930,6 +12132,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -11986,6 +12189,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -12042,6 +12246,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -12274,6 +12479,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -12336,6 +12542,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -12472,6 +12679,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -12533,6 +12741,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -12750,6 +12959,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -12822,6 +13032,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
@@ -12872,6 +13083,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -12998,6 +13210,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -13050,6 +13263,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "n"
         ]
@@ -13132,6 +13346,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -13188,6 +13403,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -13241,6 +13457,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o"
         ]
@@ -13403,6 +13620,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "q",
           "p",
@@ -13494,7 +13712,7 @@
       "hexEscapeModifier": false,
       "name": "Print Rate",
       "opensField": false,
-      "plane": "device",
+      "plane": "format",
       "rawPayload": false,
       "requiresField": false,
       "scope": "session",
@@ -13502,6 +13720,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "p",
           "s",
@@ -13552,7 +13771,7 @@
       "hexEscapeModifier": false,
       "name": "Print Width",
       "opensField": false,
-      "plane": "device",
+      "plane": "format",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -13560,6 +13779,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "w"
         ]
@@ -13959,6 +14179,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "n",
           "p0",
@@ -14123,6 +14344,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "f",
@@ -14259,6 +14481,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "mode",
           "b",
@@ -14464,6 +14687,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "t",
           "p",
@@ -14538,6 +14762,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
@@ -14637,6 +14862,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "r",
           "w",
@@ -14824,6 +15050,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -14920,6 +15147,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -14986,6 +15214,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
@@ -15068,6 +15297,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
@@ -15167,6 +15397,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
@@ -15260,6 +15491,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "v",
           "n",
@@ -15444,6 +15676,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -15506,6 +15739,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -15627,6 +15861,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -15689,6 +15924,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -15925,6 +16161,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "w",
           "m",
@@ -16116,6 +16353,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -16309,6 +16547,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -16374,6 +16613,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -16480,6 +16720,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -16553,6 +16794,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "source",
           "destination"
@@ -16626,6 +16868,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
@@ -16715,6 +16958,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -16911,6 +17155,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -17010,6 +17255,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -17083,6 +17329,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
@@ -17228,6 +17475,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -17401,6 +17649,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "e",
           "o",
@@ -17721,6 +17970,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -17874,6 +18124,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -17884,55 +18135,14 @@
     {
       "args": [
         {
-          "default": "R",
-          "defaultByDpi": null,
-          "defaultFrom": null,
-          "enum": [
-            "R",
-            "E",
-            "B",
-            "A"
-          ],
-          "key": "d",
-          "maxLength": null,
-          "minLength": null,
-          "name": "drive",
-          "optional": true,
-          "profileConstraint": null,
-          "range": null,
-          "rangeWhen": null,
-          "roundingPolicy": null,
-          "roundingPolicyWhen": null,
-          "type": "enum",
-          "unit": null
-        },
-        {
-          "default": null,
+          "default": "R:UNKNOWN.GRF",
           "defaultByDpi": null,
           "defaultFrom": null,
           "enum": null,
-          "key": "o",
+          "key": "path",
           "maxLength": null,
           "minLength": null,
-          "name": "name",
-          "optional": true,
-          "profileConstraint": null,
-          "range": null,
-          "rangeWhen": null,
-          "roundingPolicy": null,
-          "roundingPolicyWhen": null,
-          "type": "string",
-          "unit": null
-        },
-        {
-          "default": "GRF",
-          "defaultByDpi": null,
-          "defaultFrom": null,
-          "enum": null,
-          "key": "x",
-          "maxLength": null,
-          "minLength": null,
-          "name": "extension",
+          "name": "image_path",
           "optional": true,
           "profileConstraint": null,
           "range": null,
@@ -17985,7 +18195,7 @@
           "unit": null
         }
       ],
-      "arity": 5,
+      "arity": 3,
       "closesField": false,
       "codes": [
         "^XG"
@@ -18012,10 +18222,9 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
-          "d",
-          "o",
-          "x",
+          "path",
           "mx",
           "my"
         ]
@@ -18113,6 +18322,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "length",
           "threshold",
@@ -18193,6 +18403,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -18403,6 +18614,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -18516,6 +18728,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -18642,6 +18855,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -18772,6 +18986,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -18880,6 +19095,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -18988,6 +19204,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -19167,6 +19384,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "f",
@@ -19220,7 +19438,11 @@
       "hexEscapeModifier": false,
       "name": "Battery Status",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -19241,7 +19463,11 @@
       "hexEscapeModifier": false,
       "name": "Head Diagnostic",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -19262,7 +19488,11 @@
       "hexEscapeModifier": false,
       "name": "Host Identification",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -19283,7 +19513,11 @@
       "hexEscapeModifier": false,
       "name": "Host RAM Status",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -19341,7 +19575,11 @@
       "hexEscapeModifier": false,
       "name": "Host Query",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -19349,6 +19587,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "qt"
         ]
@@ -19375,7 +19614,11 @@
       "hexEscapeModifier": false,
       "name": "Host Status Return",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -19403,7 +19646,11 @@
       "hexEscapeModifier": false,
       "name": "Return ZebraNet Alert Configuration",
       "opensField": false,
-      "plane": "device",
+      "placement": {
+        "allowedInsideLabel": false,
+        "allowedOutsideLabel": true
+      },
+      "plane": "host",
       "rawPayload": false,
       "requiresField": false,
       "scope": "document",
@@ -19574,6 +19821,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "p"
         ]
@@ -19806,6 +20054,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "b"
         ]
@@ -19903,6 +20152,10 @@
       "hexEscapeModifier": false,
       "name": "Network Connect",
       "opensField": false,
+      "placement": {
+        "allowedInsideLabel": true,
+        "allowedOutsideLabel": true
+      },
       "plane": "device",
       "rawPayload": false,
       "requiresField": false,
@@ -19911,6 +20164,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -20013,6 +20267,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -20087,6 +20342,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
@@ -20190,6 +20446,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "c"
         ]
@@ -20245,7 +20502,7 @@
       "hexEscapeModifier": false,
       "name": "Set Darkness",
       "opensField": false,
-      "plane": "device",
+      "plane": "format",
       "rawPayload": false,
       "requiresField": false,
       "scope": "session",
@@ -20253,6 +20510,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -20313,6 +20571,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]
@@ -20412,6 +20671,7 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
+        "noSpaceAfterOpcode": true,
         "params": [
           "a"
         ]

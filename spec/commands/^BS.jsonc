@@ -24,7 +24,7 @@
         { "kind": "order", "expr": "before:^FD|^FV", "message": "^BS should precede its field data (^FD/^FV)", "severity": "info" }
       ],
       "docs": "Print a UPC/EAN two-digit or five-digit extension barcode used for ISBNs and periodicals.",
-      "fieldDataRules": { "characterSet": "0-9", "minLength": 2, "maxLength": 5, "notes": "Exactly 2 or 5 numeric digits required; ZPL auto-pads on the left with zeros or truncates to required length. Used with ^BU (UPC-A) or ^B9 (UPC-E)" }
+      "fieldDataRules": { "characterSet": "0-9", "allowedLengths": [2, 5], "notes": "Exactly 2 or 5 numeric digits required; ZPL auto-pads on the left with zeros or truncates to required length. Used with ^BU (UPC-A) or ^B9 (UPC-E)" }
     }
   ]
 }

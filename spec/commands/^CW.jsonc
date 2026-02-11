@@ -7,6 +7,7 @@
       "name": "Font Identifier",
       "plane": "device",
       "scope": "session",
+      "placement": { "allowedInsideLabel": true, "allowedOutsideLabel": true },
       "arity": 4,
       "signature": { "params": ["a", "d", "o", "x"], "joiner": ",", "allowEmptyTrailing": true },
       "args": [

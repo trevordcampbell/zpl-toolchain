@@ -21,6 +21,7 @@ fn arg_union_accepts_either_shape() {
             signature: Some(zpl_toolchain_spec_tables::Signature {
                 params: vec!["x".to_string()],
                 joiner: ",".to_string(),
+                no_space_after_opcode: true,
                 allow_empty_trailing: true,
                 split_rule: None,
             }),
@@ -35,6 +36,7 @@ fn arg_union_accepts_either_shape() {
                         min_length: None,
                         max_length: None,
                         optional: false,
+                        presence: None,
                         default: None,
                         default_by_dpi: None,
                         default_from: None,
@@ -42,6 +44,7 @@ fn arg_union_accepts_either_shape() {
                         range_when: None,
                         rounding_policy: None,
                         rounding_policy_when: None,
+                        resource: None,
                         r#enum: None,
                     },
                     zpl_toolchain_spec_tables::Arg {
@@ -53,6 +56,7 @@ fn arg_union_accepts_either_shape() {
                         min_length: None,
                         max_length: None,
                         optional: false,
+                        presence: None,
                         default: None,
                         default_by_dpi: None,
                         default_from: None,
@@ -60,6 +64,7 @@ fn arg_union_accepts_either_shape() {
                         range_when: None,
                         rounding_policy: None,
                         rounding_policy_when: None,
+                        resource: None,
                         r#enum: Some(vec![
                             zpl_toolchain_spec_tables::EnumValue::Simple("A".to_string()),
                             zpl_toolchain_spec_tables::EnumValue::Simple("B".to_string()),
@@ -71,6 +76,7 @@ fn arg_union_accepts_either_shape() {
             effects: None,
             plane: None,
             scope: None,
+            placement: None,
             name: None,
             category: None,
             since: None,
@@ -83,6 +89,7 @@ fn arg_union_accepts_either_shape() {
             printer_gates: None,
             signature_overrides: None,
             field_data_rules: None,
+            examples: None,
         }],
         None,
     );

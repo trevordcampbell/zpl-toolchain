@@ -44,7 +44,7 @@ Validation is **skipped** when `^FH` (hex escape) is active, since raw hex-escap
 | UPC-A | `^BU` | `0-9` | `exactLength: 11` | — | Mod 10 (auto) |
 | UPC-E | `^B9` | `0-9` | `exactLength: 10` | — | Mod 10 (auto) |
 | I 2of5 | `^B2` | `0-9` | — | `even` | Optional Mod 10 |
-| UPC/EAN Ext | `^BS` | `0-9` | `min: 2`, `max: 5` | — | — |
+| UPC/EAN Ext | `^BS` | `0-9` | `allowedLengths: [2, 5]` | — | — |
 
 ### Variable-Length Numeric Barcodes
 

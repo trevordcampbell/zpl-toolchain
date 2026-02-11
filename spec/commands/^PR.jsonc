@@ -5,7 +5,7 @@
     {
       "codes": ["^PR"],
       "name": "Print Rate",
-      "plane": "device",
+      "plane": "format",
       "scope": "session",
       "arity": 3,
       "signature": { "params": ["p", "s", "b"], "joiner": ",", "allowEmptyTrailing": true },

@@ -5,13 +5,20 @@
     {
       "codes": ["^HZ"],
       "name": "Display Description Information",
-      "plane": "device",
+      "plane": "host",
       "scope": "document",
-      "arity": 1,
-      "signature": { "params": ["b"], "joiner": ",", "allowEmptyTrailing": true },
+      "placement": { "allowedInsideLabel": false, "allowedOutsideLabel": true },
+      "arity": 3,
+      "signature": { "params": ["b", "obj", "l"], "joiner": ",", "allowEmptyTrailing": true },
       "args": [
-        { "name": "info_type", "key": "b", "type": "enum", "enum": ["a","f","l","o","r"],
+        { "name": "info_type", "key": "b", "type": "enum", "enum": ["a","A","f","F","l","L","o","O","r","R"],
           "doc": "Display description to return. a = all information, f = format settings, l = object directory listing, o = individual object data, r = printer status. If value is missing or invalid the command is ignored." }
+      ,
+        { "name": "object_spec", "key": "obj", "type": "string", "optional": true,
+          "doc": "Extended object selector used when info_type='o'. Format: d:o.x where d is device, o is object name, and x is extension." }
+      ,
+        { "name": "long_filename", "key": "l", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "N",
+          "doc": "Long filename support flag for extended info_type='o'. Y enables long filename support; N disables it." }
       ],
       "constraints": [
         { "kind": "note", "message": "When info_type is 'o', an extended format is used: ^HZO,d:o.x,l where d = device (R:,E:,B:,A:), o = object name (1-16 chars), x = extension (.FNT,.GRF,.PNG,.ZPL,.DAT,.ZOB,.STO), and l = long filename support (Y/N, default N)." }

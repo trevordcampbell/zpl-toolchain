@@ -8,6 +8,7 @@
       "name": "Calibrate RFID Tag Position",
       "plane": "device",
       "scope": "document",
+      "placement": { "allowedInsideLabel": false, "allowedOutsideLabel": true },
       "arity": 9,
       "signature": { "params": ["a","b","c","d","e","f","g","h","i"], "joiner": ",", "allowEmptyTrailing": true },
       "args": [

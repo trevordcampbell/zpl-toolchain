@@ -5,8 +5,9 @@
     {
       "codes": ["^HT"],
       "name": "Host Linked Fonts List",
-      "plane": "device",
+      "plane": "host",
       "scope": "document",
+      "placement": { "allowedInsideLabel": false, "allowedOutsideLabel": true },
       "arity": 0,
       "constraints": [
         { "kind": "note", "message": "Available only for printers with firmware version V60.14.x, V50.14.x, or later." }

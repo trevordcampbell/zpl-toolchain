@@ -5,8 +5,9 @@
     {
       "codes": ["~HI"],
       "name": "Host Identification",
-      "plane": "device",
+      "plane": "host",
       "scope": "document",
+      "placement": { "allowedInsideLabel": false, "allowedOutsideLabel": true },
       "arity": 0,
       "constraints": [],
       "docs": "Returns printer identification information to the host including model, software version, dots-per-millimeter setting, memory size, and detected options."

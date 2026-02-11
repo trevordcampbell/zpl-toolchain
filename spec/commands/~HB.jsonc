@@ -5,8 +5,9 @@
     {
       "codes": ["~HB"],
       "name": "Battery Status",
-      "plane": "device",
+      "plane": "host",
       "scope": "document",
+      "placement": { "allowedInsideLabel": false, "allowedOutsideLabel": true },
       "arity": 0,
       "constraints": [
         { "kind": "note", "message": "Only responds to mobile printers. Returns <STX>hh.hh,bb.bb,bt<ETX><CR><LF> where hh.hh = head voltage, bb.bb = battery voltage, bt = battery temperature in Celsius." }

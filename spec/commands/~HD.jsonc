@@ -5,8 +5,9 @@
     {
       "codes": ["~HD"],
       "name": "Head Diagnostic",
-      "plane": "device",
+      "plane": "host",
       "scope": "document",
+      "placement": { "allowedInsideLabel": false, "allowedOutsideLabel": true },
       "arity": 0,
       "constraints": [],
       "docs": "Echoes printer status information including power supply and head temperature diagnostics using the terminal emulator."

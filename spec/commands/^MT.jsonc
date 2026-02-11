@@ -5,7 +5,7 @@
     {
       "codes": ["^MT"],
       "name": "Media Type",
-      "plane": "device",
+      "plane": "format",
       "scope": "session",
       "arity": 1,
       "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },

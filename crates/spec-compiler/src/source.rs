@@ -7,9 +7,13 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use zpl_toolchain_spec_tables::{
-    Arg, ArgUnion, CommandCategory, CommandScope, Composite, Constraint, Effects, Example, Plane,
-    Signature, Stability,
+    Arg, ArgUnion, CommandCategory, CommandScope, Composite, Constraint, Effects, Example,
+    Placement, Plane, Signature, Stability,
 };
+
+fn default_scope_opt() -> Option<CommandScope> {
+    Some(CommandScope::Field)
+}
 
 /// Top-level structure of a per-command JSONC file.
 #[derive(Debug, Clone, Deserialize)]
@@ -53,8 +57,11 @@ pub struct SourceCommand {
     #[serde(default)]
     pub plane: Option<Plane>,
     /// Scope in which this command is valid (e.g. label, format, global).
-    #[serde(default)]
+    #[serde(default = "default_scope_opt")]
     pub scope: Option<CommandScope>,
+    /// Explicit placement permissions (inside/outside ^XA/^XZ).
+    #[serde(default)]
+    pub placement: Option<Placement>,
     /// Free-text documentation / description of the command.
     #[serde(default)]
     pub docs: Option<String>,

@@ -8,10 +8,20 @@ use std::path::Path;
 fn main() {
     println!("cargo::rustc-check-cfg=cfg(has_embedded_tables)");
 
-    let tables_path = Path::new("../../generated/parser_tables.json");
-    println!("cargo:rerun-if-changed={}", tables_path.display());
+    let primary = Path::new("../../generated/parser_tables.json");
+    let fallback = Path::new("../cli/data/parser_tables.json");
+    println!("cargo:rerun-if-changed={}", primary.display());
+    println!("cargo:rerun-if-changed={}", fallback.display());
 
-    if tables_path.exists() {
+    let tables_path = if primary.exists() {
+        Some(primary)
+    } else if fallback.exists() {
+        Some(fallback)
+    } else {
+        None
+    };
+
+    if let Some(tables_path) = tables_path {
         println!("cargo:rustc-cfg=has_embedded_tables");
 
         let out_dir = std::env::var("OUT_DIR").expect("OUT_DIR not set");

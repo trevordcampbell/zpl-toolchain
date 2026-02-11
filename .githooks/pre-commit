@@ -7,9 +7,23 @@
 set -e
 
 # Keep the embedded parser tables in sync with the generated copy.
-# generated/ is gitignored, so we compare the on-disk files directly.
-# If the developer has run the spec-compiler and the generated file differs
-# from the committed copy, auto-sync and stage the update.
+# generated/ is gitignored, so we (re)generate when spec-related files change
+# or when generated/parser_tables.json is missing.
+regen_tables=0
+while IFS= read -r path; do
+    case "$path" in
+        spec/*|crates/spec-compiler/*|crates/spec-tables/*|crates/diagnostics/spec/*)
+            regen_tables=1
+            break
+            ;;
+    esac
+done < <(git diff --cached --name-only --diff-filter=ACMR)
+
+if [ "$regen_tables" -eq 1 ] || [ ! -f generated/parser_tables.json ]; then
+    echo "pre-commit: generating parser tables..."
+    cargo run -q -p zpl_toolchain_spec_compiler -- build --spec-dir spec --out-dir generated
+fi
+
 if [ -f generated/parser_tables.json ] && [ -f crates/cli/data/parser_tables.json ] \
    && ! diff -q generated/parser_tables.json crates/cli/data/parser_tables.json >/dev/null 2>&1; then
     echo "pre-commit: syncing parser tables to crates/cli/data/..."

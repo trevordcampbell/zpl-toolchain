@@ -17,6 +17,76 @@ use zpl_toolchain_core::grammar::diag::Span;
 use zpl_toolchain_core::grammar::parser::{parse_str, parse_with_tables};
 use zpl_toolchain_diagnostics::{Severity, codes};
 
+fn tables_with_spacing_command(
+    code: &str,
+    no_space_after_opcode: bool,
+) -> zpl_toolchain_spec_tables::ParserTables {
+    zpl_toolchain_spec_tables::ParserTables::new(
+        "1.0.0".into(),
+        "0.3.0".into(),
+        vec![zpl_toolchain_spec_tables::CommandEntry {
+            codes: vec![code.to_string()],
+            arity: 1,
+            raw_payload: false,
+            field_data: false,
+            opens_field: false,
+            closes_field: false,
+            hex_escape_modifier: false,
+            field_number: false,
+            serialization: false,
+            requires_field: false,
+            signature: Some(zpl_toolchain_spec_tables::Signature {
+                params: vec!["n".to_string()],
+                joiner: ",".to_string(),
+                no_space_after_opcode,
+                allow_empty_trailing: true,
+                split_rule: None,
+            }),
+            args: Some(vec![zpl_toolchain_spec_tables::ArgUnion::Single(Box::new(
+                zpl_toolchain_spec_tables::Arg {
+                    name: Some("num".to_string()),
+                    key: Some("n".to_string()),
+                    r#type: "int".to_string(),
+                    unit: None,
+                    range: None,
+                    min_length: None,
+                    max_length: None,
+                    optional: false,
+                    presence: None,
+                    default: None,
+                    default_by_dpi: None,
+                    default_from: None,
+                    profile_constraint: None,
+                    range_when: None,
+                    rounding_policy: None,
+                    rounding_policy_when: None,
+                    resource: None,
+                    r#enum: None,
+                },
+            ))]),
+            constraints: None,
+            effects: None,
+            plane: None,
+            scope: None,
+            placement: None,
+            name: None,
+            category: None,
+            since: None,
+            deprecated: None,
+            deprecated_since: None,
+            stability: None,
+            composites: None,
+            defaults: None,
+            units: None,
+            printer_gates: None,
+            signature_overrides: None,
+            field_data_rules: None,
+            examples: None,
+        }],
+        None,
+    )
+}
+
 // ─── 1. Basic Parsing ────────────────────────────────────────────────────────
 
 #[test]
@@ -237,6 +307,63 @@ fn mixed_present_empty_args() {
     assert!(
         matches!(args[5].presence, Presence::Empty),
         "arg 5 should be Empty"
+    );
+}
+
+#[test]
+fn signature_no_space_after_opcode_rejects_space() {
+    let tables = tables_with_spacing_command("^ZZN", true);
+    let result = parse_with_tables("^XA^ZZN 5^XZ", Some(&tables));
+    assert!(
+        result
+            .diagnostics
+            .iter()
+            .any(|d| d.id == codes::PARSER_INVALID_COMMAND
+                && d.message.contains("should not include a space")),
+        "expected parser spacing diagnostic when noSpaceAfterOpcode=true: {:?}",
+        result.diagnostics
+    );
+}
+
+#[test]
+fn signature_space_after_opcode_required() {
+    let tables = tables_with_spacing_command("^ZZS", false);
+    let result = parse_with_tables("^XA^ZZS5^XZ", Some(&tables));
+    assert!(
+        result
+            .diagnostics
+            .iter()
+            .any(|d| d.id == codes::PARSER_INVALID_COMMAND && d.message.contains("expects a space")),
+        "expected parser spacing diagnostic when noSpaceAfterOpcode=false: {:?}",
+        result.diagnostics
+    );
+}
+
+#[test]
+fn signature_space_after_opcode_allows_space() {
+    let tables = tables_with_spacing_command("^ZZS", false);
+    let result = parse_with_tables("^XA^ZZS 5^XZ", Some(&tables));
+    assert!(
+        !result
+            .diagnostics
+            .iter()
+            .any(|d| d.id == codes::PARSER_INVALID_COMMAND && d.message.contains("expects a space")),
+        "space should be accepted when noSpaceAfterOpcode=false: {:?}",
+        result.diagnostics
+    );
+}
+
+#[test]
+fn diag_parser_1302_non_ascii_arg() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^CCé^XZ", Some(tables));
+    assert!(
+        result
+            .diagnostics
+            .iter()
+            .any(|d| d.id == codes::PARSER_NON_ASCII_ARG),
+        "non-ASCII arg for ^CC should emit ZPL.PARSER.1302: {:?}",
+        result.diagnostics
     );
 }
 

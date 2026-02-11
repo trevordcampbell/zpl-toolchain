@@ -517,8 +517,8 @@ mod tests {
 
         let mock = ReconnectMock::new(
             vec![Err(retryable_error()), Err(retryable_error())],
-            reconnect_count.clone(),
-            send_count.clone(),
+            Arc::clone(&reconnect_count),
+            Arc::clone(&send_count),
         );
 
         let mut printer = ReconnectRetryPrinter::new(mock, fast_retry_config(5));
@@ -538,8 +538,8 @@ mod tests {
 
         let mock = ReconnectMock::new(
             vec![Err(non_retryable_error())],
-            reconnect_count.clone(),
-            send_count.clone(),
+            Arc::clone(&reconnect_count),
+            Arc::clone(&send_count),
         );
 
         let mut printer = ReconnectRetryPrinter::new(mock, fast_retry_config(3));
@@ -561,8 +561,8 @@ mod tests {
                 Err(retryable_error()),
                 Err(retryable_error()),
             ],
-            reconnect_count.clone(),
-            send_count.clone(),
+            Arc::clone(&reconnect_count),
+            Arc::clone(&send_count),
         );
 
         let mut printer = ReconnectRetryPrinter::new(mock, fast_retry_config(3));
@@ -590,7 +590,7 @@ mod tests {
         let reconnect_count = Arc::new(Mutex::new(0u32));
         let send_count = Arc::new(Mutex::new(0u32));
 
-        let mock = ReconnectMock::new(vec![], reconnect_count, send_count.clone());
+        let mock = ReconnectMock::new(vec![], reconnect_count, Arc::clone(&send_count));
 
         let printer = ReconnectRetryPrinter::new(mock, fast_retry_config(1));
         let inner = printer.into_inner();

@@ -7,8 +7,8 @@ Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) pr
 ## Key types
 - `ParserTables { schema_version, format_version, commands, opcode_trie }`
 - `CommandEntry { codes, arity, field_data, raw_payload, opens_field, closes_field, hex_escape_modifier, field_number, serialization, requires_field, signature, args, constraints, effects, plane, scope, ... }`
-- `Signature { params, joiner, allow_empty_trailing }`
-- `Arg { name, key, type, unit, range, optional, default, default_from, profile_constraint, range_when, rounding_policy, rounding_policy_when, enum, min_length, max_length }`
+- `Signature { params, joiner, no_space_after_opcode, allow_empty_trailing }`
+- `Arg { name, key, type, unit, range, optional, presence, default, default_from, profile_constraint, range_when, rounding_policy, rounding_policy_when, resource, enum, min_length, max_length }`
 - `Constraint { kind: ConstraintKind, expr, message, severity: Option<ConstraintSeverity> }`
 - `Effects { sets: Vec<String> }`
 - `ProfileConstraint { field, op: ComparisonOp }`

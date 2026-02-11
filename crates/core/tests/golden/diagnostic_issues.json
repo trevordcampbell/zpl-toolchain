@@ -151,34 +151,6 @@
     },
     {
       "context": {
-        "command": "^FO",
-        "kind": "order",
-        "target": "^FS"
-      },
-      "id": "ZPL2103",
-      "message": "^FO should appear before its ^FS",
-      "severity": "info",
-      "span": {
-        "end": 28,
-        "start": 20
-      }
-    },
-    {
-      "context": {
-        "command": "^FO",
-        "kind": "order",
-        "target": "^FS"
-      },
-      "id": "ZPL2103",
-      "message": "^FO should appear before its ^FS",
-      "severity": "info",
-      "span": {
-        "end": 38,
-        "start": 28
-      }
-    },
-    {
-      "context": {
         "command": "^FO"
       },
       "id": "ZPL2203",

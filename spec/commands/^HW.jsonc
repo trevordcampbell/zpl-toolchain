@@ -5,8 +5,9 @@
     {
       "codes": ["^HW"],
       "name": "Host Directory List",
-      "plane": "device",
+      "plane": "host",
       "scope": "document",
+      "placement": { "allowedInsideLabel": false, "allowedOutsideLabel": true },
       "arity": 3,
       "signature": { "params": ["d","o","x"], "joiner": ":", "allowEmptyTrailing": true },
       "args": [

@@ -5,8 +5,9 @@
     {
       "codes": ["~HM"],
       "name": "Host RAM Status",
-      "plane": "device",
+      "plane": "host",
       "scope": "document",
+      "placement": { "allowedInsideLabel": false, "allowedOutsideLabel": true },
       "arity": 0,
       "constraints": [],
       "docs": "Returns memory status to the host including total RAM installed, maximum RAM available to the user, and currently available RAM (all in kilobytes)."

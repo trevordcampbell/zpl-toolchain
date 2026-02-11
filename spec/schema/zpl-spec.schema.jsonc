@@ -107,15 +107,24 @@
         },
 
         "name": { "type": "string" },
-        "category": { "type": "string" },                 // text, barcode, graphics, media, format, device
+        "category": { "type": "string" },                 // text, barcode, graphics, media, format, device, host, config, network, rfid, wireless, storage, kdu, misc
         "plane": {
-          "enum": ["format", "device", "host"],
-          "description": "format (label content), device (settings), or host (status)"
+          "enum": ["format", "device", "host", "config"],
+          "description": "format (label content), device (settings), host (status), or config (persistent settings)"
         },
         "scope": {
           "enum": ["document", "field", "job", "label", "session"],
           "default": "field",
           "description": "Effect lifetime; e.g., field-scoped like ^A, or document (^PW)"
+        },
+        "placement": {
+          "type": "object",
+          "properties": {
+            "allowedInsideLabel": { "type": "boolean" },
+            "allowedOutsideLabel": { "type": "boolean" }
+          },
+          "additionalProperties": false,
+          "description": "Explicit placement permissions that refine semantic plane classification."
         },
 
         // Structured side-effect hints (object format only).
@@ -136,6 +145,12 @@
             "minLength": { "type": "integer", "description": "Minimum data length" },
             "maxLength": { "type": "integer", "description": "Maximum data length" },
             "exactLength": { "type": "integer", "description": "Shorthand for minLength == maxLength" },
+            "allowedLengths": {
+              "type": "array",
+              "items": { "type": "integer", "minimum": 0 },
+              "minItems": 1,
+              "description": "Allowed discrete lengths for data (e.g., [2,5])"
+            },
             "lengthParity": { "type": "string", "enum": ["even", "odd"], "description": "Required parity of data length" },
             "notes": { "type": "string", "description": "Human-readable notes about the data format" }
           },
@@ -350,17 +365,7 @@
       "type": "object",
       "properties": {
         "unit": { "type": "string" },
-        "mode": {
-          "enum": [
-            "nearest",
-            "floor",
-            "ceil",
-            "ties-to-even",
-            "toMultiple",
-            "toNearestMultipleOfBaseHeight",
-            "toNearestMultipleOfBaseWidth"
-          ]
-        },
+        "mode": { "enum": ["toMultiple"] },
         "multiple": { "type": "number" }
       },
       "required": ["mode"],
@@ -371,7 +376,7 @@
       "type": "object",
       "properties": {
         "when": { "type": "string" },
-        "mode": { "type": "string" },
+        "mode": { "enum": ["toMultiple"] },
         "multiple": { "type": "number" }
       },
       "required": ["when", "mode"],
@@ -388,6 +393,11 @@
         "expr": { "type": "string", "description": "Small DSL condition; optional for kind=note/custom" },
         "message": { "type": "string" },
         "severity": { "enum": ["error", "warn", "info"], "default": "warn" },
+        "scope": {
+          "enum": ["label", "field"],
+          "default": "label",
+          "description": "Constraint evaluation scope. 'field' limits checks to the current field."
+        },
 
         // For sandboxed WASM rulelets
         "wasmRuleletId": { "type": "string" },

@@ -20,7 +20,7 @@ automatically.
   - Derives `PartialEq`, `Eq` for easy test assertions and exhaustive equality checks.
 
 ## Functions
-- `explain(code: &str) -> Option<&'static str>` -- human-readable explanation for all 45 diagnostic codes (auto-generated).
+- `explain(code: &str) -> Option<&'static str>` -- human-readable explanation for all 46 diagnostic codes (auto-generated).
 - `Diagnostic::explain(&self) -> Option<&'static str>` -- convenience method that calls the free `explain()` function with the diagnostic's own `id`.
 
 ## Guidance

@@ -190,14 +190,15 @@ zpl print <FILES>... --printer <ADDR> [OPTIONS]
 | Flag | Description |
 |------|-------------|
 | `--profile <PATH>` | Printer profile for pre-print validation (e.g., `profiles/ZD421-300dpi.json`). |
-| `--tables <PATH>` | Path to parser tables JSON. Uses embedded tables if available. |
+| `--tables <PATH>` | Override parser tables with custom JSON. When omitted, embedded tables are used (hidden flag). |
 | `--no-lint` | Skip validation and send raw ZPL directly. |
 | `--strict` | Treat warnings as errors — abort if any warnings are found. |
 | `--dry-run` | Validate files and resolve the printer address, but don't actually send. |
 | `--status` | Query printer status (`~HS`) after sending and display the result. |
+| `--verify` | Require post-send status verification. Fails if `~HS` cannot be read or reports hard fault flags (paper/ribbon/head/temp/RAM/pause/buffer). |
 | `--wait` | Poll printer status until it finishes processing all labels. |
-| `--info` | Query printer info (`~HI`) and display model, firmware, DPI, and memory. |
-| `--timeout <SECS>` | Connection timeout in seconds (minimum 1). Write timeout scales to 6× and read to 2×. Default: connect=5s, write=30s, read=10s. |
+| `--info` | Query printer info (`~HI`) before sending and display model, firmware, DPI, and memory. |
+| `--timeout <SECS>` | Connection timeout in seconds (minimum 1). Write timeout scales to 6× and read to 2×. Default profile: connect=5s, write=30s, read=10s. When using `--serial` without `--timeout`, safer serial defaults are used (connect=10s, write=120s, read=30s). |
 | `--wait-timeout <SECS>` | Timeout in seconds for `--wait` polling (default: 120). Requires `--wait`. |
 | `--serial` | Use serial/Bluetooth SPP transport (printer address is a serial port path). |
 | `--baud <RATE>` | Baud rate for serial connections (default: 9600). Requires `--serial`. |
@@ -426,6 +427,22 @@ zpl print label.zpl --printer /dev/rfcomm0 --serial
 # Windows
 zpl print label.zpl --printer COM5 --serial
 ```
+
+> **Important:** With `--serial`, pass the OS-assigned serial port path.
+> Do **not** pass a Bluetooth MAC address (for example `60:95:32:1C:7A:10`).
+> Also note that serial/Bluetooth send success means bytes were written to the OS serial device. Use
+> `--verify` (or `--status` / `--wait`) in the CLI when you need verification that the printer processed the label.
+
+If the CLI reports `sent:` but no physical label prints:
+
+1. Confirm your OS created a serial port for the paired printer (SPP/RFCOMM), and use that path (`/dev/cu.*`, `/dev/tty*`, `/dev/rfcomm*`, `COM*`).
+2. Send a tiny probe label first (to separate transport/setup issues from large-label throughput issues):
+   ```bash
+   printf '^XA^FO20,20^A0N,40,40^FDHELLO^FS^XZ' > /tmp/zpl_probe.zpl
+   zpl print /tmp/zpl_probe.zpl --printer /dev/cu.<printer-port> --serial --status
+   ```
+3. If tiny labels print but large labels fail, increase `--timeout` (serial/Bluetooth can be slower than TCP, especially with `^GF` graphics).
+4. Verify the printer and host are using the same serial settings (`--baud` and printer communication settings).
 
 ```rust
 use zpl_toolchain_print_client::{SerialPrinter, PrinterConfig, Printer};

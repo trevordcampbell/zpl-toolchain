@@ -137,6 +137,10 @@ enum Cmd {
         /// Query printer status (~HS) after sending.
         #[arg(long)]
         status: bool,
+        /// Require successful post-send status verification; fails if ~HS cannot be read
+        /// or reports hard printer fault flags (paper/ribbon/head/temp/RAM).
+        #[arg(long, conflicts_with = "dry_run")]
+        verify: bool,
         /// Query printer info (~HI) and display model/firmware/DPI/memory.
         #[arg(long)]
         info: bool,
@@ -229,6 +233,7 @@ fn main() -> Result<()> {
             strict,
             dry_run,
             status,
+            verify,
             info,
             wait,
             timeout,
@@ -246,6 +251,7 @@ fn main() -> Result<()> {
             strict,
             dry_run,
             status,
+            verify,
             info,
             wait,
             timeout,
@@ -359,6 +365,8 @@ fn cmd_lint(
         Format::Json => {
             let out = serde_json::json!({
                 "ok": vr.ok,
+                // Keep both keys for compatibility; prefer diagnostics.
+                "diagnostics": vr.issues,
                 "issues": vr.issues,
             });
             println!("{}", serde_json::to_string_pretty(&out)?);
@@ -392,7 +400,7 @@ fn cmd_format(
     };
 
     // Surface parse diagnostics so the user knows if the input has issues.
-    if !res.diagnostics.is_empty() {
+    if format == Format::Pretty && !res.diagnostics.is_empty() {
         render_diagnostics(&input, file, &res.diagnostics, format);
         print_summary(&res.diagnostics);
     }
@@ -405,13 +413,24 @@ fn cmd_format(
     let already_formatted = formatted == input;
 
     if check {
-        status_message(
-            format,
-            already_formatted,
-            "already formatted",
-            "not formatted",
-            file,
-        );
+        if format == Format::Json {
+            let out = serde_json::json!({
+                "mode": "check",
+                "file": file,
+                "already_formatted": already_formatted,
+                "status": if already_formatted { "already formatted" } else { "not formatted" },
+                "diagnostics": res.diagnostics,
+            });
+            println!("{}", serde_json::to_string_pretty(&out)?);
+        } else {
+            status_message(
+                format,
+                already_formatted,
+                "already formatted",
+                "not formatted",
+                file,
+            );
+        }
         if !already_formatted {
             process::exit(1);
         }
@@ -419,16 +438,37 @@ fn cmd_format(
         if !already_formatted {
             fs::write(file, &formatted)?;
         }
-        status_message(
-            format,
-            !already_formatted,
-            "formatted",
-            "already formatted",
-            file,
-        );
+        if format == Format::Json {
+            let out = serde_json::json!({
+                "mode": "write",
+                "file": file,
+                "changed": !already_formatted,
+                "status": if !already_formatted { "formatted" } else { "already formatted" },
+                "diagnostics": res.diagnostics,
+            });
+            println!("{}", serde_json::to_string_pretty(&out)?);
+        } else {
+            status_message(
+                format,
+                !already_formatted,
+                "formatted",
+                "already formatted",
+                file,
+            );
+        }
     } else {
         // Default: print formatted output to stdout.
-        print!("{}", formatted);
+        if format == Format::Json {
+            let out = serde_json::json!({
+                "mode": "stdout",
+                "file": file,
+                "formatted": formatted,
+                "diagnostics": res.diagnostics,
+            });
+            println!("{}", serde_json::to_string_pretty(&out)?);
+        } else {
+            print!("{}", formatted);
+        }
     }
 
     Ok(())
@@ -461,6 +501,7 @@ struct PrintOpts<'a> {
     strict: bool,
     dry_run: bool,
     status: bool,
+    verify: bool,
     info: bool,
     wait: bool,
     timeout: Option<u64>,
@@ -484,6 +525,7 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
         strict,
         dry_run,
         status,
+        verify,
         info,
         wait,
         timeout,
@@ -605,6 +647,13 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
         }
 
         let (transport, display_addr) = if is_serial {
+            if looks_like_bluetooth_mac(printer_addr) {
+                anyhow::bail!(
+                    "'{}' looks like a Bluetooth MAC address. With --serial, pass the OS serial port path instead \
+                     (for example: /dev/cu.<name> on macOS, COM5 on Windows, /dev/rfcomm0 on Linux).",
+                    printer_addr
+                );
+            }
             ("serial", printer_addr.to_string())
         } else if is_usb_addr {
             #[cfg(not(feature = "usb"))]
@@ -630,6 +679,12 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
             anyhow::bail!(
                 "'{}' looks like a serial port, but this binary was compiled without serial support. \
                  Reinstall with default features: cargo install zpl_toolchain_cli",
+                printer_addr
+            );
+        } else if looks_like_bluetooth_mac(printer_addr) {
+            anyhow::bail!(
+                "'{}' looks like a Bluetooth MAC address. For Bluetooth/serial printers, pass the OS serial port path \
+                 and add --serial (for example: /dev/cu.<name> on macOS, COM5 on Windows, /dev/rfcomm0 on Linux).",
                 printer_addr
             );
         } else {
@@ -687,7 +742,16 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
         cfg.timeouts.read = base.mul_f64(2.0); // 2× connect
         cfg
     } else {
-        PrinterConfig::default()
+        let mut cfg = PrinterConfig::default();
+        // Serial/Bluetooth links are often slower than TCP. Use a safer default
+        // timeout profile when the user explicitly selects --serial.
+        #[cfg(feature = "serial")]
+        if serial {
+            cfg.timeouts.connect = Duration::from_secs(10);
+            cfg.timeouts.write = Duration::from_secs(120);
+            cfg.timeouts.read = Duration::from_secs(30);
+        }
+        cfg
     };
 
     // ── Connect and run print session ─────────────────────────────
@@ -711,6 +775,7 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
         all_diagnostics: &all_diagnostics,
         info,
         status,
+        verify,
         wait,
         wait_timeout,
         format,
@@ -727,10 +792,20 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
 
     #[cfg(feature = "serial")]
     if serial {
+        if looks_like_bluetooth_mac(printer_addr) {
+            anyhow::bail!(
+                "'{}' looks like a Bluetooth MAC address. With --serial, pass the OS serial port path instead \
+                 (for example: /dev/cu.<name> on macOS, COM5 on Windows, /dev/rfcomm0 on Linux).",
+                printer_addr
+            );
+        }
         let mut printer =
             SerialPrinter::open(printer_addr, baud, config).map_err(connection_err)?;
         if format == Format::Pretty {
             eprintln!("connected to {} (serial, {} baud)", printer_addr, baud);
+            eprintln!(
+                "note: serial/Bluetooth sends are write-only. Use --status or --wait to verify printer processing."
+            );
         }
         return run_print_session(&mut printer, printer_addr, &session);
     }
@@ -779,6 +854,13 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
             printer_addr
         );
     }
+    if looks_like_bluetooth_mac(printer_addr) {
+        anyhow::bail!(
+            "'{}' looks like a Bluetooth MAC address. For Bluetooth/serial transport, pass the OS serial port path and add --serial \
+             (for example: /dev/cu.<name> on macOS, COM5 on Windows, /dev/rfcomm0 on Linux).",
+            printer_addr
+        );
+    }
 
     // ── TCP transport (default) ──────────────────────────────────
     {
@@ -810,6 +892,7 @@ struct SessionOpts<'a> {
     all_diagnostics: &'a [Diagnostic],
     info: bool,
     status: bool,
+    verify: bool,
     wait: bool,
     wait_timeout: u64,
     format: Format,
@@ -830,6 +913,7 @@ fn run_print_session<P: StatusQuery>(
         all_diagnostics,
         info,
         status,
+        verify,
         wait,
         wait_timeout,
         format,
@@ -889,7 +973,8 @@ fn run_print_session<P: StatusQuery>(
     }
 
     // ── Post-send: status query ─────────────────────────────────────
-    if status {
+    let mut last_status: Option<zpl_toolchain_print_client::HostStatus> = None;
+    if status || verify {
         match printer.query_status() {
             Ok(hs) => {
                 if format == Format::Pretty {
@@ -933,9 +1018,32 @@ fn run_print_session<P: StatusQuery>(
                 if format == Format::Json {
                     json_result["printer_status"] = serde_json::to_value(&hs).unwrap_or_default();
                 }
+                last_status = Some(hs);
             }
             Err(e) => {
-                eprintln!("warning: failed to query printer status: {}", e);
+                if verify {
+                    if format == Format::Json {
+                        json_result["success"] = serde_json::json!(false);
+                        json_result["error"] = serde_json::json!("verify_failed");
+                        json_result["message"] = serde_json::json!(format!(
+                            "post-send verification failed: could not query printer status (~HS): {}",
+                            e
+                        ));
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&json_result)
+                                .expect("JSON serialization cannot fail")
+                        );
+                    } else {
+                        eprintln!(
+                            "error: post-send verification failed: could not query printer status (~HS): {}",
+                            e
+                        );
+                    }
+                    process::exit(1);
+                } else {
+                    eprintln!("warning: failed to query printer status: {}", e);
+                }
             }
         }
     }
@@ -951,6 +1059,11 @@ fn run_print_session<P: StatusQuery>(
             Ok(()) => {
                 if format == Format::Pretty {
                     eprintln!("printer finished");
+                }
+                // Re-check status after completion when --verify is enabled.
+                // This avoids validating against stale pre-wait status.
+                if verify {
+                    last_status = None;
                 }
             }
             Err(e) => {
@@ -969,6 +1082,88 @@ fn run_print_session<P: StatusQuery>(
                 }
                 process::exit(1);
             }
+        }
+    }
+
+    // ── Post-send verification (strict) ──────────────────────────────
+    if verify {
+        let status = if let Some(hs) = last_status {
+            hs
+        } else {
+            match printer.query_status() {
+                Ok(hs) => hs,
+                Err(e) => {
+                    if format == Format::Json {
+                        json_result["success"] = serde_json::json!(false);
+                        json_result["error"] = serde_json::json!("verify_failed");
+                        json_result["message"] = serde_json::json!(format!(
+                            "post-send verification failed: could not query printer status (~HS): {}",
+                            e
+                        ));
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&json_result)
+                                .expect("JSON serialization cannot fail")
+                        );
+                    } else {
+                        eprintln!(
+                            "error: post-send verification failed: could not query printer status (~HS): {}",
+                            e
+                        );
+                    }
+                    process::exit(1);
+                }
+            }
+        };
+
+        let mut hard_faults: Vec<&'static str> = Vec::new();
+        if status.paper_out {
+            hard_faults.push("paper_out");
+        }
+        if status.ribbon_out {
+            hard_faults.push("ribbon_out");
+        }
+        if status.head_up {
+            hard_faults.push("head_up");
+        }
+        if status.over_temperature {
+            hard_faults.push("over_temp");
+        }
+        if status.under_temperature {
+            hard_faults.push("under_temp");
+        }
+        if status.corrupt_ram {
+            hard_faults.push("corrupt_ram");
+        }
+        if status.buffer_full {
+            hard_faults.push("buffer_full");
+        }
+        if status.paused {
+            hard_faults.push("paused");
+        }
+
+        if !hard_faults.is_empty() {
+            if format == Format::Json {
+                json_result["success"] = serde_json::json!(false);
+                json_result["error"] = serde_json::json!("verify_failed");
+                json_result["verify_faults"] =
+                    serde_json::to_value(&hard_faults).unwrap_or_default();
+                json_result["message"] = serde_json::json!(format!(
+                    "post-send verification found printer fault flags: {}",
+                    hard_faults.join(", ")
+                ));
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&json_result)
+                        .expect("JSON serialization cannot fail")
+                );
+            } else {
+                eprintln!(
+                    "error: post-send verification found printer fault flags: {}",
+                    hard_faults.join(", ")
+                );
+            }
+            process::exit(1);
         }
     }
 
@@ -1215,4 +1410,25 @@ fn looks_like_serial_port(addr: &str) -> bool {
         || (addr.len() >= 4
             && addr.get(..3).is_some_and(|p| p.eq_ignore_ascii_case("COM"))
             && addr[3..].chars().all(|c| c.is_ascii_digit()))
+}
+
+/// Detect Bluetooth MAC address strings (XX:XX:XX:XX:XX:XX or XX-XX-XX-XX-XX-XX).
+///
+/// The serial transport expects an OS-assigned serial port path, not a MAC.
+fn looks_like_bluetooth_mac(addr: &str) -> bool {
+    let mut colon = 0usize;
+    let mut dash = 0usize;
+    let mut hex_digits = 0usize;
+    for c in addr.chars() {
+        if c == ':' {
+            colon += 1;
+        } else if c == '-' {
+            dash += 1;
+        } else if c.is_ascii_hexdigit() {
+            hex_digits += 1;
+        } else {
+            return false;
+        }
+    }
+    hex_digits == 12 && ((colon == 5 && dash == 0) || (dash == 5 && colon == 0))
 }

@@ -6,6 +6,7 @@
       "codes": ["~NC"],
       "name": "Network Connect",
       "plane": "device",
+      "placement": { "allowedInsideLabel": true, "allowedOutsideLabel": true },
       "scope": "session",
       "arity": 1,
       "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },

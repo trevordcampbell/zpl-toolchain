@@ -49,12 +49,12 @@ fn assert_invariants(result: &ParseResult, input: &str) {
 
     for label in &result.ast.labels {
         for node in &label.nodes {
-            let s = match node {
-                Node::Command { span, .. }
-                | Node::FieldData { span, .. }
-                | Node::RawData { span, .. }
-                | Node::Trivia { span, .. } => span,
-                _ => continue,
+            let (Node::Command { span: s, .. }
+            | Node::FieldData { span: s, .. }
+            | Node::RawData { span: s, .. }
+            | Node::Trivia { span: s, .. }) = node
+            else {
+                continue;
             };
             assert!(
                 s.start <= s.end,

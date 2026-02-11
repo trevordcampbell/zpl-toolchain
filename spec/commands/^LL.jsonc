@@ -5,7 +5,7 @@
     {
       "codes": ["^LL"],
       "name": "Label Length",
-      "plane": "device",
+      "plane": "format",
       "scope": "document",
       "arity": 2,
       "signature": { "params": ["h", "x"], "joiner": ".", "allowEmptyTrailing": true },

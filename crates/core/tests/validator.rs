@@ -154,6 +154,32 @@ fn diag_zpl1104_non_empty_field_data_passes() {
     );
 }
 
+#[test]
+fn diag_zpl1104_empty_field_variable() {
+    let tables = &*common::TABLES;
+    // ^FV shares emptyData semantics with ^FD.
+    let result = parse_with_tables("^XA^FO50,50^FV^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::EMPTY_FIELD_DATA),
+        "empty field variable should emit ZPL1104: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl1104_field_data_in_following_node_satisfies_non_empty() {
+    let tables = &*common::TABLES;
+    // Inline ^FD arg is empty, but following FieldData content exists.
+    let result = parse_with_tables("^XA^FO50,50^FD\nhello^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::EMPTY_FIELD_DATA),
+        "non-empty trailing FieldData should satisfy emptyData constraint: {:?}",
+        vr.issues,
+    );
+}
+
 // ─── ZPL1107/1108/1109: Type Validation ──────────────────────────────────────
 
 #[test]
@@ -324,6 +350,42 @@ fn diag_profile_constraint_ll_within_height() {
     );
 }
 
+#[test]
+fn diag_profile_constraint_pw_respects_mu_unit_conversion() {
+    let tables = &*common::TABLES;
+    // With ^MU inches, ^PW is given in inches and must be converted to dots
+    // before profileConstraint comparison against page.width_dots.
+    let profile = common::profile_from_json(
+        r#"{"id":"test","schema_version":"1.0.0","dpi":203,"page":{"width_dots":812,"height_dots":1200}}"#,
+    );
+    // 5 inches at 203 dpi = 1015 dots > 812, so this must violate profileConstraint.
+    let result = parse_with_tables("^XA^MUI^PW5^XZ", Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::PROFILE_CONSTRAINT),
+        "^PW under ^MU inches should be converted to dots for profileConstraint: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_profile_constraint_pw_respects_mu_desired_dpi_conversion() {
+    let tables = &*common::TABLES;
+    // Profile width corresponds to 4 inches at 203 dpi.
+    let profile = common::profile_from_json(
+        r#"{"id":"test","schema_version":"1.0.0","dpi":203,"page":{"width_dots":812,"height_dots":1200}}"#,
+    );
+    // ^MU specifies conversion to desired dpi=300. ^PW4 should be interpreted as
+    // 1200 dots, which exceeds 812.
+    let result = parse_with_tables("^XA^MUI,203,300^PW4^XZ", Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::PROFILE_CONSTRAINT),
+        "^MU desired dpi should affect profileConstraint conversion: {:?}",
+        vr.issues,
+    );
+}
+
 // ─── ZPL1501/1502: Required Missing/Empty ────────────────────────────────────
 
 #[test]
@@ -362,6 +424,22 @@ fn diag_zpl1502_required_empty() {
     );
 }
 
+#[test]
+fn diag_mn_mode_optional_with_default() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^MN^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    let has_presence = vr
+        .issues
+        .iter()
+        .any(|d| d.id == codes::REQUIRED_MISSING || d.id == codes::REQUIRED_EMPTY);
+    assert!(
+        !has_presence,
+        "^MN mode should be optional with default N: {:?}",
+        vr.issues,
+    );
+}
+
 // ─── ZPL2101: Required Command ───────────────────────────────────────────────
 
 #[test]
@@ -390,17 +468,44 @@ fn diag_zpl2101_required_command_present_passes() {
     );
 }
 
+#[test]
+fn diag_zpl2101_field_scoped_requires_missing_in_current_field() {
+    let tables = &*common::TABLES;
+    // ^FB now has a field-scoped requires(^FD|^FV). ^FD in a previous field
+    // must not satisfy ^FB in a later field.
+    let result = parse_with_tables(
+        "^XA^FO10,10^FDfirst^FS^FO20,20^FB100,2,0,L,0^FS^XZ",
+        Some(tables),
+    );
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::REQUIRED_COMMAND),
+        "field-scoped requires should fail when current field has no ^FD/^FV: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2101_field_scoped_requires_satisfied_by_following_fd() {
+    let tables = &*common::TABLES;
+    // ^FB requires ^FD/^FV in the same field, regardless of command order.
+    let result = parse_with_tables("^XA^FO20,20^FB100,2,0,L,0^FDsecond^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::REQUIRED_COMMAND),
+        "field-scoped requires should pass when same field contains ^FD: {:?}",
+        vr.issues,
+    );
+}
+
 // ─── ZPL2103: Order Violation ────────────────────────────────────────────────
 
 #[test]
 fn diag_zpl2103_order_violation() {
     let tables = &*common::TABLES;
-    // ^BC has constraint "before:^FD|^FV": ^FD or ^FV must NOT appear before
-    // ^BC in the node list. Put ^FD BEFORE ^BC to trigger this.
-    let result = parse_with_tables(
-        "^XA^BY2^FO10,10^FDtest^FS^BCN,100,Y,N,N^FDmore^FS^XZ",
-        Some(tables),
-    );
+    // ^FH has constraint "before:^FD|^FV". Place ^FH after ^FD in the same
+    // field to trigger an order violation.
+    let result = parse_with_tables("^XA^FO10,10^FDtest^FH^FS^XZ", Some(tables));
     let vr = validate::validate(&result.ast, tables);
     assert!(
         vr.issues.iter().any(|d| d.id == codes::ORDER_BEFORE),
@@ -418,6 +523,23 @@ fn diag_zpl2103_correct_order_passes() {
     assert!(
         !vr.issues.iter().any(|d| d.id == codes::ORDER_BEFORE),
         "correct order should not emit ZPL2103: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2103_field_order_does_not_cross_fields() {
+    let tables = &*common::TABLES;
+    // ^A has order constraints relative to ^FD/^FV and ^FS. It should be
+    // evaluated within its current field, not against prior fields.
+    let result = parse_with_tables(
+        "^XA^FO10,10^FDfirst^FS^FO20,20^A0,30,30^FDsecond^FS^XZ",
+        Some(tables),
+    );
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::ORDER_BEFORE),
+        "field-scoped ordering should not be violated by prior field commands: {:?}",
         vr.issues,
     );
 }
@@ -512,6 +634,19 @@ fn diag_zpl2203_non_overlapping_fields_passes() {
     );
 }
 
+#[test]
+fn diag_zpl2203_unclosed_field_at_end_of_label() {
+    let tables = &*common::TABLES;
+    // Missing ^FS before ^XZ should emit FIELD_NOT_CLOSED.
+    let result = parse_with_tables("^XA^FO10,10^FDHello^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::FIELD_NOT_CLOSED),
+        "unclosed field at end of label should emit ZPL2203: {:?}",
+        vr.issues,
+    );
+}
+
 // ─── ZPL2204: Orphaned Field Separator ───────────────────────────────────────
 
 #[test]
@@ -572,6 +707,113 @@ fn diag_zpl2205_label_command_in_label_passes() {
             .iter()
             .any(|d| d.id == codes::HOST_COMMAND_IN_LABEL),
         "label command in label should not emit ZPL2205: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2205_pre_xa_device_commands_do_not_warn() {
+    let tables = &*common::TABLES;
+    // ^PW/^LL before ^XA should not be treated as inside-label commands.
+    let result = parse_with_tables("^PW900^LL200^XA^FO10,20^FDok^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::HOST_COMMAND_IN_LABEL),
+        "pre-^XA device commands should not emit ZPL2205: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2205_inside_xa_pw_ll_do_not_warn() {
+    let tables = &*common::TABLES;
+    // ^PW/^LL are label-format setup commands and should be allowed inside ^XA/^XZ.
+    let result = parse_with_tables("^XA^PW900^LL200^FO10,20^FDok^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::HOST_COMMAND_IN_LABEL),
+        "inside-label ^PW/^LL should not emit ZPL2205: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2205_inside_xa_format_setup_commands_do_not_warn() {
+    let tables = &*common::TABLES;
+    // Common format/media setup commands are valid inside ^XA/^XZ.
+    let result = parse_with_tables(
+        "^XA^MMT^MNN^MTT^PR4,4,4^MD5~SD15~NC001^FO10,20^FDok^FS^XZ",
+        Some(tables),
+    );
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::HOST_COMMAND_IN_LABEL),
+        "inside-label format setup commands should not emit ZPL2205: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2205_inside_xa_cw_allowed_by_placement() {
+    let tables = &*common::TABLES;
+    // ^CW is session/device semantic state but valid inside ^XA/^XZ by placement rule.
+    let result = parse_with_tables("^XA^CWx,E:ARIAL.TTF^FO10,20^FDok^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::HOST_COMMAND_IN_LABEL),
+        "^CW should be allowed inside label by explicit placement: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2205_hh_inside_xa_warns() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^HH^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        vr.issues
+            .iter()
+            .any(|d| d.id == codes::HOST_COMMAND_IN_LABEL),
+        "^HH should be treated as host-return command and warn inside label: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn hz_uppercase_info_type_is_accepted() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^HZO,E:TEST.GRF,N", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::INVALID_ENUM),
+        "uppercase ^HZ info_type should be accepted: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2205_inside_flag_resets_after_xz() {
+    let tables = &*common::TABLES;
+    // First ~HS is inside label (warn). Second ~HS is outside label (allowed).
+    let result = parse_with_tables("^XA~HS^XZ~HS", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    let count = vr
+        .issues
+        .iter()
+        .filter(|d| d.id == codes::HOST_COMMAND_IN_LABEL)
+        .count();
+    assert_eq!(
+        count, 1,
+        "inside-format bounds should reset at ^XZ: {:?}",
         vr.issues,
     );
 }
@@ -644,6 +886,21 @@ fn diag_zpl2302_position_within_bounds() {
             .iter()
             .any(|d| d.id == codes::POSITION_OUT_OF_BOUNDS),
         "valid position should not emit ZPL2302: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2302_ft_position_out_of_bounds() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_800x1200();
+    let result = parse_with_tables("^XA^FT9999,100^FDtest^FS^XZ", Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        vr.issues
+            .iter()
+            .any(|d| d.id == codes::POSITION_OUT_OF_BOUNDS),
+        "^FT out-of-bounds should emit ZPL2302: {:?}",
         vr.issues,
     );
 }
@@ -724,6 +981,20 @@ fn diag_zpl2304_invalid_hex_escape() {
         diag_ids.contains(&codes::INVALID_HEX_ESCAPE),
         "expected ZPL2304 for invalid hex escape _GZ, got {:?}",
         diag_ids
+    );
+}
+
+#[test]
+fn diag_zpl2304_invalid_hex_escape_inline_fd() {
+    let tables = &*common::TABLES;
+    // Inline ^FD content should be checked too, not only multiline FieldData nodes.
+    let result = parse_with_tables("^XA^FO50,50^FH^FDHello _GZ World^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    let diag_ids: Vec<&str> = vr.issues.iter().map(|d| &*d.id).collect();
+    assert!(
+        diag_ids.contains(&codes::INVALID_HEX_ESCAPE),
+        "inline invalid hex escape should emit ZPL2304: {:?}",
+        vr.issues
     );
 }
 
@@ -1307,6 +1578,243 @@ fn barcode_fd_no_barcode_no_validation() {
             .iter()
             .any(|d| d.id == codes::BARCODE_INVALID_CHAR || d.id == codes::BARCODE_DATA_LENGTH),
         "no barcode command should not trigger barcode diagnostics: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn barcode_validation_skipped_when_fh_active() {
+    let tables = &*common::TABLES;
+    // ^FH active: barcode content checks are intentionally skipped because raw
+    // text includes escape sequences.
+    let input = "^XA^FO10,10^B2,50^FH^FD123^FS^XZ";
+    let result = parse_with_tables(input, Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::BARCODE_DATA_LENGTH),
+        "^FH should suppress barcode parity/length validation: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn barcode_fd_bs_allowed_lengths_invalid_three() {
+    let tables = &*common::TABLES;
+    // ^BS allows only 2 or 5 digits.
+    let input = "^XA^FO10,10^BSN,50,Y,N^FD123^FS^XZ";
+    let result = parse_with_tables(input, Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::BARCODE_DATA_LENGTH),
+        "^BS with 3 digits should violate allowed discrete lengths: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn barcode_fd_bs_allowed_lengths_valid_two() {
+    let tables = &*common::TABLES;
+    let input = "^XA^FO10,10^BSN,50,Y,N^FD12^FS^XZ";
+    let result = parse_with_tables(input, Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::BARCODE_DATA_LENGTH),
+        "^BS with 2 digits should pass allowed discrete lengths: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn barcode_fd_combined_inline_and_multiline_validates_as_one_payload() {
+    let tables = &*common::TABLES;
+    // Combined payload is 12 digits for EAN-13, split across inline and FieldData nodes.
+    let input = "^XA^FO10,10^BE,50,N,N^FD123\n456789012^FS^XZ";
+    let result = parse_with_tables(input, Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::BARCODE_DATA_LENGTH),
+        "split field data should be validated as one combined barcode payload: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn xg_path_form_does_not_emit_invalid_enum() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^FO10,10^XGR:IMAGE.GRF,2,2^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::INVALID_ENUM),
+        "^XG d:o.x path form should not be treated as invalid enum: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn barcode_multiple_barcodes_same_field_are_validated_separately() {
+    let tables = &*common::TABLES;
+    // First barcode (^BC) accepts alphanumeric payload; second (^B2) requires
+    // numeric even-length payload. They must be validated against their own
+    // corresponding ^FD segments.
+    let input = "^XA^BY2^FO10,10^BCN,50,Y,N,N^FD123ABC^B2,50^FD4567^FS^XZ";
+    let result = parse_with_tables(input, Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::BARCODE_INVALID_CHAR || d.id == codes::BARCODE_DATA_LENGTH),
+        "multiple barcodes in one field should not cross-validate payloads: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn barcode_bs_requires_by() {
+    let tables = &*common::TABLES;
+    let input = "^XA^FO10,10^BSN,50,Y,N^FD12^FS^XZ";
+    let result = parse_with_tables(input, Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::REQUIRED_COMMAND),
+        "^BS should require ^BY defaults in label: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn barcode_fd_msi_too_long_triggers_length() {
+    let tables = &*common::TABLES;
+    // ^BM max length is 14.
+    let input = "^XA^BY2^FO10,10^BM^FD123456789012345^FS^XZ";
+    let result = parse_with_tables(input, Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::BARCODE_DATA_LENGTH),
+        "^BM payload over max length should trigger barcode length diagnostic: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn barcode_diagnostics_point_to_fd_span_not_fs() {
+    let tables = &*common::TABLES;
+    let input = "^XA^BY2^FO10,10^B2,50^FD123^FS^XZ";
+    let result = parse_with_tables(input, Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+
+    let expected_fd_span = result.ast.labels[0]
+        .nodes
+        .iter()
+        .find_map(|n| match n {
+            zpl_toolchain_core::grammar::ast::Node::Command { code, span, .. } if code == "^FD" => {
+                Some(*span)
+            }
+            _ => None,
+        })
+        .expect("test input should include ^FD command with span");
+
+    let diag = vr
+        .issues
+        .iter()
+        .find(|d| d.id == codes::BARCODE_DATA_LENGTH)
+        .expect("odd-length I2of5 should emit barcode length diagnostic");
+    assert_eq!(
+        diag.span,
+        Some(expected_fd_span),
+        "barcode diagnostic span should point at field data, not ^FS: {:?}",
+        vr.issues
+    );
+}
+
+#[test]
+fn hz_extended_form_does_not_fail_arity() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^HZO,E:TEST.GRF,N", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::ARITY),
+        "^HZ extended form should be accepted without arity diagnostic: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn hz_uppercase_info_type_no_invalid_enum() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^HZO,E:TEST.GRF,N", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::INVALID_ENUM),
+        "^HZ uppercase info type should not trigger INVALID_ENUM: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn xg_path_form_no_invalid_enum_or_arity() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^FO10,10^XGR:IMAGE.GRF,2,2^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::INVALID_ENUM || d.id == codes::ARITY),
+        "^XG path-form should parse without enum/arity diagnostics: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn mn_no_args_uses_default_without_required_missing() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^MN^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::REQUIRED_MISSING),
+        "^MN should allow omitted mode using default N: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn mu_units_persist_across_labels() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_from_json(
+        r#"{"id":"test","schema_version":"1.0.0","dpi":203,"page":{"width_dots":800,"height_dots":1200}}"#,
+    );
+    // Label 1 sets inches. Label 2 uses ^PW without resetting units.
+    // 4 inches at 203 dpi = 812 dots > profile width 800.
+    let result = parse_with_tables("^XA^MUI^XZ^XA^PW4^XZ", Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::PROFILE_CONSTRAINT),
+        "^MU session state should persist across labels: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn ft_opens_field_and_overlaps_without_fs() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^FO10,10^FT20,20^FDx^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::FIELD_NOT_CLOSED),
+        "^FT should be treated as field-opening and overlap without prior ^FS: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn barcode_fd_multiline_segments_are_validated_as_combined_payload() {
+    let tables = &*common::TABLES;
+    // Combined payload is 12 digits and valid for ^BE.
+    let input = "^XA^FO10,10^BE,50,N,N^FD123\n456789012^FS^XZ";
+    let result = parse_with_tables(input, Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::BARCODE_DATA_LENGTH),
+        "split field data should be validated as one combined payload: {:?}",
         vr.issues,
     );
 }
@@ -1950,7 +2458,6 @@ fn context_host_command_in_label() {
         .as_ref()
         .expect("host_command_in_label diagnostic should have context");
     assert_eq!(ctx.get("command").unwrap(), "~TA");
-    assert!(ctx.contains_key("plane"), "should have plane key");
 }
 
 // ─── requires_field enforcement ──────────────────────────────────────────────

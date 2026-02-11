@@ -64,7 +64,8 @@ zpl explain ZPL1201
 | `--strict` | Treat warnings as errors during validation |
 | `--dry-run` | Validate and resolve address without sending |
 | `--status` | Query `~HS` host status after printing |
-| `--info` | Query `~HI` printer info after printing |
+| `--verify` | Require post-send status verification; fail on status-read failure or hard fault flags. With `--wait`, status is re-queried after completion. |
+| `--info` | Query `~HI` printer info before sending |
 | `--wait` | Wait for printer to finish all labels |
 | `--wait-timeout <SECS>` | Timeout for `--wait` polling (default: 120s; requires `--wait`) |
 | `--timeout <SECS>` | Connection timeout in seconds, minimum 1 (default: 5). Also sets write timeout to 6× and read timeout to 2× this value |
@@ -82,6 +83,8 @@ zpl explain ZPL1201
 | Serial path | Serial/BT SPP (with `--serial`) | `/dev/ttyUSB0`, `COM3` |
 
 > **Note:** Serial/Bluetooth addresses require the `--serial` flag. Without it, the CLI assumes TCP.
+> With `--serial`, pass the OS serial port path (`/dev/cu.*`, `/dev/tty*`, `COM*`, `/dev/rfcomm*`) — not a Bluetooth MAC address.
+> Serial/Bluetooth transport is write-only at send time; use `--verify` (or `--status` / `--wait`) when you need stronger verification that the printer processed the job.
 
 ## Troubleshooting
 
@@ -91,6 +94,7 @@ zpl explain ZPL1201
 | `failed to open device: Access denied` | Insufficient USB permissions | Linux: add udev rule or run with `sudo`; macOS: grant USB access |
 | `serial port error: Permission denied` | Insufficient serial port permissions | Add user to `dialout` group (`sudo usermod -aG dialout $USER`) or `chmod 666` the device |
 | DNS error on a serial path | Missing `--serial` flag | Add `--serial`: `zpl print label.zpl -p /dev/ttyUSB0 --serial` |
+| `sent:` appears but no physical label prints (serial/Bluetooth) | Wrong serial endpoint (BLE pairing without SPP) or serial throughput/settings mismatch | Use an OS serial port path (`/dev/cu.*`, `/dev/tty*`, `/dev/rfcomm*`, `COM*`), test with a tiny probe label first, then use `--verify` (or `--status`/`--wait`) and increase `--timeout` if needed |
 | `no parser tables available` | Binary built without embedded tables | Use `cargo install zpl_toolchain_cli` or download from [Releases](https://github.com/trevordcampbell/zpl-toolchain/releases) |
 
 See the full [Print Client Guide](https://github.com/trevordcampbell/zpl-toolchain/blob/main/docs/PRINT_CLIENT.md) for detailed transport setup and troubleshooting.

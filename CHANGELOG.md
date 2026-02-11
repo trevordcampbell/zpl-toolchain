@@ -140,6 +140,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CLI** — `parse`, `syntax-check`, `lint`, `format`, `coverage`, `explain` commands with `--output pretty|json` auto-detection, `ariadne`-powered coloured diagnostics, embedded parser tables
 - **Printer profiles** — 11 shipped profiles (GK420t, ZD420, ZD620, ZD621, ZT231, ZT410, ZT411, ZT610, ZQ520, plus generics) with page bounds, speed/darkness ranges, 10 hardware feature gates, media capabilities, DPI-dependent defaults
 - **Ecosystem bindings** — WASM (wasm-bindgen), TypeScript (@zpl-toolchain/core), Python (PyO3/maturin), C FFI (cdylib/staticlib), Go (cgo), .NET (P/Invoke); all expose unified 5-function API
-- **Diagnostic system** — 45 diagnostic codes with structured context, severity levels, byte-offset spans, `explain()` for every code
+- **Diagnostic system** — 46 diagnostic codes with structured context, severity levels, byte-offset spans, `explain()` for every code
 - **Spec-compiler** — typed pipeline with cross-field validation, constraint DSL parsing, schema version enforcement
 - **CI** — multi-OS matrix (Linux/macOS/Windows), cargo cache, rustfmt/clippy checks, spec validation, coverage report, WASM size check, Python wheel build, C FFI cross-platform build

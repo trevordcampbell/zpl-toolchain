@@ -24,15 +24,24 @@ fn golden_dir() -> PathBuf {
     p
 }
 
-/// Produce a deterministic JSON snapshot from parse + validate results.
-///
-/// Serializes the full AST and diagnostics (whatever fields the structs have)
-/// so changes to field names or shapes cause a visible diff.
-fn snapshot_json(input: &str, tables: &ParserTables) -> String {
+/// Result of parse + validate: JSON value and extracted diagnostic/issue IDs.
+struct ParseValidateResult {
+    json: serde_json::Value,
+    parser_diagnostic_ids: Vec<String>,
+    validator_issue_ids: Vec<String>,
+}
+
+/// Compute parse + validate once, return JSON value and extracted IDs.
+fn parse_and_validate(input: &str, tables: &ParserTables) -> ParseValidateResult {
     let res = parse_with_tables(input, Some(tables));
     let vr = validate::validate(&res.ast, tables);
 
-    let output = serde_json::json!({
+    let parser_diagnostic_ids: Vec<String> =
+        res.diagnostics.iter().map(|d| d.id.to_string()).collect();
+
+    let validator_issue_ids: Vec<String> = vr.issues.iter().map(|d| d.id.to_string()).collect();
+
+    let json = serde_json::json!({
         "label_count": res.ast.labels.len(),
         "ast": serde_json::to_value(&res.ast).unwrap(),
         "parser_diagnostics": serde_json::to_value(&res.diagnostics).unwrap(),
@@ -40,7 +49,20 @@ fn snapshot_json(input: &str, tables: &ParserTables) -> String {
         "ok": vr.ok,
     });
 
-    serde_json::to_string_pretty(&output).unwrap()
+    ParseValidateResult {
+        json,
+        parser_diagnostic_ids,
+        validator_issue_ids,
+    }
+}
+
+/// Produce a deterministic JSON snapshot from parse + validate results.
+///
+/// Serializes the full AST and diagnostics (whatever fields the structs have)
+/// so changes to field names or shapes cause a visible diff.
+fn snapshot_json(input: &str, tables: &ParserTables) -> String {
+    let pv = parse_and_validate(input, tables);
+    serde_json::to_string_pretty(&pv.json).unwrap()
 }
 
 /// Compare `actual` against a golden file.
@@ -115,7 +137,21 @@ fn golden_diagnostic_issues() {
     let tables = &*common::TABLES;
     // Missing field origin, overlapping fields
     let input = "^XA\n^FDNo origin^FS\n^FO50,50^FO100,100^FDOverlap^FS\n^XZ";
-    assert_golden("diagnostic_issues", &snapshot_json(input, tables));
+    let pv = parse_and_validate(input, tables);
+    assert!(
+        pv.validator_issue_ids.iter().any(|id| id == "ZPL2201"),
+        "expected ZPL2201 in validator issues: {:?}",
+        pv.validator_issue_ids
+    );
+    assert!(
+        pv.validator_issue_ids.iter().any(|id| id == "ZPL2204"),
+        "expected ZPL2204 in validator issues: {:?}",
+        pv.validator_issue_ids
+    );
+    assert_golden(
+        "diagnostic_issues",
+        &serde_json::to_string_pretty(&pv.json).unwrap(),
+    );
 }
 
 #[test]
@@ -135,7 +171,23 @@ fn golden_graphics_and_formatting() {
 fn golden_unknown_commands() {
     let tables = &*common::TABLES;
     let input = "^XA\n^ZZ999\n^NOTACMD\n^FO50,100\n^FDHello^FS\n^XZ";
-    assert_golden("unknown_commands", &snapshot_json(input, tables));
+    let pv = parse_and_validate(input, tables);
+    assert!(
+        pv.parser_diagnostic_ids
+            .iter()
+            .any(|id| id == "ZPL.PARSER.1002"),
+        "expected ZPL.PARSER.1002 in parser diagnostics: {:?}",
+        pv.parser_diagnostic_ids
+    );
+    assert!(
+        pv.validator_issue_ids.iter().any(|id| id == "ZPL1103"),
+        "expected ZPL1103 in validator issues: {:?}",
+        pv.validator_issue_ids
+    );
+    assert_golden(
+        "unknown_commands",
+        &serde_json::to_string_pretty(&pv.json).unwrap(),
+    );
 }
 
 #[test]
@@ -156,7 +208,16 @@ fn golden_raw_payload() {
 fn golden_tilde_commands() {
     let tables = &*common::TABLES;
     let input = "~TA000\n^XA^FO10,10^FDAfter tilde^FS^XZ\n~JA";
-    assert_golden("tilde_commands", &snapshot_json(input, tables));
+    let pv = parse_and_validate(input, tables);
+    assert!(
+        !pv.validator_issue_ids.iter().any(|id| id == "ZPL2205"),
+        "expected no ZPL2205 in validator issues: {:?}",
+        pv.validator_issue_ids
+    );
+    assert_golden(
+        "tilde_commands",
+        &serde_json::to_string_pretty(&pv.json).unwrap(),
+    );
 }
 
 #[test]

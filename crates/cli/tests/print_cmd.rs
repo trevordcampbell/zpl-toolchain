@@ -41,6 +41,7 @@ fn print_help_shows_flags() {
     );
     assert!(stdout.contains("--strict"), "missing --strict flag in help");
     assert!(stdout.contains("--status"), "missing --status flag in help");
+    assert!(stdout.contains("--verify"), "missing --verify flag in help");
     assert!(stdout.contains("--info"), "missing --info flag in help");
     assert!(stdout.contains("--wait"), "missing --wait flag in help");
     #[cfg(feature = "serial")]
@@ -84,6 +85,31 @@ fn print_requires_printer_flag() {
     assert!(
         stderr.contains("--printer") || stderr.contains("required"),
         "expected --printer required error, got: {stderr}"
+    );
+}
+
+#[test]
+fn print_verify_conflicts_with_dry_run() {
+    let (_dir, path) = write_temp_zpl(SAMPLE_ZPL);
+
+    let output = zpl_cmd()
+        .args([
+            "print",
+            &path,
+            "--printer",
+            "127.0.0.1",
+            "--verify",
+            "--dry-run",
+        ])
+        .output()
+        .unwrap();
+
+    assert_eq!(output.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("cannot be used with")
+            || (stderr.contains("--verify") && stderr.contains("--dry-run")),
+        "expected clap conflict for --verify/--dry-run, got: {stderr}"
     );
 }
 
@@ -150,6 +176,30 @@ fn print_dry_run_json() {
     assert_eq!(json["transport"], "tcp");
     assert_eq!(json["resolved_address"], "127.0.0.1:9100");
     assert!(json["validation"] == "skipped");
+}
+
+#[test]
+fn print_dry_run_mac_without_serial_shows_helpful_error() {
+    let (_dir, path) = write_temp_zpl(SAMPLE_ZPL);
+
+    let output = zpl_cmd()
+        .args([
+            "print",
+            &path,
+            "--printer",
+            "60:95:32:1C:7A:10",
+            "--dry-run",
+            "--no-lint",
+        ])
+        .output()
+        .unwrap();
+
+    assert_eq!(output.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("Bluetooth MAC address") && stderr.contains("--serial"),
+        "expected helpful MAC guidance, got: {stderr}"
+    );
 }
 
 #[test]
@@ -237,6 +287,58 @@ fn print_dry_run_serial_json() {
     assert_eq!(json["dry_run"], true);
     assert_eq!(json["transport"], "serial");
     assert_eq!(json["resolved_address"], "/dev/ttyUSB0");
+}
+
+#[test]
+#[cfg(feature = "serial")]
+fn print_serial_mac_address_shows_helpful_error() {
+    let (_dir, path) = write_temp_zpl(SAMPLE_ZPL);
+
+    let output = zpl_cmd()
+        .args([
+            "print",
+            &path,
+            "--printer",
+            "60:95:32:1C:7A:10",
+            "--serial",
+            "--dry-run",
+            "--no-lint",
+        ])
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("Bluetooth MAC address")
+            && stderr.contains("OS serial port path")
+            && stderr.contains("--serial"),
+        "expected actionable MAC-address guidance, got: {stderr}"
+    );
+}
+
+#[test]
+fn print_tcp_path_rejects_bluetooth_mac_without_dry_run() {
+    let (_dir, path) = write_temp_zpl(SAMPLE_ZPL);
+    let output = zpl_cmd()
+        .args([
+            "print",
+            &path,
+            "--printer",
+            "60:95:32:1C:7A:10",
+            "--no-lint",
+        ])
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("Bluetooth MAC address")
+            && stderr.contains("--serial")
+            && stderr.contains("OS serial port path"),
+        "expected actionable MAC-address guidance, got: {stderr}"
+    );
 }
 
 #[test]

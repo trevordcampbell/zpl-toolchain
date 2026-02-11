@@ -5,8 +5,9 @@
     {
       "codes": ["^HH"],
       "name": "Configuration Label Return",
-      "plane": "device",
+      "plane": "host",
       "scope": "document",
+      "placement": { "allowedInsideLabel": false, "allowedOutsideLabel": true },
       "arity": 0,
       "constraints": [],
       "docs": "Echoes printer configuration information back to the host using a terminal emulator."

@@ -116,32 +116,6 @@
         "end": 7,
         "start": 0
       }
-    },
-    {
-      "context": {
-        "command": "~TA",
-        "plane": "device"
-      },
-      "id": "ZPL2205",
-      "message": "~TA is a device command and should not appear inside a label (^XA/^XZ)",
-      "severity": "warn",
-      "span": {
-        "end": 7,
-        "start": 0
-      }
-    },
-    {
-      "context": {
-        "command": "~JA",
-        "plane": "device"
-      },
-      "id": "ZPL2205",
-      "message": "~JA is a device command and should not appear inside a label (^XA/^XZ)",
-      "severity": "warn",
-      "span": {
-        "end": 42,
-        "start": 39
-      }
     }
   ]
 }

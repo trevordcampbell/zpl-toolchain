@@ -5,8 +5,9 @@
     {
       "codes": ["~HQ"],
       "name": "Host Query",
-      "plane": "device",
+      "plane": "host",
       "scope": "document",
+      "placement": { "allowedInsideLabel": false, "allowedOutsideLabel": true },
       "arity": 1,
       "signature": { "params": ["qt"], "joiner": ",", "allowEmptyTrailing": true },
       "args": [

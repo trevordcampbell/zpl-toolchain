@@ -5,8 +5,9 @@
     {
       "codes": ["^HV"],
       "name": "Host Verification",
-      "plane": "format",
+      "plane": "host",
       "scope": "field",
+      "placement": { "allowedInsideLabel": true, "allowedOutsideLabel": false },
       "arity": 5,
       "signature": { "params": ["num","n","h","t","a"], "joiner": ",", "allowEmptyTrailing": true },
       "args": [

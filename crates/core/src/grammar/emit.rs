@@ -176,6 +176,10 @@ fn emit_command(
 
     let joiner = sig.map_or(",", |s| s.joiner.as_str());
     let split_rule = sig.and_then(|s| s.split_rule.as_ref());
+    let no_space_after_opcode = sig.is_none_or(|s| s.no_space_after_opcode);
+    if !no_space_after_opcode {
+        out.push(' ');
+    }
 
     // Convert args to string values, handling presence.
     let arg_values: Vec<&str> = args

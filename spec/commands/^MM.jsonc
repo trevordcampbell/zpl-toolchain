@@ -5,7 +5,7 @@
     {
       "codes": ["^MM"],
       "name": "Print Mode",
-      "plane": "device",
+      "plane": "format",
       "scope": "session",
       "arity": 2,
       "signature": { "params": ["a", "b"], "joiner": ",", "allowEmptyTrailing": true },

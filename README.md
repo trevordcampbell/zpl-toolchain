@@ -24,7 +24,7 @@ ZPL II is the standard language for Zebra thermal label printers, used across lo
 
 - **Full ZPL II command coverage** — 223/223 commands (100%) across 216 per-command spec files, each audited against the official Zebra Programming Guide
 - **Hand-written parser** — opcode trie for longest-match, signature-driven argument parsing, prefix/delimiter state tracking, UTF-8 safe, lossless round-trip capable
-- **45 diagnostic codes** — structured errors and warnings with byte-offset spans, coloured source annotations via `ariadne`, and `explain` for every code
+- **46 diagnostic codes** — structured errors and warnings with byte-offset spans, coloured source annotations via `ariadne`, and `explain` for every code
 - **Printer profiles** — 11 shipped profiles covering desktop, industrial, and mobile Zebra printers with DPI, page bounds, speed/darkness ranges, and hardware feature gates
 
 ### Validation
@@ -151,10 +151,11 @@ OPTIONS:
   --no-lint                Skip validation entirely
   --dry-run                Validate without connecting to the printer
   --status                 Query ~HS printer status after sending
-  --info                   Query ~HI printer info (model, firmware, DPI)
+  --verify                 Require post-send status verification and fail on fault flags
+  --info                   Query ~HI printer info (model, firmware, DPI) before sending
   --wait                   Poll until the printer finishes all labels
   --wait-timeout <SECS>    Timeout for --wait polling (default: 120)
-  --timeout <SECS>         Connection timeout in seconds (default: 5)
+  --timeout <SECS>         Connection timeout in seconds (default: 5; write=6x, read=2x)
   --serial                 Use serial/Bluetooth SPP transport
   --baud <RATE>            Serial baud rate (default: 9600, requires --serial)
 ```
@@ -172,7 +173,8 @@ OPTIONS:
 > All transports (TCP, USB, serial/Bluetooth) are included by default in every install method.
 > For a minimal TCP-only build: `cargo install zpl_toolchain_cli --no-default-features --features tcp`.
 
-> **Note:** Serial/Bluetooth addresses require the `--serial` flag. USB printing on Linux may require [udev rules](docs/PRINT_CLIENT.md#linux-udev-rules). See the [Print Client Guide](docs/PRINT_CLIENT.md) for transport setup details.
+> **Note:** Serial/Bluetooth addresses require the `--serial` flag and an OS serial port path (for example `/dev/cu.*`, `/dev/tty*`, `COM*`, `/dev/rfcomm*`), not a Bluetooth MAC address. USB printing on Linux may require [udev rules](docs/PRINT_CLIENT.md#linux-udev-rules). See the [Print Client Guide](docs/PRINT_CLIENT.md) for transport setup details.
+> For stronger delivery checks, use `--verify` (or `--status` / `--wait`). With `--wait`, verification re-queries status after completion. Write success alone does not guarantee physical print completion.
 
 ### Examples
 
@@ -311,7 +313,7 @@ zpl-toolchain/
     core/              Parser, validator, emitter, AST
     cli/               CLI (parse, lint, format, print, coverage, explain)
     print-client/      TCP, USB, serial print client with retry and batch
-    diagnostics/       45 diagnostic codes (auto-generated from spec)
+    diagnostics/       46 diagnostic codes (auto-generated from spec)
     spec-tables/       Shared types (CommandEntry, Arg, Constraint, etc.)
     spec-compiler/     Spec compiler (validate specs → generate tables)
     profile/           Printer profile loading and validation
@@ -351,7 +353,7 @@ cargo run -p zpl_toolchain_spec_compiler -- build --spec-dir spec --out-dir gene
 | Document | Description |
 |----------|-------------|
 | [Print Client Guide](docs/PRINT_CLIENT.md) | Printing: transports, CLI, TypeScript, proxy, troubleshooting |
-| [Diagnostic Codes](docs/DIAGNOSTIC_CODES.md) | All 45 diagnostic codes explained |
+| [Diagnostic Codes](docs/DIAGNOSTIC_CODES.md) | All 46 diagnostic codes explained |
 | [Profile Guide](docs/PROFILE_GUIDE.md) | Printer profile system reference |
 | [Spec Authoring Guide](docs/public/schema/SPEC_AUTHORING.md) | How to write command specs |
 | [Barcode Data Rules](docs/BARCODE_DATA_RULES.md) | Barcode field data validation |

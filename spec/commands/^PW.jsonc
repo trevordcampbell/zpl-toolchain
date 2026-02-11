@@ -5,7 +5,7 @@
     {
       "codes": ["^PW"],
       "name": "Print Width",
-      "plane": "device",
+      "plane": "format",
       "scope": "document",
       "arity": 1,
       "signature": { "params": ["w"], "joiner": ",", "allowEmptyTrailing": true },

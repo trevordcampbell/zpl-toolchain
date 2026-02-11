@@ -5,7 +5,7 @@
     {
       "codes": ["~SD"],
       "name": "Set Darkness",
-      "plane": "device",
+      "plane": "format",
       "scope": "session",
       "arity": 1,
       "signature": { "params": ["a"], "joiner": ",", "allowEmptyTrailing": true },

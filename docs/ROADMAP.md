@@ -12,7 +12,7 @@ Everything below is **done and shipped**:
 
 - **Spec-first pipeline** — 216 JSONC spec files, 223/223 ZPL II commands (100%), spec-compiler generates parser tables, docs bundle, constraints bundle, coverage report
 - **Parser** — hand-written tokenizer + recursive-descent parser, opcode trie (O(k) longest-match), field data mode (`^FD`/`^FV`), raw data mode (`^GF`/`~DG`), prefix/delimiter mutation tracking (`^CC`/`^CD`), lossless round-trip via trivia preservation
-- **Validator** — table-driven: type/range/enum/length checking, cross-command state tracking, constraint DSL (`requires`/`incompatible`/`order`/`emptyData`/`note`), profile-aware bounds, printer gates, media validation, barcode field data validation (29 symbologies), 45 diagnostic codes with structured context
+- **Validator** — table-driven: type/range/enum/length checking, cross-command state tracking, constraint DSL (`requires`/`incompatible`/`order`/`emptyData`/`note`), profile-aware bounds, printer gates, media validation, barcode field data validation (29 symbologies), 46 diagnostic codes with structured context
 - **Formatter** — spec-driven, configurable indentation, trailing-arg trimming, round-trip fidelity
 - **Profiles** — 11 printer profiles, hardware feature gates, DPI-dependent defaults, media capabilities
 - **CLI** — `parse`, `lint`, `format`, `coverage`, `explain` with `--output pretty|json`
@@ -219,7 +219,7 @@ flowchart TD
   subgraph foundation [Foundation - DONE]
     Spec["216 JSONC Specs\n223/223 commands"]
     Parser["Parser - AST"]
-    Validator["Validator\n45 diagnostics"]
+    Validator["Validator\n46 diagnostics"]
     Formatter["Formatter\nround-trip"]
     Profiles["11 Printer Profiles"]
     Bindings["Bindings\nWASM/Py/Go/.NET/C"]

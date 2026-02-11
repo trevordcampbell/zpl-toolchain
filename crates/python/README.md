@@ -81,12 +81,12 @@ All functions return **JSON strings** — use `json.loads()` to parse. This give
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
-| `print_zpl` | `(zpl: str, addr: str, profile: str? = None, validate: bool = False) -> str` | Send ZPL to a network printer over TCP |
+| `print_zpl` | `(zpl: str, addr: str, profile: str? = None, validate: bool = True) -> str` | Send ZPL to a network printer over TCP |
 | `query_printer_status` | `(addr: str) -> str` | Query `~HS` host status from a printer |
 
 ## Features
 
-- **45 diagnostic codes** covering syntax, semantics, formatting, and preflight checks
+- **46 diagnostic codes** covering syntax, semantics, formatting, and preflight checks
 - **Printer profiles** for model-specific validation (label dimensions, DPI, memory limits)
 - **Deterministic output** — identical input always produces identical results
 - **Spec-driven** — parser tables generated from ZPL II command specifications

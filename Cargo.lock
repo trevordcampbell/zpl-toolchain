@@ -1118,7 +1118,7 @@ dependencies = [
 
 [[package]]
 name = "zpl_toolchain_cli"
-version = "0.1.8"
+version = "0.1.9"
 dependencies = [
  "anyhow",
  "ariadne",
@@ -1163,7 +1163,7 @@ dependencies = [
 
 [[package]]
 name = "zpl_toolchain_print_client"
-version = "0.1.4"
+version = "0.1.5"
 dependencies = [
  "futures-lite",
  "nusb",

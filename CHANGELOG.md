@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.8](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.7...v0.1.8) - 2026-02-12
+
+### Fixed
+
+- *(cli)* add serial probe and explicit line setting controls
+- *(core)* make compatibility notes spec-conditional
+
 ## [0.1.7](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.6...v0.1.7) - 2026-02-11
 
 ### Added

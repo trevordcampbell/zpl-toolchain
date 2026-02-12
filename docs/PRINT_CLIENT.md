@@ -872,6 +872,24 @@ zpl serial-probe /dev/cu.TheBeast \
   --post-print-status-retries 3 \
   --trace-io
 
+# Force recovery reopen in single-session mode after broken-pipe errors
+zpl serial-probe /dev/cu.TheBeast \
+  --repeat 10 \
+  --reopen-on-broken-pipe \
+  --output json
+
+# Script/CI strictness: require all attempts to show at least one success signal
+zpl serial-probe /dev/cu.TheBeast \
+  --repeat 10 \
+  --require-all-attempts \
+  --output json
+
+# Alternative strictness: require success ratio threshold
+zpl serial-probe /dev/cu.TheBeast \
+  --repeat 10 \
+  --min-success-ratio 0.8 \
+  --output json
+
 # JSON output for scripts/incident reports
 zpl serial-probe /dev/cu.TheBeast --output json
 ```
@@ -881,6 +899,9 @@ zpl serial-probe /dev/cu.TheBeast --output json
 - repeated `~HS` host status read path checks (`--repeat N`),
 - repeated `~HI` host identification read path checks (`--repeat N`),
 - optional reconnect lifecycle testing (`--reopen-each-attempt`, `--interval-ms`),
+- optional broken-pipe recovery reopen (`--reopen-on-broken-pipe`),
+- optional stricter success gating for CI/scripts (`--require-all-attempts`, `--min-success-ratio`),
+- optional `/dev/cu.*` vs `/dev/tty.*` peer matrix run (`--compare-tty-cu`) that executes the same repeat/reopen status/info probe on the mapped peer port and includes comparative results,
 - optional per-attempt label send and post-send status checks (`--send-test-label-each-attempt`, `--post-print-status-retries`),
 - optional tiny test-label write path.
 
@@ -901,10 +922,22 @@ Diagnosis categories currently emitted:
 Use `zpl bt-status` to read Bluetooth-related SGD variables over TCP while debugging serial/Bluetooth behavior:
 
 ```bash
-zpl bt-status --printer 10.0.0.199
+zpl bt-status --printer 10.0.0.199 --retries 3 --retry-delay-ms 250
 
 # Script-friendly JSON output
 zpl bt-status --printer 10.0.0.199 --output json
+```
+
+`bt-status` now:
+- retries each variable query (`--retries`, `--retry-delay-ms`),
+- treats macOS `WouldBlock` reads like timeout boundaries instead of hard failure,
+- returns per-variable error details in JSON when a specific variable cannot be read.
+
+For shell pipelines, prefer:
+
+```bash
+set -o pipefail
+zpl bt-status --printer 10.0.0.199 --output json | jq .
 ```
 
 Current report includes:

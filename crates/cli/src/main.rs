@@ -209,12 +209,41 @@ enum Cmd {
         /// Probe timeout in seconds for connect/read/write.
         #[arg(long, default_value_t = 8, value_parser = clap::value_parser!(u64).range(1..))]
         timeout: u64,
+        /// Number of status/info probe rounds in the same connection.
+        #[arg(long, default_value_t = 1, value_parser = clap::value_parser!(u32).range(1..))]
+        repeat: u32,
+        /// Reopen the serial port between attempts (reconnect lifecycle stress test).
+        #[arg(long)]
+        reopen_each_attempt: bool,
+        /// Sleep interval in milliseconds between attempts.
+        #[arg(long, default_value_t = 0)]
+        interval_ms: u64,
         /// Send a small test label after status/info probes.
         #[arg(long)]
         send_test_label: bool,
+        /// Send a small test label in every probe attempt.
+        #[arg(long)]
+        send_test_label_each_attempt: bool,
+        /// Number of post-label `~HS` retries per attempt.
+        #[arg(long, default_value_t = 0)]
+        post_print_status_retries: u32,
+        /// On macOS, also suggest the mapped `/dev/tty.*` endpoint for side-by-side comparison.
+        #[arg(long)]
+        compare_tty_cu: bool,
         /// Log raw serial bytes sent/received for diagnostics.
         #[arg(long)]
         trace_io: bool,
+    },
+
+    /// Query Bluetooth SGD variables over TCP and print a normalized report.
+    #[cfg(feature = "tcp")]
+    BtStatus {
+        /// Printer address (IP/hostname, port defaults to 9100).
+        #[arg(long, short)]
+        printer: String,
+        /// Timeout in seconds for TCP connect/read/write.
+        #[arg(long, default_value_t = 5, value_parser = clap::value_parser!(u64).range(1..))]
+        timeout: u64,
     },
 
     // ── Reference / informational ───────────────────────────────────
@@ -375,7 +404,13 @@ fn main() -> Result<()> {
             serial_stop_bits,
             serial_data_bits,
             timeout,
+            repeat,
+            reopen_each_attempt,
+            interval_ms,
             send_test_label,
+            send_test_label_each_attempt,
+            post_print_status_retries,
+            compare_tty_cu,
             trace_io,
         } => cmd_serial_probe(SerialProbeOpts {
             port: &port,
@@ -385,10 +420,18 @@ fn main() -> Result<()> {
             serial_stop_bits,
             serial_data_bits,
             timeout,
+            repeat,
+            reopen_each_attempt,
+            interval_ms,
             send_test_label,
+            send_test_label_each_attempt,
+            post_print_status_retries,
+            compare_tty_cu,
             trace_io,
             format,
         })?,
+        #[cfg(feature = "tcp")]
+        Cmd::BtStatus { printer, timeout } => cmd_bt_status(&printer, timeout, format)?,
         Cmd::Coverage {
             coverage,
             show_issues,
@@ -1401,7 +1444,13 @@ struct SerialProbeOpts<'a> {
     serial_stop_bits: CliSerialStopBits,
     serial_data_bits: CliSerialDataBits,
     timeout: u64,
+    repeat: u32,
+    reopen_each_attempt: bool,
+    interval_ms: u64,
     send_test_label: bool,
+    send_test_label_each_attempt: bool,
+    post_print_status_retries: u32,
+    compare_tty_cu: bool,
     trace_io: bool,
     format: Format,
 }
@@ -1416,11 +1465,29 @@ fn cmd_serial_probe(opts: SerialProbeOpts<'_>) -> Result<()> {
         serial_stop_bits,
         serial_data_bits,
         timeout,
+        repeat,
+        reopen_each_attempt,
+        interval_ms,
         send_test_label,
+        send_test_label_each_attempt,
+        post_print_status_retries,
+        compare_tty_cu,
         trace_io,
         format,
     } = opts;
-    use std::time::Duration;
+    use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+    fn now_ms() -> u128 {
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|d| d.as_millis())
+            .unwrap_or(0)
+    }
+
+    fn is_timeout_error(msg: &str) -> bool {
+        let lowered = msg.to_ascii_lowercase();
+        lowered.contains("timed out") || lowered.contains("timeout")
+    }
 
     let settings = SerialSettings {
         flow_control: to_print_flow_control(serial_flow_control),
@@ -1436,6 +1503,7 @@ fn cmd_serial_probe(opts: SerialProbeOpts<'_>) -> Result<()> {
     config.timeouts.read = probe_timeout;
     config.trace_io = trace_io;
 
+    let probe_started_ms = now_ms();
     let mut probe_json = serde_json::json!({
         "port": port,
         "baud": baud,
@@ -1445,79 +1513,313 @@ fn cmd_serial_probe(opts: SerialProbeOpts<'_>) -> Result<()> {
             "stop_bits": format!("{:?}", settings.stop_bits).to_lowercase(),
             "data_bits": format!("{:?}", settings.data_bits).to_lowercase(),
         },
+        "repeat": repeat,
+        "reopen_each_attempt": reopen_each_attempt,
+        "interval_ms": interval_ms,
+        "started_at_ms": probe_started_ms,
     });
+    if compare_tty_cu && let Some(mapped) = mapped_tty_cu_peer(port) {
+        probe_json["peer_port_hint"] = serde_json::json!(mapped);
+    }
 
-    let mut printer = match SerialPrinter::open_with_settings(port, baud, settings, config) {
-        Ok(p) => p,
-        Err(e) => {
-            if format == Format::Json {
-                probe_json["success"] = serde_json::json!(false);
-                probe_json["stage"] = serde_json::json!("connect");
-                probe_json["message"] =
-                    serde_json::json!(format!("failed to open serial port: {}", e));
-                println!("{}", serde_json::to_string_pretty(&probe_json)?);
-                process::exit(1);
-            }
-            anyhow::bail!("failed to open serial port '{}': {}", port, e);
-        }
-    };
+    let open_printer = || SerialPrinter::open_with_settings(port, baud, settings, config.clone());
 
     let mut status_ok = false;
     let mut info_ok = false;
+    let mut status_successes = 0u32;
+    let mut info_successes = 0u32;
+    let mut status_failures = 0u32;
+    let mut info_failures = 0u32;
+    let mut open_successes = 0u32;
+    let mut open_failures = 0u32;
+    let mut test_label_successes = 0u32;
+    let mut test_label_failures = 0u32;
     let mut test_label_sent = false;
+    let mut timeout_stage_hits: Vec<String> = Vec::new();
     let mut findings: Vec<String> = Vec::new();
-
-    match printer.query_status() {
-        Ok(status) => {
-            status_ok = true;
-            probe_json["status"] = serde_json::to_value(status).unwrap_or_default();
-            findings.push("~HS status read succeeded".to_string());
+    let mut per_attempt: Vec<serde_json::Value> = Vec::new();
+    let mut printer: Option<SerialPrinter> = if reopen_each_attempt {
+        None
+    } else {
+        match open_printer() {
+            Ok(p) => {
+                open_successes += 1;
+                Some(p)
+            }
+            Err(e) => {
+                open_failures += 1;
+                if format == Format::Json {
+                    probe_json["success"] = serde_json::json!(false);
+                    probe_json["stage"] = serde_json::json!("connect");
+                    probe_json["message"] =
+                        serde_json::json!(format!("failed to open serial port: {}", e));
+                    probe_json["connect_timeout"] =
+                        serde_json::json!(is_timeout_error(&e.to_string()));
+                    probe_json["open_successes"] = serde_json::json!(open_successes);
+                    probe_json["open_failures"] = serde_json::json!(open_failures);
+                    println!("{}", serde_json::to_string_pretty(&probe_json)?);
+                    process::exit(1);
+                }
+                anyhow::bail!("failed to open serial port '{}': {}", port, e);
+            }
         }
-        Err(e) => {
-            probe_json["status_error"] = serde_json::json!(e.to_string());
-            findings.push(format!("~HS status read failed: {}", e));
+    };
+
+    for attempt in 1..=repeat {
+        if trace_io && format == Format::Pretty {
+            eprintln!("[trace-io] serial probe attempt {attempt}/{repeat}");
+        }
+        let mut attempt_entry = serde_json::json!({
+            "attempt": attempt,
+            "started_at_ms": now_ms(),
+        });
+
+        if reopen_each_attempt {
+            match open_printer() {
+                Ok(p) => {
+                    printer = Some(p);
+                    open_successes += 1;
+                    findings.push(format!("attempt {attempt}: serial open succeeded"));
+                    attempt_entry["open"] = serde_json::json!("ok");
+                    attempt_entry["opened_at_ms"] = serde_json::json!(now_ms());
+                }
+                Err(e) => {
+                    open_failures += 1;
+                    findings.push(format!("attempt {attempt}: serial open failed: {}", e));
+                    attempt_entry["open_error"] = serde_json::json!(e.to_string());
+                    attempt_entry["stage"] = serde_json::json!("connect");
+                    attempt_entry["connect_timeout"] =
+                        serde_json::json!(is_timeout_error(&e.to_string()));
+                    if is_timeout_error(&e.to_string()) {
+                        timeout_stage_hits.push("connect".to_string());
+                    }
+                    attempt_entry["finished_at_ms"] = serde_json::json!(now_ms());
+                    attempt_entry["elapsed_ms"] = serde_json::json!(
+                        attempt_entry["finished_at_ms"]
+                            .as_u64()
+                            .unwrap_or_default()
+                            .saturating_sub(
+                                attempt_entry["started_at_ms"].as_u64().unwrap_or_default()
+                            )
+                    );
+                    per_attempt.push(attempt_entry);
+                    if interval_ms > 0 && attempt < repeat {
+                        std::thread::sleep(Duration::from_millis(interval_ms));
+                    }
+                    continue;
+                }
+            }
+        }
+
+        let Some(printer_ref) = printer.as_mut() else {
+            findings.push(format!("attempt {attempt}: serial open missing"));
+            attempt_entry["open_error"] = serde_json::json!("serial open missing");
+            attempt_entry["stage"] = serde_json::json!("connect");
+            attempt_entry["finished_at_ms"] = serde_json::json!(now_ms());
+            attempt_entry["elapsed_ms"] = serde_json::json!(
+                attempt_entry["finished_at_ms"]
+                    .as_u64()
+                    .unwrap_or_default()
+                    .saturating_sub(attempt_entry["started_at_ms"].as_u64().unwrap_or_default())
+            );
+            per_attempt.push(attempt_entry);
+            continue;
+        };
+
+        match printer_ref.query_status() {
+            Ok(status) => {
+                status_ok = true;
+                status_successes += 1;
+                probe_json["status"] = serde_json::to_value(status).unwrap_or_default();
+                findings.push(format!("attempt {attempt}: ~HS status read succeeded"));
+                attempt_entry["status"] = serde_json::json!("ok");
+            }
+            Err(e) => {
+                status_failures += 1;
+                probe_json["status_error"] = serde_json::json!(e.to_string());
+                findings.push(format!("attempt {attempt}: ~HS status read failed: {}", e));
+                attempt_entry["status_error"] = serde_json::json!(e.to_string());
+                attempt_entry["stage"] = serde_json::json!("status");
+                attempt_entry["status_timeout"] =
+                    serde_json::json!(is_timeout_error(&e.to_string()));
+                if is_timeout_error(&e.to_string()) {
+                    timeout_stage_hits.push("status".to_string());
+                }
+            }
+        }
+
+        match printer_ref.query_info() {
+            Ok(info) => {
+                info_ok = true;
+                info_successes += 1;
+                probe_json["info"] = serde_json::to_value(info).unwrap_or_default();
+                findings.push(format!("attempt {attempt}: ~HI info read succeeded"));
+                attempt_entry["info"] = serde_json::json!("ok");
+            }
+            Err(e) => {
+                info_failures += 1;
+                probe_json["info_error"] = serde_json::json!(e.to_string());
+                findings.push(format!("attempt {attempt}: ~HI info read failed: {}", e));
+                attempt_entry["info_error"] = serde_json::json!(e.to_string());
+                if attempt_entry.get("stage").is_none() {
+                    attempt_entry["stage"] = serde_json::json!("info");
+                }
+                attempt_entry["info_timeout"] = serde_json::json!(is_timeout_error(&e.to_string()));
+                if is_timeout_error(&e.to_string()) {
+                    timeout_stage_hits.push("info".to_string());
+                }
+            }
+        }
+
+        if send_test_label_each_attempt {
+            let label = "^XA^FO30,30^A0N,30,30^FDzpl serial probe^FS^XZ";
+            match <SerialPrinter as zpl_toolchain_print_client::Printer>::send_zpl(
+                printer_ref,
+                label,
+            ) {
+                Ok(()) => {
+                    test_label_sent = true;
+                    test_label_successes += 1;
+                    findings.push(format!("attempt {attempt}: test label sent successfully"));
+                    attempt_entry["test_label"] = serde_json::json!("ok");
+                }
+                Err(e) => {
+                    test_label_failures += 1;
+                    findings.push(format!("attempt {attempt}: test label send failed: {}", e));
+                    attempt_entry["test_label_error"] = serde_json::json!(e.to_string());
+                    if attempt_entry.get("stage").is_none() {
+                        attempt_entry["stage"] = serde_json::json!("test_label");
+                    }
+                    attempt_entry["test_label_timeout"] =
+                        serde_json::json!(is_timeout_error(&e.to_string()));
+                    if is_timeout_error(&e.to_string()) {
+                        timeout_stage_hits.push("test_label".to_string());
+                    }
+                }
+            }
+
+            if post_print_status_retries > 0 {
+                let mut retries: Vec<serde_json::Value> = Vec::new();
+                for retry in 1..=post_print_status_retries {
+                    match printer_ref.query_status() {
+                        Ok(status) => {
+                            status_ok = true;
+                            status_successes += 1;
+                            retries.push(serde_json::json!({
+                                "retry": retry,
+                                "status": "ok",
+                                "labels_remaining": status.labels_remaining,
+                                "formats_in_buffer": status.formats_in_buffer,
+                            }));
+                            break;
+                        }
+                        Err(e) => {
+                            retries.push(serde_json::json!({
+                                "retry": retry,
+                                "status_error": e.to_string(),
+                                "timeout": is_timeout_error(&e.to_string()),
+                            }));
+                            if is_timeout_error(&e.to_string()) {
+                                timeout_stage_hits.push("post_print_status".to_string());
+                            }
+                        }
+                    }
+                }
+                attempt_entry["post_print_status_retries"] = serde_json::Value::Array(retries);
+            }
+        }
+
+        attempt_entry["finished_at_ms"] = serde_json::json!(now_ms());
+        attempt_entry["elapsed_ms"] = serde_json::json!(
+            attempt_entry["finished_at_ms"]
+                .as_u64()
+                .unwrap_or_default()
+                .saturating_sub(attempt_entry["started_at_ms"].as_u64().unwrap_or_default())
+        );
+        per_attempt.push(attempt_entry);
+
+        if reopen_each_attempt {
+            printer = None;
+        }
+        if interval_ms > 0 && attempt < repeat {
+            std::thread::sleep(Duration::from_millis(interval_ms));
         }
     }
 
-    match printer.query_info() {
-        Ok(info) => {
-            info_ok = true;
-            probe_json["info"] = serde_json::to_value(info).unwrap_or_default();
-            findings.push("~HI info read succeeded".to_string());
-        }
-        Err(e) => {
-            probe_json["info_error"] = serde_json::json!(e.to_string());
-            findings.push(format!("~HI info read failed: {}", e));
-        }
-    }
-
-    if send_test_label {
+    if send_test_label && !send_test_label_each_attempt {
         let label = "^XA^FO30,30^A0N,30,30^FDzpl serial probe^FS^XZ";
-        match <SerialPrinter as zpl_toolchain_print_client::Printer>::send_zpl(&mut printer, label)
-        {
+        if printer.is_none() {
+            printer = open_printer().ok();
+        }
+        let Some(printer_ref) = printer.as_mut() else {
+            findings.push("single test label send skipped: unable to open serial port".to_string());
+            probe_json["test_label_error"] = serde_json::json!("unable to open serial port");
+            if format == Format::Json {
+                probe_json["attempts"] = serde_json::Value::Array(per_attempt);
+            }
+            return Ok(());
+        };
+        match <SerialPrinter as zpl_toolchain_print_client::Printer>::send_zpl(printer_ref, label) {
             Ok(()) => {
                 test_label_sent = true;
+                test_label_successes += 1;
                 findings.push("Test label sent successfully".to_string());
             }
             Err(e) => {
+                test_label_failures += 1;
                 probe_json["test_label_error"] = serde_json::json!(e.to_string());
                 findings.push(format!("Test label send failed: {}", e));
+                if is_timeout_error(&e.to_string()) {
+                    timeout_stage_hits.push("test_label".to_string());
+                }
             }
         }
     }
 
     let diagnosis = if status_ok || info_ok {
-        "bidirectional_serial_ok"
+        if (status_successes + info_successes) < (repeat * 2) {
+            "intermittent_bidirectional_serial"
+        } else {
+            "bidirectional_serial_ok"
+        }
     } else if test_label_sent {
         "write_path_only_or_response_blocked"
     } else {
         "serial_transport_not_viable_with_current_settings"
     };
+    let success = status_ok || info_ok || test_label_sent;
 
     if format == Format::Json {
-        probe_json["success"] = serde_json::json!(status_ok || info_ok || test_label_sent);
+        let probe_finished_ms = now_ms();
+        let mut timeout_stage_hits_json = timeout_stage_hits;
+        timeout_stage_hits_json.sort();
+        timeout_stage_hits_json.dedup();
+        probe_json["success"] = serde_json::json!(success);
+        probe_json["status_successes"] = serde_json::json!(status_successes);
+        probe_json["info_successes"] = serde_json::json!(info_successes);
+        probe_json["status_failures"] = serde_json::json!(status_failures);
+        probe_json["info_failures"] = serde_json::json!(info_failures);
+        probe_json["open_successes"] = serde_json::json!(open_successes);
+        probe_json["open_failures"] = serde_json::json!(open_failures);
+        probe_json["test_label_successes"] = serde_json::json!(test_label_successes);
+        probe_json["test_label_failures"] = serde_json::json!(test_label_failures);
+        probe_json["timeout_stages"] = serde_json::json!(timeout_stage_hits_json);
         probe_json["diagnosis"] = serde_json::json!(diagnosis);
+        probe_json["attempts"] = serde_json::Value::Array(per_attempt);
         probe_json["findings"] = serde_json::to_value(findings).unwrap_or_default();
+        probe_json["finished_at_ms"] = serde_json::json!(probe_finished_ms);
+        probe_json["elapsed_ms"] =
+            serde_json::json!(probe_finished_ms.saturating_sub(probe_started_ms));
+        probe_json["summary"] = serde_json::json!({
+            "attempts_total": repeat,
+            "attempts_with_status_ok": status_successes,
+            "attempts_with_info_ok": info_successes,
+            "attempts_with_open_failure": open_failures,
+            "attempts_with_status_failure": status_failures,
+            "attempts_with_info_failure": info_failures,
+            "attempts_with_test_label_success": test_label_successes,
+            "attempts_with_test_label_failure": test_label_failures
+        });
         println!("{}", serde_json::to_string_pretty(&probe_json)?);
     } else {
         eprintln!("serial probe report");
@@ -1527,6 +1829,16 @@ fn cmd_serial_probe(opts: SerialProbeOpts<'_>) -> Result<()> {
             "  settings:  data={:?} parity={:?} stop={:?} flow={:?}",
             settings.data_bits, settings.parity, settings.stop_bits, settings.flow_control
         );
+        eprintln!("  repeat:    {}", repeat);
+        if reopen_each_attempt {
+            eprintln!("  reopen:    each attempt");
+        }
+        if interval_ms > 0 {
+            eprintln!("  interval:  {} ms", interval_ms);
+        }
+        if compare_tty_cu && let Some(mapped) = mapped_tty_cu_peer(port) {
+            eprintln!("  peer hint: {}", mapped);
+        }
         for finding in findings {
             eprintln!("  - {}", finding);
         }
@@ -1539,6 +1851,102 @@ fn cmd_serial_probe(opts: SerialProbeOpts<'_>) -> Result<()> {
         }
     }
 
+    if !success {
+        process::exit(1);
+    }
+
+    Ok(())
+}
+
+#[cfg(feature = "serial")]
+fn mapped_tty_cu_peer(port: &str) -> Option<String> {
+    if let Some(rest) = port.strip_prefix("/dev/cu.") {
+        return Some(format!("/dev/tty.{}", rest));
+    }
+    if let Some(rest) = port.strip_prefix("/dev/tty.") {
+        return Some(format!("/dev/cu.{}", rest));
+    }
+    None
+}
+
+#[cfg(feature = "tcp")]
+fn cmd_bt_status(printer_addr: &str, timeout_secs: u64, format: Format) -> Result<()> {
+    use std::io::{Read, Write};
+    use std::net::TcpStream;
+    use std::time::Duration;
+
+    let addr = resolve_printer_addr(printer_addr)
+        .map_err(|e| anyhow::anyhow!("failed to resolve '{}': {}", printer_addr, e))?;
+    let timeout = Duration::from_secs(timeout_secs);
+
+    let vars = [
+        "bluetooth.enable",
+        "bluetooth.discoverable",
+        "bluetooth.bonding",
+        "bluetooth.minimum_security_mode",
+        "bluetooth.authentication",
+        "bluetooth.bluetooth_pin",
+    ];
+
+    let mut results: Vec<serde_json::Value> = Vec::new();
+    for var in vars {
+        let mut stream = TcpStream::connect_timeout(&addr, timeout)
+            .map_err(|e| anyhow::anyhow!("failed to connect to {}: {}", addr, e))?;
+        stream.set_read_timeout(Some(timeout))?;
+        stream.set_write_timeout(Some(timeout))?;
+
+        let cmd = format!("! U1 getvar \"{}\"\r\n", var);
+        stream.write_all(cmd.as_bytes())?;
+        stream.flush()?;
+
+        let mut buf = [0u8; 2048];
+        let mut out = Vec::new();
+        loop {
+            match stream.read(&mut buf) {
+                Ok(0) => break,
+                Ok(n) => out.extend_from_slice(&buf[..n]),
+                Err(e) if e.kind() == std::io::ErrorKind::TimedOut => break,
+                Err(e) => return Err(anyhow::anyhow!("read failed for {}: {}", var, e)),
+            }
+        }
+
+        let text = String::from_utf8_lossy(&out).trim().to_string();
+        let value = if text.is_empty() {
+            "(no response)".to_string()
+        } else {
+            text.lines()
+                .rev()
+                .find(|l| !l.trim().is_empty())
+                .map(|s| s.trim().to_string())
+                .unwrap_or_else(|| "(no response)".to_string())
+        };
+        results.push(serde_json::json!({ "name": var, "value": value }));
+    }
+
+    match format {
+        Format::Json => {
+            let out = serde_json::json!({
+                "printer": addr.to_string(),
+                "timeout_secs": timeout_secs,
+                "variables": results
+            });
+            println!("{}", serde_json::to_string_pretty(&out)?);
+        }
+        Format::Pretty => {
+            eprintln!("bluetooth status via tcp ({})", addr);
+            for v in results {
+                let name = v
+                    .get("name")
+                    .and_then(|n| n.as_str())
+                    .unwrap_or("(unknown)");
+                let value = v
+                    .get("value")
+                    .and_then(|n| n.as_str())
+                    .unwrap_or("(unknown)");
+                eprintln!("  {} = {}", name, value);
+            }
+        }
+    }
     Ok(())
 }
 

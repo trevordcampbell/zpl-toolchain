@@ -422,6 +422,18 @@ fn serial_probe_help_shows_options() {
         "missing --post-print-status-retries"
     );
     assert!(
+        stdout.contains("--reopen-on-broken-pipe"),
+        "missing --reopen-on-broken-pipe"
+    );
+    assert!(
+        stdout.contains("--require-all-attempts"),
+        "missing --require-all-attempts"
+    );
+    assert!(
+        stdout.contains("--min-success-ratio"),
+        "missing --min-success-ratio"
+    );
+    assert!(
         stdout.contains("--compare-tty-cu"),
         "missing --compare-tty-cu"
     );
@@ -439,6 +451,11 @@ fn bt_status_help_shows_options() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("--printer"), "missing --printer");
     assert!(stdout.contains("--timeout"), "missing --timeout");
+    assert!(stdout.contains("--retries"), "missing --retries");
+    assert!(
+        stdout.contains("--retry-delay-ms"),
+        "missing --retry-delay-ms"
+    );
     assert!(stdout.contains("--output"), "missing --output");
 }
 

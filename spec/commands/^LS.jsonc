@@ -16,7 +16,7 @@
       ],
       "effects": { "sets": ["label.shift"] },
       "constraints": [
-        { "kind": "note", "message": "Must come before the first ^FS command for compatibility. Setting is retained until printer is turned off or a new ^LS command is sent." }
+        { "kind": "note", "expr": "after:first:^FS", "message": "Must come before the first ^FS command for compatibility. Setting is retained until printer is turned off or a new ^LS command is sent." }
       ],
       "docs": "Shifts all field positions to the left for compatibility with Z-130/Z-220 printer formats. Retained until power-off or new ^LS command."
     }

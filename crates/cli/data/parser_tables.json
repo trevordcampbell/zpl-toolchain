@@ -11693,7 +11693,7 @@
       ],
       "constraints": [
         {
-          "expr": null,
+          "expr": "after:first:^FS",
           "kind": "note",
           "message": "Must come before the first ^FS command for compatibility. Setting is retained until printer is turned off or a new ^LS command is sent.",
           "severity": null

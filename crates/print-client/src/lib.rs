@@ -22,7 +22,9 @@ pub use error::{PrintError, PrinterErrorKind};
 pub use frame::{expected_frame_count, read_frames};
 pub use retry::{ReconnectRetryPrinter, RetryPrinter};
 #[cfg(feature = "serial")]
-pub use serial::SerialPrinter;
+pub use serial::{
+    SerialDataBits, SerialFlowControl, SerialParity, SerialPrinter, SerialSettings, SerialStopBits,
+};
 pub use status::{HostStatus, PrintMode, PrinterInfo};
 #[cfg(feature = "tcp")]
 pub use tcp::TcpPrinter;

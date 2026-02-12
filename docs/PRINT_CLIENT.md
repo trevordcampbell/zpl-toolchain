@@ -854,11 +854,22 @@ zpl serial-probe /dev/cu.TheBeast
 # Probe with explicit serial settings and wire traces
 zpl serial-probe /dev/cu.TheBeast \
   --baud 9600 \
+  --repeat 5 \
   --serial-flow-control software \
   --serial-parity none \
   --serial-stop-bits one \
   --serial-data-bits eight \
   --send-test-label \
+  --trace-io
+
+# Reconnect lifecycle stress test (reopen each attempt, delay between attempts)
+zpl serial-probe /dev/cu.TheBeast \
+  --baud 9600 \
+  --repeat 10 \
+  --reopen-each-attempt \
+  --interval-ms 500 \
+  --send-test-label-each-attempt \
+  --post-print-status-retries 3 \
   --trace-io
 
 # JSON output for scripts/incident reports
@@ -867,14 +878,42 @@ zpl serial-probe /dev/cu.TheBeast --output json
 
 `serial-probe` checks:
 - open/connect viability on the selected serial endpoint,
-- `~HS` host status read path,
-- `~HI` host identification read path,
+- repeated `~HS` host status read path checks (`--repeat N`),
+- repeated `~HI` host identification read path checks (`--repeat N`),
+- optional reconnect lifecycle testing (`--reopen-each-attempt`, `--interval-ms`),
+- optional per-attempt label send and post-send status checks (`--send-test-label-each-attempt`, `--post-print-status-retries`),
 - optional tiny test-label write path.
+
+JSON output now includes:
+- per-attempt timestamps (`started_at_ms`, `opened_at_ms`, `finished_at_ms`, `elapsed_ms`),
+- per-attempt failure stage (`stage`) and timeout booleans (`*_timeout`),
+- aggregate counters (`status_successes`, `info_successes`, open/status/info/test-label failures),
+- overall timing and summary (`started_at_ms`, `finished_at_ms`, `elapsed_ms`, `summary`).
 
 Diagnosis categories currently emitted:
 - `bidirectional_serial_ok` — status/info reads are working.
+- `intermittent_bidirectional_serial` — at least one status/info read succeeded, but not consistently across repeats.
 - `write_path_only_or_response_blocked` — writes succeed but reads fail (common with wrong channel/profile).
 - `serial_transport_not_viable_with_current_settings` — connect/read/write path failed with current settings.
+
+### Bluetooth Status Command (TCP SGD Inspector)
+
+Use `zpl bt-status` to read Bluetooth-related SGD variables over TCP while debugging serial/Bluetooth behavior:
+
+```bash
+zpl bt-status --printer 10.0.0.199
+
+# Script-friendly JSON output
+zpl bt-status --printer 10.0.0.199 --output json
+```
+
+Current report includes:
+- `bluetooth.enable`
+- `bluetooth.discoverable`
+- `bluetooth.bonding`
+- `bluetooth.minimum_security_mode`
+- `bluetooth.authentication`
+- `bluetooth.bluetooth_pin`
 
 ### Validation Errors Blocking Print
 

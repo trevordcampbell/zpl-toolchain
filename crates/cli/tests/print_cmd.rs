@@ -407,7 +407,39 @@ fn serial_probe_help_shows_options() {
         stdout.contains("--send-test-label"),
         "missing --send-test-label"
     );
+    assert!(
+        stdout.contains("--send-test-label-each-attempt"),
+        "missing --send-test-label-each-attempt"
+    );
+    assert!(stdout.contains("--repeat"), "missing --repeat");
+    assert!(
+        stdout.contains("--reopen-each-attempt"),
+        "missing --reopen-each-attempt"
+    );
+    assert!(stdout.contains("--interval-ms"), "missing --interval-ms");
+    assert!(
+        stdout.contains("--post-print-status-retries"),
+        "missing --post-print-status-retries"
+    );
+    assert!(
+        stdout.contains("--compare-tty-cu"),
+        "missing --compare-tty-cu"
+    );
     assert!(stdout.contains("--trace-io"), "missing --trace-io");
+}
+
+#[test]
+fn bt_status_help_shows_options() {
+    let output = zpl_cmd()
+        .args(["bt-status", "--help"])
+        .output()
+        .expect("failed to run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("--printer"), "missing --printer");
+    assert!(stdout.contains("--timeout"), "missing --timeout");
+    assert!(stdout.contains("--output"), "missing --output");
 }
 
 #[test]
@@ -430,12 +462,43 @@ fn serial_probe_json_reports_connect_failure() {
     let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
     assert_eq!(json["success"], false);
     assert_eq!(json["stage"], "connect");
+    assert!(json["started_at_ms"].as_u64().is_some());
     assert!(
         json["message"]
             .as_str()
             .unwrap_or("")
             .contains("failed to open serial port")
     );
+}
+
+#[test]
+#[cfg(feature = "serial")]
+fn serial_probe_reopen_attempts_failure_exits_nonzero_with_attempts() {
+    let output = zpl_cmd()
+        .args([
+            "serial-probe",
+            "/dev/does-not-exist",
+            "--output",
+            "json",
+            "--timeout",
+            "1",
+            "--repeat",
+            "2",
+            "--reopen-each-attempt",
+        ])
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+    assert_eq!(json["success"], false);
+    let attempts = json["attempts"]
+        .as_array()
+        .expect("attempts must be an array");
+    assert_eq!(attempts.len(), 2);
+    assert_eq!(json["open_failures"], 2);
+    assert_eq!(json["stage"], serde_json::Value::Null);
 }
 
 #[test]

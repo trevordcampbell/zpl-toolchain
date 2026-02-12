@@ -46,6 +46,25 @@ fn parse_bool_field(fields: &[&str], index: usize, line: u8) -> Result<bool, Pri
     Ok(raw != "0")
 }
 
+/// Parse a memory field from `~HI` that may include unit suffixes.
+///
+/// Zebra responses are often plain integers (e.g. `131072`), but some models
+/// include a suffix like `8176KB`. This parser accepts both forms.
+fn parse_memory_kb_field(raw: &str) -> Result<u32, PrintError> {
+    let trimmed = raw.trim();
+    let digits_len = trimmed.chars().take_while(|c| c.is_ascii_digit()).count();
+    if digits_len == 0 {
+        return Err(PrintError::MalformedFrame {
+            details: format!("~HI: cannot parse memory_kb ({trimmed:?})"),
+        });
+    }
+    trimmed[..digits_len]
+        .parse::<u32>()
+        .map_err(|_| PrintError::MalformedFrame {
+            details: format!("~HI: cannot parse memory_kb ({trimmed:?})"),
+        })
+}
+
 // ── PrintMode ───────────────────────────────────────────────────────────
 
 /// Zebra print mode, as reported in `~HS` line 2 field 4.
@@ -288,12 +307,7 @@ impl PrinterInfo {
                 details: format!("~HI: cannot parse DPI ({:?})", fields[2].trim()),
             })?;
 
-        let memory_kb: u32 = fields[3]
-            .trim()
-            .parse()
-            .map_err(|_| PrintError::MalformedFrame {
-                details: format!("~HI: cannot parse memory_kb ({:?})", fields[3].trim()),
-            })?;
+        let memory_kb = parse_memory_kb_field(fields[3])?;
 
         Ok(PrinterInfo {
             model,
@@ -523,6 +537,13 @@ mod tests {
         let err = PrinterInfo::parse(&input).unwrap_err();
         let msg = format!("{err}");
         assert!(msg.contains("memory_kb"), "unexpected error: {msg}");
+    }
+
+    #[test]
+    fn parse_printer_info_memory_with_kb_suffix() {
+        let input = frames(&["ZD621-300dpi,V93.21.26Z,12,8176KB"]);
+        let info = PrinterInfo::parse(&input).expect("should parse");
+        assert_eq!(info.memory_kb, 8176);
     }
 
     // ── Serialization ───────────────────────────────────────────────

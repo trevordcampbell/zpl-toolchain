@@ -48,6 +48,26 @@ fn print_help_shows_flags() {
     {
         assert!(stdout.contains("--serial"), "missing --serial flag in help");
         assert!(stdout.contains("--baud"), "missing --baud flag in help");
+        assert!(
+            stdout.contains("--serial-flow-control"),
+            "missing --serial-flow-control flag in help"
+        );
+        assert!(
+            stdout.contains("--serial-parity"),
+            "missing --serial-parity flag in help"
+        );
+        assert!(
+            stdout.contains("--serial-stop-bits"),
+            "missing --serial-stop-bits flag in help"
+        );
+        assert!(
+            stdout.contains("--serial-data-bits"),
+            "missing --serial-data-bits flag in help"
+        );
+        assert!(
+            stdout.contains("--trace-io"),
+            "missing --trace-io flag in help"
+        );
     }
     assert!(
         stdout.contains("--timeout"),
@@ -314,6 +334,107 @@ fn print_serial_mac_address_shows_helpful_error() {
             && stderr.contains("OS serial port path")
             && stderr.contains("--serial"),
         "expected actionable MAC-address guidance, got: {stderr}"
+    );
+}
+
+#[test]
+#[cfg(feature = "serial")]
+fn print_dry_run_serial_accepts_line_overrides() {
+    let (_dir, path) = write_temp_zpl(SAMPLE_ZPL);
+
+    let output = zpl_cmd()
+        .args([
+            "print",
+            &path,
+            "--printer",
+            "/dev/ttyUSB0",
+            "--serial",
+            "--dry-run",
+            "--no-lint",
+            "--baud",
+            "9600",
+            "--serial-flow-control",
+            "software",
+            "--serial-parity",
+            "none",
+            "--serial-stop-bits",
+            "one",
+            "--serial-data-bits",
+            "eight",
+            "--trace-io",
+            "--output",
+            "json",
+        ])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+    assert_eq!(json["dry_run"], true);
+    assert_eq!(json["transport"], "serial");
+    assert_eq!(json["resolved_address"], "/dev/ttyUSB0");
+}
+
+#[test]
+#[cfg(feature = "serial")]
+fn serial_probe_help_shows_options() {
+    let output = zpl_cmd()
+        .args(["serial-probe", "--help"])
+        .output()
+        .expect("failed to run");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("--baud"), "missing --baud");
+    assert!(
+        stdout.contains("--serial-flow-control"),
+        "missing --serial-flow-control"
+    );
+    assert!(
+        stdout.contains("--serial-parity"),
+        "missing --serial-parity"
+    );
+    assert!(
+        stdout.contains("--serial-stop-bits"),
+        "missing --serial-stop-bits"
+    );
+    assert!(
+        stdout.contains("--serial-data-bits"),
+        "missing --serial-data-bits"
+    );
+    assert!(
+        stdout.contains("--send-test-label"),
+        "missing --send-test-label"
+    );
+    assert!(stdout.contains("--trace-io"), "missing --trace-io");
+}
+
+#[test]
+#[cfg(feature = "serial")]
+fn serial_probe_json_reports_connect_failure() {
+    let output = zpl_cmd()
+        .args([
+            "serial-probe",
+            "/dev/does-not-exist",
+            "--output",
+            "json",
+            "--timeout",
+            "1",
+        ])
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let json: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+    assert_eq!(json["success"], false);
+    assert_eq!(json["stage"], "connect");
+    assert!(
+        json["message"]
+            .as_str()
+            .unwrap_or("")
+            .contains("failed to open serial port")
     );
 }
 

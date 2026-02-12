@@ -45,3 +45,6 @@ z.plan.md
 # Environment / Secrets
 .env
 .npmrc
+
+# Internal Notes
+/notes

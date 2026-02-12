@@ -156,6 +156,9 @@ All Tier 1 items completed. See "Completed Work" below.
 - [ ] **TS `BatchResult` with partial error** — when `printBatch` fails mid-batch, include `{ sent, total, error }` so callers know which labels were sent
 - [ ] **CLI stdin support** — accept `-` as a file path to read ZPL from stdin (common CLI convention)
 - [ ] **CLI JSON error envelope consistency** — ensure all error paths (`anyhow::bail!`, file-read `?`, tables loading) produce JSON error envelopes when `--output json` is active
+- [x] **CLI serial override flags** — added `--serial-flow-control {none,software,hardware}`, `--serial-parity {none,even,odd}`, `--serial-stop-bits {one,two}`, and `--serial-data-bits {seven,eight}` so users can match printer/adapter line settings explicitly
+- [x] **`zpl serial-probe` diagnostics command** — added `zpl serial-probe` to classify serial endpoint health via `~HS`/`~HI` probes plus optional test-label send, with JSON diagnostics output
+- [x] **Serial debug trace mode** — added `--trace-io` for serial/Bluetooth transports to emit byte-level TX/RX hex+ASCII traces during print/probe troubleshooting
 - [ ] **Preflight `^MU` + bounds tests** — add tests for `^MUI`/`^MUM` interaction with ZPL2302 position bounds and ZPL2308 graphic bounds checks
 - [ ] **Preflight `^FT` bounds test** — add test for `^FT` position bounds (currently only `^FO` is tested)
 - [ ] **Preflight boundary comparison** — evaluate changing ZPL2302 from `>` to `>=` at exact boundary (position == label dimension)

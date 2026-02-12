@@ -13,6 +13,70 @@ use crate::{PrintError, Printer, PrinterConfig, StatusQuery};
 /// Default baud rate for Zebra label printers (9600 8N1).
 const DEFAULT_BAUD: u32 = 9600;
 
+/// Serial line settings used to open a serial port.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SerialSettings {
+    /// Data bits per symbol (typically 8 for Zebra).
+    pub data_bits: SerialDataBits,
+    /// Parity mode (typically none for Zebra).
+    pub parity: SerialParity,
+    /// Stop bits (typically 1 for Zebra).
+    pub stop_bits: SerialStopBits,
+    /// Flow control mode (often software/XON-XOFF on Zebra serial links).
+    pub flow_control: SerialFlowControl,
+}
+
+impl Default for SerialSettings {
+    fn default() -> Self {
+        Self {
+            data_bits: SerialDataBits::Eight,
+            parity: SerialParity::None,
+            stop_bits: SerialStopBits::One,
+            flow_control: SerialFlowControl::Software,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Supported serial data-bit settings.
+pub enum SerialDataBits {
+    /// 7 data bits.
+    Seven,
+    /// 8 data bits.
+    Eight,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Supported parity settings.
+pub enum SerialParity {
+    /// No parity bit.
+    None,
+    /// Even parity.
+    Even,
+    /// Odd parity.
+    Odd,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Supported stop-bit settings.
+pub enum SerialStopBits {
+    /// 1 stop bit.
+    One,
+    /// 2 stop bits.
+    Two,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// Supported flow-control settings.
+pub enum SerialFlowControl {
+    /// No line-level flow control.
+    None,
+    /// Software flow control (XON/XOFF).
+    Software,
+    /// Hardware flow control (RTS/CTS).
+    Hardware,
+}
+
 /// A Zebra printer connected over a serial port (RS-232, USB-serial, or Bluetooth SPP).
 ///
 /// Serial connections are inherently bidirectional, so this type supports
@@ -38,8 +102,24 @@ impl SerialPrinter {
     ///
     /// Returns `PrintError::SerialError` if the port cannot be opened.
     pub fn open(path: &str, baud: u32, config: PrinterConfig) -> Result<Self, PrintError> {
+        Self::open_with_settings(path, baud, SerialSettings::default(), config)
+    }
+
+    /// Open a serial port with explicit serial line settings.
+    ///
+    /// Use this when printer-side serial config is not known or must be overridden.
+    pub fn open_with_settings(
+        path: &str,
+        baud: u32,
+        settings: SerialSettings,
+        config: PrinterConfig,
+    ) -> Result<Self, PrintError> {
         let timeout = config.timeouts.read.max(config.timeouts.write);
         let port = serialport::new(path, baud)
+            .data_bits(map_data_bits(settings.data_bits))
+            .parity(map_parity(settings.parity))
+            .stop_bits(map_stop_bits(settings.stop_bits))
+            .flow_control(map_flow_control(settings.flow_control))
             .timeout(timeout)
             .open()
             .map_err(|e| PrintError::SerialError(e.to_string()))?;
@@ -77,6 +157,9 @@ impl SerialPrinter {
 
 impl Printer for SerialPrinter {
     fn send_raw(&mut self, data: &[u8]) -> Result<(), PrintError> {
+        if self.config.trace_io {
+            trace_bytes("serial tx", data);
+        }
         self.port.write_all(data).map_err(PrintError::WriteFailed)?;
 
         self.port.flush().map_err(PrintError::WriteFailed)?;
@@ -96,11 +179,72 @@ impl StatusQuery for SerialPrinter {
         // The serial port already implements `std::io::Read`, so we can
         // pass it directly to the frame parser. The port's read timeout
         // is set during open, and `read_frames` handles its own deadline.
-        read_frames(
+        let frames = read_frames(
             &mut self.port,
             expected_frames,
             timeout,
             DEFAULT_MAX_FRAME_SIZE,
-        )
+        )?;
+
+        if self.config.trace_io {
+            for frame in &frames {
+                trace_bytes("serial rx", frame);
+            }
+        }
+        Ok(frames)
     }
+}
+
+fn map_data_bits(bits: SerialDataBits) -> serialport::DataBits {
+    match bits {
+        SerialDataBits::Seven => serialport::DataBits::Seven,
+        SerialDataBits::Eight => serialport::DataBits::Eight,
+    }
+}
+
+fn map_parity(parity: SerialParity) -> serialport::Parity {
+    match parity {
+        SerialParity::None => serialport::Parity::None,
+        SerialParity::Even => serialport::Parity::Even,
+        SerialParity::Odd => serialport::Parity::Odd,
+    }
+}
+
+fn map_stop_bits(bits: SerialStopBits) -> serialport::StopBits {
+    match bits {
+        SerialStopBits::One => serialport::StopBits::One,
+        SerialStopBits::Two => serialport::StopBits::Two,
+    }
+}
+
+fn map_flow_control(flow: SerialFlowControl) -> serialport::FlowControl {
+    match flow {
+        SerialFlowControl::None => serialport::FlowControl::None,
+        SerialFlowControl::Software => serialport::FlowControl::Software,
+        SerialFlowControl::Hardware => serialport::FlowControl::Hardware,
+    }
+}
+
+fn trace_bytes(label: &str, bytes: &[u8]) {
+    let hex = bytes
+        .iter()
+        .map(|b| format!("{:02X}", b))
+        .collect::<Vec<_>>()
+        .join(" ");
+    let ascii = bytes
+        .iter()
+        .map(|b| {
+            if b.is_ascii_graphic() || *b == b' ' {
+                char::from(*b)
+            } else {
+                '.'
+            }
+        })
+        .collect::<String>();
+    eprintln!(
+        "[trace-io] {label} len={} hex=[{}] ascii='{}'",
+        bytes.len(),
+        hex,
+        ascii
+    );
 }

@@ -1835,6 +1835,42 @@ fn diag_zpl3001_note_emitted() {
     );
 }
 
+#[test]
+fn note_ls_before_first_fs_is_not_emitted() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^LS0^FO10,10^FDX^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::NOTE
+            && d.context
+                .as_ref()
+                .and_then(|c| c.get("command"))
+                .is_some_and(|v| v == "^LS")),
+        "^LS before first ^FS should not emit compatibility note: {:?}",
+        vr.issues
+    );
+}
+
+#[test]
+fn note_ls_after_first_fs_is_emitted_as_warn() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^FO10,10^FDX^FS^LS0^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    let ls_note = vr.issues.iter().find(|d| {
+        d.id == codes::NOTE
+            && d.context
+                .as_ref()
+                .and_then(|c| c.get("command"))
+                .is_some_and(|v| v == "^LS")
+    });
+    assert!(
+        ls_note.is_some(),
+        "expected ^LS compatibility note: {:?}",
+        vr.issues
+    );
+    assert_eq!(ls_note.expect("checked above").severity, Severity::Warn);
+}
+
 // ─── Structural Validation ───────────────────────────────────────────────────
 
 #[test]

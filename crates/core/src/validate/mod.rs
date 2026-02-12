@@ -1409,6 +1409,43 @@ fn validate_command_constraints(
                 }
             }
             ConstraintKind::Note => {
+                // Optional note predicates (spec-driven):
+                // - after:first:<codes>
+                // - before:first:<codes>
+                // - after:<codes>
+                // - before:<codes>
+                // where <codes> can be a single command or comma-separated list.
+                let should_emit = if let Some(expr) = c.expr.as_deref() {
+                    let eval_scope = c.scope.unwrap_or_else(|| {
+                        if cmd_ctx.cmd.scope == Some(CommandScope::Field) {
+                            ConstraintScope::Field
+                        } else {
+                            ConstraintScope::Label
+                        }
+                    });
+                    let seen_codes = if eval_scope == ConstraintScope::Field {
+                        seen_field_codes
+                    } else {
+                        seen_label_codes
+                    };
+
+                    if let Some(targets) = expr.strip_prefix("after:first:") {
+                        any_target_in_set(targets, seen_codes)
+                    } else if let Some(targets) = expr.strip_prefix("before:first:") {
+                        !any_target_in_set(targets, seen_codes)
+                    } else if let Some(targets) = expr.strip_prefix("after:") {
+                        any_target_in_set(targets, seen_codes)
+                    } else if let Some(targets) = expr.strip_prefix("before:") {
+                        !any_target_in_set(targets, seen_codes)
+                    } else {
+                        true
+                    }
+                } else {
+                    true
+                };
+                if !should_emit {
+                    continue;
+                }
                 issues.push(
                     Diagnostic::new(
                         codes::NOTE,

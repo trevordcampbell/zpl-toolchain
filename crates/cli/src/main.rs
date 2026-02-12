@@ -15,14 +15,16 @@ use zpl_toolchain_core::grammar::{
 };
 use zpl_toolchain_core::validate;
 use zpl_toolchain_diagnostics::{self as diag, Diagnostic, Severity};
-#[cfg(feature = "serial")]
-use zpl_toolchain_print_client::SerialPrinter;
 #[cfg(feature = "tcp")]
 use zpl_toolchain_print_client::TcpPrinter;
 #[cfg(feature = "usb")]
 use zpl_toolchain_print_client::UsbPrinter;
 use zpl_toolchain_print_client::{
     PrinterConfig, StatusQuery, resolve_printer_addr, wait_for_completion,
+};
+#[cfg(feature = "serial")]
+use zpl_toolchain_print_client::{
+    SerialDataBits, SerialFlowControl, SerialParity, SerialPrinter, SerialSettings, SerialStopBits,
 };
 
 use crate::render::{Format, print_summary, render_diagnostics};
@@ -161,6 +163,58 @@ enum Cmd {
         #[cfg(feature = "serial")]
         #[arg(long, default_value_t = 9600, requires = "serial")]
         baud: u32,
+        /// Serial flow control (none/software/hardware).
+        #[cfg(feature = "serial")]
+        #[arg(long, value_enum, default_value_t = CliSerialFlowControl::Software, requires = "serial")]
+        serial_flow_control: CliSerialFlowControl,
+        /// Serial parity (none/even/odd).
+        #[cfg(feature = "serial")]
+        #[arg(long, value_enum, default_value_t = CliSerialParity::None, requires = "serial")]
+        serial_parity: CliSerialParity,
+        /// Serial stop bits (1/2).
+        #[cfg(feature = "serial")]
+        #[arg(long, value_enum, default_value_t = CliSerialStopBits::One, requires = "serial")]
+        serial_stop_bits: CliSerialStopBits,
+        /// Serial data bits (7/8).
+        #[cfg(feature = "serial")]
+        #[arg(long, value_enum, default_value_t = CliSerialDataBits::Eight, requires = "serial")]
+        serial_data_bits: CliSerialDataBits,
+        /// Log raw serial bytes sent/received for diagnostics.
+        #[cfg(feature = "serial")]
+        #[arg(long, requires = "serial")]
+        trace_io: bool,
+    },
+
+    /// Probe a serial/Bluetooth endpoint and report bidirectional health.
+    #[cfg(feature = "serial")]
+    SerialProbe {
+        /// Serial port path (for example: /dev/cu.TheBeast, COM5, /dev/rfcomm0).
+        #[arg(value_name = "PORT")]
+        port: String,
+        /// Baud rate for serial probe (default: 9600).
+        #[arg(long, default_value_t = 9600)]
+        baud: u32,
+        /// Serial flow control (none/software/hardware).
+        #[arg(long, value_enum, default_value_t = CliSerialFlowControl::Software)]
+        serial_flow_control: CliSerialFlowControl,
+        /// Serial parity (none/even/odd).
+        #[arg(long, value_enum, default_value_t = CliSerialParity::None)]
+        serial_parity: CliSerialParity,
+        /// Serial stop bits (1/2).
+        #[arg(long, value_enum, default_value_t = CliSerialStopBits::One)]
+        serial_stop_bits: CliSerialStopBits,
+        /// Serial data bits (7/8).
+        #[arg(long, value_enum, default_value_t = CliSerialDataBits::Eight)]
+        serial_data_bits: CliSerialDataBits,
+        /// Probe timeout in seconds for connect/read/write.
+        #[arg(long, default_value_t = 8, value_parser = clap::value_parser!(u64).range(1..))]
+        timeout: u64,
+        /// Send a small test label after status/info probes.
+        #[arg(long)]
+        send_test_label: bool,
+        /// Log raw serial bytes sent/received for diagnostics.
+        #[arg(long)]
+        trace_io: bool,
     },
 
     // ── Reference / informational ───────────────────────────────────
@@ -191,6 +245,36 @@ enum IndentStyle {
     Label,
     /// Label + additional 2-space indent inside ^FO...^FS field blocks.
     Field,
+}
+
+#[cfg(feature = "serial")]
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum CliSerialFlowControl {
+    None,
+    Software,
+    Hardware,
+}
+
+#[cfg(feature = "serial")]
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum CliSerialParity {
+    None,
+    Even,
+    Odd,
+}
+
+#[cfg(feature = "serial")]
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum CliSerialStopBits {
+    One,
+    Two,
+}
+
+#[cfg(feature = "serial")]
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum CliSerialDataBits {
+    Seven,
+    Eight,
 }
 
 impl From<IndentStyle> for Indent {
@@ -242,6 +326,16 @@ fn main() -> Result<()> {
             serial,
             #[cfg(feature = "serial")]
             baud,
+            #[cfg(feature = "serial")]
+            serial_flow_control,
+            #[cfg(feature = "serial")]
+            serial_parity,
+            #[cfg(feature = "serial")]
+            serial_stop_bits,
+            #[cfg(feature = "serial")]
+            serial_data_bits,
+            #[cfg(feature = "serial")]
+            trace_io,
         } => cmd_print(PrintOpts {
             files: &files,
             printer_addr: &printer,
@@ -260,6 +354,39 @@ fn main() -> Result<()> {
             serial,
             #[cfg(feature = "serial")]
             baud,
+            #[cfg(feature = "serial")]
+            serial_flow_control,
+            #[cfg(feature = "serial")]
+            serial_parity,
+            #[cfg(feature = "serial")]
+            serial_stop_bits,
+            #[cfg(feature = "serial")]
+            serial_data_bits,
+            #[cfg(feature = "serial")]
+            trace_io,
+            format,
+        })?,
+        #[cfg(feature = "serial")]
+        Cmd::SerialProbe {
+            port,
+            baud,
+            serial_flow_control,
+            serial_parity,
+            serial_stop_bits,
+            serial_data_bits,
+            timeout,
+            send_test_label,
+            trace_io,
+        } => cmd_serial_probe(SerialProbeOpts {
+            port: &port,
+            baud,
+            serial_flow_control,
+            serial_parity,
+            serial_stop_bits,
+            serial_data_bits,
+            timeout,
+            send_test_label,
+            trace_io,
             format,
         })?,
         Cmd::Coverage {
@@ -510,6 +637,16 @@ struct PrintOpts<'a> {
     serial: bool,
     #[cfg(feature = "serial")]
     baud: u32,
+    #[cfg(feature = "serial")]
+    serial_flow_control: CliSerialFlowControl,
+    #[cfg(feature = "serial")]
+    serial_parity: CliSerialParity,
+    #[cfg(feature = "serial")]
+    serial_stop_bits: CliSerialStopBits,
+    #[cfg(feature = "serial")]
+    serial_data_bits: CliSerialDataBits,
+    #[cfg(feature = "serial")]
+    trace_io: bool,
     format: Format,
 }
 
@@ -534,6 +671,16 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
         serial,
         #[cfg(feature = "serial")]
         baud,
+        #[cfg(feature = "serial")]
+        serial_flow_control,
+        #[cfg(feature = "serial")]
+        serial_parity,
+        #[cfg(feature = "serial")]
+        serial_stop_bits,
+        #[cfg(feature = "serial")]
+        serial_data_bits,
+        #[cfg(feature = "serial")]
+        trace_io,
         format,
     } = opts;
 
@@ -734,7 +881,7 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
     }
 
     // ── Build printer config ────────────────────────────────────────
-    let config = if let Some(secs) = timeout {
+    let mut config = if let Some(secs) = timeout {
         let base = Duration::from_secs(secs);
         let mut cfg = PrinterConfig::default();
         cfg.timeouts.connect = base;
@@ -754,6 +901,11 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
         cfg
     };
 
+    #[cfg(feature = "serial")]
+    if serial {
+        config.trace_io = trace_io;
+    }
+
     // ── Connect and run print session ─────────────────────────────
     let connection_err = |e: zpl_toolchain_print_client::PrintError| {
         if format == Format::Json {
@@ -770,7 +922,7 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
         anyhow::anyhow!("failed to connect to printer '{}': {}", printer_addr, e)
     };
 
-    let session = SessionOpts {
+    let make_session = |transport: &'static str| SessionOpts {
         file_contents: &file_contents,
         all_diagnostics: &all_diagnostics,
         info,
@@ -779,6 +931,7 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
         wait,
         wait_timeout,
         format,
+        transport,
     };
 
     // ── Serial transport ──────────────────────────────────────────
@@ -799,15 +952,26 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
                 printer_addr
             );
         }
-        let mut printer =
-            SerialPrinter::open(printer_addr, baud, config).map_err(connection_err)?;
+        let settings = SerialSettings {
+            flow_control: to_print_flow_control(serial_flow_control),
+            parity: to_print_parity(serial_parity),
+            stop_bits: to_print_stop_bits(serial_stop_bits),
+            data_bits: to_print_data_bits(serial_data_bits),
+        };
+        let mut printer = SerialPrinter::open_with_settings(printer_addr, baud, settings, config)
+            .map_err(connection_err)?;
         if format == Format::Pretty {
             eprintln!("connected to {} (serial, {} baud)", printer_addr, baud);
             eprintln!(
-                "note: serial/Bluetooth sends are write-only. Use --status or --wait to verify printer processing."
+                "note: serial/Bluetooth status reads require a bidirectional serial endpoint. \
+If --status/--wait times out, verify the printer serial config matches host settings \
+(baud/data/parity/stop/flow) and disable serial ACK/NAK protocol."
+            );
+            eprintln!(
+                "hint: over TCP, set known-good serial defaults then persist: ^XA^SC9600,8,N,1,X,N^JUS^XZ"
             );
         }
-        return run_print_session(&mut printer, printer_addr, &session);
+        return run_print_session(&mut printer, printer_addr, &make_session("serial"));
     }
 
     // ── USB transport ────────────────────────────────────────────
@@ -817,7 +981,7 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
         if format == Format::Pretty {
             eprintln!("connected to USB Zebra printer");
         }
-        return run_print_session(&mut printer, "usb", &session);
+        return run_print_session(&mut printer, "usb", &make_session("usb"));
     }
 
     #[cfg(feature = "usb")]
@@ -827,7 +991,7 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
         if format == Format::Pretty {
             eprintln!("connected to USB printer {:04X}:{:04X}", vid, pid);
         }
-        return run_print_session(&mut printer, printer_addr, &session);
+        return run_print_session(&mut printer, printer_addr, &make_session("usb"));
     }
 
     #[cfg(not(feature = "usb"))]
@@ -869,7 +1033,7 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
         if format == Format::Pretty {
             eprintln!("connected to {}", remote);
         }
-        run_print_session(&mut printer, &remote.to_string(), &session)
+        run_print_session(&mut printer, &remote.to_string(), &make_session("tcp"))
     }
 }
 
@@ -896,6 +1060,7 @@ struct SessionOpts<'a> {
     wait: bool,
     wait_timeout: u64,
     format: Format,
+    transport: &'a str,
 }
 
 /// Run the print session (info → send → status → wait → result).
@@ -917,6 +1082,7 @@ fn run_print_session<P: StatusQuery>(
         wait,
         wait_timeout,
         format,
+        transport,
     } = *opts;
 
     // Accumulate JSON data into a single envelope for `--output json`.
@@ -1023,11 +1189,16 @@ fn run_print_session<P: StatusQuery>(
             Err(e) => {
                 if verify {
                     if format == Format::Json {
+                        let serial_hint = if transport == "serial" {
+                            " Selected serial endpoint may be write-only for responses; verify the printer/adapter supports bidirectional ~HS over this port."
+                        } else {
+                            ""
+                        };
                         json_result["success"] = serde_json::json!(false);
                         json_result["error"] = serde_json::json!("verify_failed");
                         json_result["message"] = serde_json::json!(format!(
-                            "post-send verification failed: could not query printer status (~HS): {}",
-                            e
+                            "post-send verification failed: could not query printer status (~HS): {}.{}",
+                            e, serial_hint
                         ));
                         println!(
                             "{}",
@@ -1039,10 +1210,23 @@ fn run_print_session<P: StatusQuery>(
                             "error: post-send verification failed: could not query printer status (~HS): {}",
                             e
                         );
+                        if transport == "serial" {
+                            eprintln!(
+                                "hint: this serial endpoint may be write-only for responses; use a bidirectional serial/SPP port for --status/--wait/--verify."
+                            );
+                        }
                     }
                     process::exit(1);
                 } else {
                     eprintln!("warning: failed to query printer status: {}", e);
+                    if transport == "serial" {
+                        eprintln!(
+                            "hint: this serial endpoint may be write-only for responses, or printer serial settings may not match host settings."
+                        );
+                        eprintln!(
+                            "hint: bootstrap serial via TCP and persist: ^XA^SC9600,8,N,1,X,N^JUS^XZ"
+                        );
+                    }
                 }
             }
         }
@@ -1079,6 +1263,14 @@ fn run_print_session<P: StatusQuery>(
                     );
                 } else {
                     eprintln!("error: wait for completion failed: {}", e);
+                    if transport == "serial" {
+                        eprintln!(
+                            "hint: wait polling uses ~HS status reads. If this times out on serial/Bluetooth, check bidirectional support and serial settings."
+                        );
+                        eprintln!(
+                            "hint: bootstrap serial via TCP and persist: ^XA^SC9600,8,N,1,X,N^JUS^XZ"
+                        );
+                    }
                 }
                 process::exit(1);
             }
@@ -1094,11 +1286,16 @@ fn run_print_session<P: StatusQuery>(
                 Ok(hs) => hs,
                 Err(e) => {
                     if format == Format::Json {
+                        let serial_hint = if transport == "serial" {
+                            " Selected serial endpoint may be write-only for responses; verify the printer/adapter supports bidirectional ~HS over this port."
+                        } else {
+                            ""
+                        };
                         json_result["success"] = serde_json::json!(false);
                         json_result["error"] = serde_json::json!("verify_failed");
                         json_result["message"] = serde_json::json!(format!(
-                            "post-send verification failed: could not query printer status (~HS): {}",
-                            e
+                            "post-send verification failed: could not query printer status (~HS): {}.{}",
+                            e, serial_hint
                         ));
                         println!(
                             "{}",
@@ -1110,6 +1307,14 @@ fn run_print_session<P: StatusQuery>(
                             "error: post-send verification failed: could not query printer status (~HS): {}",
                             e
                         );
+                        if transport == "serial" {
+                            eprintln!(
+                                "hint: this serial endpoint may be write-only for responses, or serial settings/protocol may not match printer."
+                            );
+                            eprintln!(
+                                "hint: bootstrap serial via TCP and persist: ^XA^SC9600,8,N,1,X,N^JUS^XZ"
+                            );
+                        }
                     }
                     process::exit(1);
                 }
@@ -1185,6 +1390,190 @@ fn run_print_session<P: StatusQuery>(
         }
     }
     Ok(())
+}
+
+#[cfg(feature = "serial")]
+struct SerialProbeOpts<'a> {
+    port: &'a str,
+    baud: u32,
+    serial_flow_control: CliSerialFlowControl,
+    serial_parity: CliSerialParity,
+    serial_stop_bits: CliSerialStopBits,
+    serial_data_bits: CliSerialDataBits,
+    timeout: u64,
+    send_test_label: bool,
+    trace_io: bool,
+    format: Format,
+}
+
+#[cfg(feature = "serial")]
+fn cmd_serial_probe(opts: SerialProbeOpts<'_>) -> Result<()> {
+    let SerialProbeOpts {
+        port,
+        baud,
+        serial_flow_control,
+        serial_parity,
+        serial_stop_bits,
+        serial_data_bits,
+        timeout,
+        send_test_label,
+        trace_io,
+        format,
+    } = opts;
+    use std::time::Duration;
+
+    let settings = SerialSettings {
+        flow_control: to_print_flow_control(serial_flow_control),
+        parity: to_print_parity(serial_parity),
+        stop_bits: to_print_stop_bits(serial_stop_bits),
+        data_bits: to_print_data_bits(serial_data_bits),
+    };
+
+    let mut config = PrinterConfig::default();
+    let probe_timeout = Duration::from_secs(timeout);
+    config.timeouts.connect = probe_timeout;
+    config.timeouts.write = probe_timeout;
+    config.timeouts.read = probe_timeout;
+    config.trace_io = trace_io;
+
+    let mut probe_json = serde_json::json!({
+        "port": port,
+        "baud": baud,
+        "settings": {
+            "flow_control": format!("{:?}", settings.flow_control).to_lowercase(),
+            "parity": format!("{:?}", settings.parity).to_lowercase(),
+            "stop_bits": format!("{:?}", settings.stop_bits).to_lowercase(),
+            "data_bits": format!("{:?}", settings.data_bits).to_lowercase(),
+        },
+    });
+
+    let mut printer = match SerialPrinter::open_with_settings(port, baud, settings, config) {
+        Ok(p) => p,
+        Err(e) => {
+            if format == Format::Json {
+                probe_json["success"] = serde_json::json!(false);
+                probe_json["stage"] = serde_json::json!("connect");
+                probe_json["message"] =
+                    serde_json::json!(format!("failed to open serial port: {}", e));
+                println!("{}", serde_json::to_string_pretty(&probe_json)?);
+                process::exit(1);
+            }
+            anyhow::bail!("failed to open serial port '{}': {}", port, e);
+        }
+    };
+
+    let mut status_ok = false;
+    let mut info_ok = false;
+    let mut test_label_sent = false;
+    let mut findings: Vec<String> = Vec::new();
+
+    match printer.query_status() {
+        Ok(status) => {
+            status_ok = true;
+            probe_json["status"] = serde_json::to_value(status).unwrap_or_default();
+            findings.push("~HS status read succeeded".to_string());
+        }
+        Err(e) => {
+            probe_json["status_error"] = serde_json::json!(e.to_string());
+            findings.push(format!("~HS status read failed: {}", e));
+        }
+    }
+
+    match printer.query_info() {
+        Ok(info) => {
+            info_ok = true;
+            probe_json["info"] = serde_json::to_value(info).unwrap_or_default();
+            findings.push("~HI info read succeeded".to_string());
+        }
+        Err(e) => {
+            probe_json["info_error"] = serde_json::json!(e.to_string());
+            findings.push(format!("~HI info read failed: {}", e));
+        }
+    }
+
+    if send_test_label {
+        let label = "^XA^FO30,30^A0N,30,30^FDzpl serial probe^FS^XZ";
+        match <SerialPrinter as zpl_toolchain_print_client::Printer>::send_zpl(&mut printer, label)
+        {
+            Ok(()) => {
+                test_label_sent = true;
+                findings.push("Test label sent successfully".to_string());
+            }
+            Err(e) => {
+                probe_json["test_label_error"] = serde_json::json!(e.to_string());
+                findings.push(format!("Test label send failed: {}", e));
+            }
+        }
+    }
+
+    let diagnosis = if status_ok || info_ok {
+        "bidirectional_serial_ok"
+    } else if test_label_sent {
+        "write_path_only_or_response_blocked"
+    } else {
+        "serial_transport_not_viable_with_current_settings"
+    };
+
+    if format == Format::Json {
+        probe_json["success"] = serde_json::json!(status_ok || info_ok || test_label_sent);
+        probe_json["diagnosis"] = serde_json::json!(diagnosis);
+        probe_json["findings"] = serde_json::to_value(findings).unwrap_or_default();
+        println!("{}", serde_json::to_string_pretty(&probe_json)?);
+    } else {
+        eprintln!("serial probe report");
+        eprintln!("  port:      {}", port);
+        eprintln!("  baud:      {}", baud);
+        eprintln!(
+            "  settings:  data={:?} parity={:?} stop={:?} flow={:?}",
+            settings.data_bits, settings.parity, settings.stop_bits, settings.flow_control
+        );
+        for finding in findings {
+            eprintln!("  - {}", finding);
+        }
+        eprintln!("  diagnosis: {}", diagnosis);
+        if diagnosis == "write_path_only_or_response_blocked" {
+            eprintln!("  hint: endpoint may allow writes but not return STX/ETX status frames.");
+            eprintln!(
+                "  hint: verify BT profile/channel and printer serial config (^SC ... ^JUS)."
+            );
+        }
+    }
+
+    Ok(())
+}
+
+#[cfg(feature = "serial")]
+fn to_print_flow_control(v: CliSerialFlowControl) -> SerialFlowControl {
+    match v {
+        CliSerialFlowControl::None => SerialFlowControl::None,
+        CliSerialFlowControl::Software => SerialFlowControl::Software,
+        CliSerialFlowControl::Hardware => SerialFlowControl::Hardware,
+    }
+}
+
+#[cfg(feature = "serial")]
+fn to_print_parity(v: CliSerialParity) -> SerialParity {
+    match v {
+        CliSerialParity::None => SerialParity::None,
+        CliSerialParity::Even => SerialParity::Even,
+        CliSerialParity::Odd => SerialParity::Odd,
+    }
+}
+
+#[cfg(feature = "serial")]
+fn to_print_stop_bits(v: CliSerialStopBits) -> SerialStopBits {
+    match v {
+        CliSerialStopBits::One => SerialStopBits::One,
+        CliSerialStopBits::Two => SerialStopBits::Two,
+    }
+}
+
+#[cfg(feature = "serial")]
+fn to_print_data_bits(v: CliSerialDataBits) -> SerialDataBits {
+    match v {
+        CliSerialDataBits::Seven => SerialDataBits::Seven,
+        CliSerialDataBits::Eight => SerialDataBits::Eight,
+    }
 }
 
 fn cmd_coverage(coverage_path: &str, show_issues: bool, json: bool) -> Result<()> {

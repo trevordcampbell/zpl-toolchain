@@ -202,6 +202,11 @@ zpl print <FILES>... --printer <ADDR> [OPTIONS]
 | `--wait-timeout <SECS>` | Timeout in seconds for `--wait` polling (default: 120). Requires `--wait`. |
 | `--serial` | Use serial/Bluetooth SPP transport (printer address is a serial port path). |
 | `--baud <RATE>` | Baud rate for serial connections (default: 9600). Requires `--serial`. |
+| `--serial-flow-control <MODE>` | Serial flow control override: `none`, `software` (XON/XOFF), or `hardware` (RTS/CTS). Requires `--serial`. |
+| `--serial-parity <MODE>` | Serial parity override: `none`, `even`, or `odd`. Requires `--serial`. |
+| `--serial-stop-bits <MODE>` | Serial stop bit override: `one` or `two`. Requires `--serial`. |
+| `--serial-data-bits <MODE>` | Serial data bit override: `seven` or `eight`. Requires `--serial`. |
+| `--trace-io` | Emit serial transport hex/ASCII TX/RX dumps to stderr (diagnostics only). Requires `--serial`. |
 | `--output <FORMAT>` | Output format: `pretty` or `json`. Defaults to `pretty` when stdout is a TTY, `json` when piped. Global flag. |
 
 ### Address Formats
@@ -255,6 +260,15 @@ zpl print label.zpl -p /dev/ttyUSB0 --serial
 
 # Print via Bluetooth SPP with custom baud rate
 zpl print label.zpl -p /dev/rfcomm0 --serial --baud 115200
+
+# Print via serial with explicit line settings and IO traces
+zpl print label.zpl -p /dev/cu.TheBeast --serial \
+  --baud 9600 \
+  --serial-flow-control software \
+  --serial-parity none \
+  --serial-stop-bits one \
+  --serial-data-bits eight \
+  --trace-io
 ```
 
 ---
@@ -806,6 +820,61 @@ warning: failed to query printer status: read timed out
 - The printer may be busy processing a label. Status queries are delayed while printing.
 - Some non-Zebra printers don't respond to `~HS` / `~HI` queries
 - This is non-fatal — the label was still sent successfully
+
+### Bluetooth/Serial Forensics (bytes sent, no print)
+
+If serial/Bluetooth reports `sent:` but no label prints, and `--status`/`--wait` repeatedly time out, use this checklist to isolate transport vs printer behavior:
+
+1. **Confirm the file is plain ZPL** (not RTF/rich text). Rich text wrappers (`{\rtf1...}`) cause enum and stray-content diagnostics.
+2. **Print config over TCP** (`~WC`) and verify active serial settings (baud, data bits, parity, handshake/protocol) on the printer.
+3. **Apply serial settings over TCP** and persist:
+   ```zpl
+   ^SC9600,8,N,1,X,N
+   ^JUS
+   ```
+4. **Use a tiny probe label** first (to avoid conflating throughput issues with transport setup):
+   ```bash
+   printf '^XA^FO20,20^A0N,40,40^FDHELLO^FS^XZ' > /tmp/zpl_probe.zpl
+   zpl print /tmp/zpl_probe.zpl --printer /dev/cu.<printer-port> --serial --baud 9600 --timeout 5
+   ```
+5. **If write succeeds but reads are always empty**, test with an external serial probe (for example `pyserial`) to confirm whether the OS serial endpoint is effectively write-only or non-responsive for this printer.
+6. **Check for port ownership conflicts** (`Resource busy`) before testing (`lsof /dev/cu.* /dev/tty.*`).
+7. **If all flow-control modes still show zero read bytes and no print**, treat it as endpoint/profile mismatch (OS Bluetooth serial service path not carrying printer data), not a parser/validator issue.
+
+Known behavior: `sent:` on serial/Bluetooth means bytes were accepted by the OS device file, not necessarily that the printer processed them. Use status queries when available, and verify with physical output.
+
+### Serial Probe Command
+
+Use `zpl serial-probe` to quickly classify whether a serial/Bluetooth path is usable for bidirectional Zebra communication:
+
+```bash
+# Baseline probe
+zpl serial-probe /dev/cu.TheBeast
+
+# Probe with explicit serial settings and wire traces
+zpl serial-probe /dev/cu.TheBeast \
+  --baud 9600 \
+  --serial-flow-control software \
+  --serial-parity none \
+  --serial-stop-bits one \
+  --serial-data-bits eight \
+  --send-test-label \
+  --trace-io
+
+# JSON output for scripts/incident reports
+zpl serial-probe /dev/cu.TheBeast --output json
+```
+
+`serial-probe` checks:
+- open/connect viability on the selected serial endpoint,
+- `~HS` host status read path,
+- `~HI` host identification read path,
+- optional tiny test-label write path.
+
+Diagnosis categories currently emitted:
+- `bidirectional_serial_ok` — status/info reads are working.
+- `write_path_only_or_response_blocked` — writes succeed but reads fail (common with wrong channel/profile).
+- `serial_transport_not_viable_with_current_settings` — connect/read/write path failed with current settings.
 
 ### Validation Errors Blocking Print
 

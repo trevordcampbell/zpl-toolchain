@@ -10,6 +10,10 @@ pub struct PrinterConfig {
     pub timeouts: PrinterTimeouts,
     /// Retry settings for transient failures.
     pub retry: RetryConfig,
+    /// Enable transport-level byte tracing for diagnostics.
+    ///
+    /// When enabled, transports may emit hex/ASCII byte dumps to stderr.
+    pub trace_io: bool,
 }
 
 /// Timeout settings for printer connections.

@@ -6,12 +6,15 @@
 //! both `Printer` and `StatusQuery` traits.
 
 use std::io::Write;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::frame::{DEFAULT_MAX_FRAME_SIZE, expected_frame_count, read_frames};
 use crate::{PrintError, Printer, PrinterConfig, StatusQuery};
 
 /// Default baud rate for Zebra label printers (9600 8N1).
 const DEFAULT_BAUD: u32 = 9600;
+static NEXT_TRACE_SESSION_ID: AtomicU64 = AtomicU64::new(1);
 
 /// Serial line settings used to open a serial port.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -86,6 +89,8 @@ pub struct SerialPrinter {
     port: Box<dyn serialport::SerialPort>,
     /// Printer configuration (timeouts, retry settings).
     config: PrinterConfig,
+    /// Unique id for trace output correlation.
+    trace_session_id: u64,
 }
 
 impl SerialPrinter {
@@ -124,7 +129,12 @@ impl SerialPrinter {
             .open()
             .map_err(|e| PrintError::SerialError(e.to_string()))?;
 
-        Ok(Self { port, config })
+        let trace_session_id = NEXT_TRACE_SESSION_ID.fetch_add(1, Ordering::Relaxed);
+        Ok(Self {
+            port,
+            config,
+            trace_session_id,
+        })
     }
 
     /// Open a serial port with the Zebra default baud rate (9600 8N1).
@@ -158,7 +168,7 @@ impl SerialPrinter {
 impl Printer for SerialPrinter {
     fn send_raw(&mut self, data: &[u8]) -> Result<(), PrintError> {
         if self.config.trace_io {
-            trace_bytes("serial tx", data);
+            trace_bytes("serial tx", data, self.trace_session_id);
         }
         self.port.write_all(data).map_err(PrintError::WriteFailed)?;
 
@@ -188,7 +198,7 @@ impl StatusQuery for SerialPrinter {
 
         if self.config.trace_io {
             for frame in &frames {
-                trace_bytes("serial rx", frame);
+                trace_bytes("serial rx", frame, self.trace_session_id);
             }
         }
         Ok(frames)
@@ -225,7 +235,7 @@ fn map_flow_control(flow: SerialFlowControl) -> serialport::FlowControl {
     }
 }
 
-fn trace_bytes(label: &str, bytes: &[u8]) {
+fn trace_bytes(label: &str, bytes: &[u8], session_id: u64) {
     let hex = bytes
         .iter()
         .map(|b| format!("{:02X}", b))
@@ -241,8 +251,12 @@ fn trace_bytes(label: &str, bytes: &[u8]) {
             }
         })
         .collect::<String>();
+    let ts_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_millis())
+        .unwrap_or(0);
     eprintln!(
-        "[trace-io] {label} len={} hex=[{}] ascii='{}'",
+        "[trace-io t={ts_ms} session={session_id}] {label} len={} hex=[{}] ascii='{}'",
         bytes.len(),
         hex,
         ascii

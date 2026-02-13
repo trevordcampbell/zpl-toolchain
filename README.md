@@ -172,6 +172,26 @@ OPTIONS:
 
 > All transports (TCP, USB, serial/Bluetooth) are included by default in every install method.
 > For a minimal TCP-only build: `cargo install zpl_toolchain_cli --no-default-features --features tcp`.
+> There is no separate `--usb` flag: USB is selected with `--printer usb` or `--printer usb:VID:PID`.
+
+**Optional minimal CLI builds (feature-selective):**
+
+```bash
+# TCP only
+cargo install zpl_toolchain_cli --no-default-features --features tcp
+
+# USB only
+cargo install zpl_toolchain_cli --no-default-features --features usb
+
+# Serial/Bluetooth only
+cargo install zpl_toolchain_cli --no-default-features --features serial
+
+# TCP + Serial (no USB)
+cargo install zpl_toolchain_cli --no-default-features --features "tcp serial"
+
+# TCP + USB (no serial/Bluetooth)
+cargo install zpl_toolchain_cli --no-default-features --features "tcp usb"
+```
 
 > **Note:** Serial/Bluetooth addresses require the `--serial` flag and an OS serial port path (for example `/dev/cu.*`, `/dev/tty*`, `COM*`, `/dev/rfcomm*`), not a Bluetooth MAC address. USB printing on Linux may require [udev rules](docs/PRINT_CLIENT.md#linux-udev-rules). See the [Print Client Guide](docs/PRINT_CLIENT.md) for transport setup details.
 > For stronger delivery checks, use `--verify` (or `--status` / `--wait`). With `--wait`, verification re-queries status after completion. Write success alone does not guarantee physical print completion.
@@ -211,7 +231,11 @@ zpl print label.zpl -p 192.168.1.55 --status --output json | jq .
 
 ## Language Bindings
 
-All bindings expose the same core API: **parse**, **validate**, **format**, **explain**. Native (non-WASM) bindings additionally expose **print** and **query status** for sending ZPL to printers over TCP.
+All bindings expose the same core API: **parse**, **validate**, **format**, **explain**.
+Transport scope for printing is runtime-specific:
+- CLI + Rust print-client API: TCP + USB + serial/Bluetooth
+- TypeScript `@zpl-toolchain/print`: TCP (plus browser proxy/Browser Print integrations)
+- Python / Go / .NET / C FFI wrappers: TCP print + status
 
 | Language | Package | Mechanism | Print Support |
 |----------|---------|-----------|---------------|

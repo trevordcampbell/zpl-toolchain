@@ -83,8 +83,30 @@ zpl explain ZPL1201
 | Serial path | Serial/BT SPP (with `--serial`) | `/dev/ttyUSB0`, `COM3` |
 
 > **Note:** Serial/Bluetooth addresses require the `--serial` flag. Without it, the CLI assumes TCP.
+> There is no separate `--usb` flag: USB is selected with `-p usb` or `-p usb:VID:PID`.
 > With `--serial`, pass the OS serial port path (`/dev/cu.*`, `/dev/tty*`, `COM*`, `/dev/rfcomm*`) — not a Bluetooth MAC address.
 > Serial/Bluetooth transport is write-only at send time; use `--verify` (or `--status` / `--wait`) when you need stronger verification that the printer processed the job.
+
+### Minimal Feature Builds
+
+Default installs include all transports (`tcp`, `usb`, `serial`). For minimal deployments:
+
+```bash
+# TCP only
+cargo install zpl_toolchain_cli --no-default-features --features tcp
+
+# USB only
+cargo install zpl_toolchain_cli --no-default-features --features usb
+
+# Serial/Bluetooth only
+cargo install zpl_toolchain_cli --no-default-features --features serial
+
+# TCP + USB
+cargo install zpl_toolchain_cli --no-default-features --features "tcp usb"
+
+# TCP + Serial/Bluetooth
+cargo install zpl_toolchain_cli --no-default-features --features "tcp serial"
+```
 
 ## Troubleshooting
 

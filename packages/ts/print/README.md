@@ -2,6 +2,9 @@
 
 Send ZPL to Zebra and ZPL-compatible label printers from Node.js. Supports persistent TCP connections, batch printing, status queries, browser printing, and a built-in HTTP/WebSocket proxy for web apps.
 
+> Transport scope: this package is **TCP-focused** (`host`/`port`).
+> For USB (`--printer usb`) and serial/Bluetooth SPP (`--serial`), use the `zpl` CLI or the Rust `zpl_toolchain_print_client` API.
+
 Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) project.
 
 ## Installation

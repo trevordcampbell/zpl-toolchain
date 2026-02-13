@@ -32,6 +32,32 @@ zpl print label.zpl --printer /dev/rfcomm0 --serial
 ```
 
 > **All transports** (TCP, USB, serial/Bluetooth) are included by default in every install method. For a minimal TCP-only build: `cargo install zpl_toolchain_cli --no-default-features --features tcp`.
+>
+> CLI transport selection rules:
+> - TCP: `--printer <ip-or-host>[:port]`
+> - USB: `--printer usb` or `--printer usb:VID:PID` (there is no separate `--usb` flag)
+> - Serial/Bluetooth SPP: `--printer <serial-port-path> --serial`
+
+### Feature-Selective CLI Builds
+
+If you want a smaller CLI binary for a specific deployment, you can disable default transports and opt into only what you need:
+
+```bash
+# TCP only
+cargo install zpl_toolchain_cli --no-default-features --features tcp
+
+# USB only
+cargo install zpl_toolchain_cli --no-default-features --features usb
+
+# Serial/Bluetooth only
+cargo install zpl_toolchain_cli --no-default-features --features serial
+
+# TCP + Serial/Bluetooth
+cargo install zpl_toolchain_cli --no-default-features --features "tcp serial"
+
+# TCP + USB
+cargo install zpl_toolchain_cli --no-default-features --features "tcp usb"
+```
 
 ### Rust
 

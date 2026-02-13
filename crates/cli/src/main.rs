@@ -118,7 +118,10 @@ enum Cmd {
         /// ZPL file(s) to print.
         #[arg(required = true, value_name = "FILE")]
         files: Vec<String>,
-        /// Printer address (IP/hostname, port defaults to 9100).
+        /// Printer target:
+        /// - TCP: `IP`, `hostname`, or `host:port`
+        /// - USB: `usb` or `usb:VID:PID`
+        /// - Serial/Bluetooth SPP: OS serial path (for example `/dev/cu.*`, `/dev/tty*`, `COM*`) with `--serial`
         #[arg(long, short)]
         printer: String,
         /// Printer profile JSON for hardware-specific validation (see profiles/).

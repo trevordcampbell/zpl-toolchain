@@ -113,6 +113,7 @@ Before implementation work starts in `crates/renderer/`, complete these research
 
 - [ ] **Shell installer script** — `curl -fsSL https://… | sh` one-liner for Linux/macOS; detect architecture, download from GitHub Releases
 - [ ] **Homebrew formula/tap** — `brew install zpl-toolchain` via a custom tap
+- [ ] **CI optimization: Python runtime matrix split by trigger** — keep full 3.9-3.13 on `main`/release, optionally run a reduced representative subset on PRs to reduce cycle time
 - [x] **`zpl doctor` diagnostic command** — initial implementation ships table availability checks, profile validity checks, and optional TCP printer reachability diagnostics with pretty/JSON output
 - [x] **`zpl check` / `zpl validate` command aliases** — added as visible aliases for `syntax-check` and `lint` to improve CLI discoverability without breaking existing commands
 - [x] **Python bindings: return native dicts** — parse/validate/print/query APIs now return native dict/list objects directly

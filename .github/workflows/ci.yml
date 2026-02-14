@@ -15,9 +15,33 @@ env:
   RUSTFLAGS: -D warnings
 
 jobs:
+  # ── Fast fail gate: cheap, high-signal checks first ────────────────────
+  fast-gate:
+    name: Fast Gate (lint + build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          components: rustfmt, clippy
+          cache-key: ci-fast-gate
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Build workspace
+        run: cargo build --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+
+      - name: Clippy
+        env:
+          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
+        run: cargo clippy --workspace --locked -- -D warnings
+
   # ── Core: build, lint, test across OS matrix ──────────────────────────
   build:
     name: Build & Test (${{ matrix.os }})
+    needs: [fast-gate]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -51,6 +75,7 @@ jobs:
   # ── Spec-compiler: validate spec files ────────────────────────────────
   spec-check:
     name: Spec Validation & Coverage
+    needs: [fast-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -85,6 +110,7 @@ jobs:
   # ── TypeScript print package: build + test ─────────────────────────────
   ts-core:
     name: TypeScript Core Tests
+    needs: [fast-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -122,6 +148,7 @@ jobs:
 
   ts-print:
     name: TypeScript Print Tests
+    needs: [fast-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -160,6 +187,7 @@ jobs:
 
   ts-cli:
     name: TypeScript CLI Wrapper Tests
+    needs: [fast-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -175,6 +203,7 @@ jobs:
   # ── WASM build + size check ───────────────────────────────────────────
   wasm:
     name: WASM Build
+    needs: [fast-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -209,6 +238,7 @@ jobs:
   # ── Python wheel build ────────────────────────────────────────────────
   python:
     name: Python Wheel
+    needs: [fast-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -230,6 +260,7 @@ jobs:
   # ── C FFI shared library build ────────────────────────────────────────
   ffi:
     name: C FFI (${{ matrix.os }})
+    needs: [fast-gate]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -273,6 +304,7 @@ jobs:
   # ── Python runtime tests (PyO3 linkable) ──────────────────────────────
   python-runtime-tests:
     name: Python Runtime Tests (py${{ matrix.python-version }})
+    needs: [fast-gate]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -309,6 +341,7 @@ jobs:
   # ── Go wrapper runtime tests ───────────────────────────────────────────
   go-bindings:
     name: Go Bindings Runtime Tests
+    needs: [fast-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -334,6 +367,7 @@ jobs:
   # ── .NET wrapper runtime tests ─────────────────────────────────────────
   dotnet-bindings:
     name: .NET Bindings Runtime Tests
+    needs: [fast-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

@@ -1,0 +1,38 @@
+name: Homebrew Tap Validate
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to validate (e.g. v0.1.13)"
+        required: true
+        type: string
+
+jobs:
+  validate-tap-sync:
+    name: Validate Homebrew Tap Sync (dry run)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ inputs.tag }}
+      HOMEBREW_TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}
+      HOMEBREW_TAP_FORMULA_PATH: ${{ vars.HOMEBREW_TAP_FORMULA_PATH }}
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+      HOMEBREW_TAP_DRY_RUN: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate Homebrew automation configuration
+        run: |
+          if [[ -z "${HOMEBREW_TAP_REPO}" ]]; then
+            echo "Missing required repository variable: HOMEBREW_TAP_REPO" >&2
+            exit 1
+          fi
+          if [[ -z "${HOMEBREW_TAP_TOKEN}" ]]; then
+            echo "Missing required repository secret: HOMEBREW_TAP_TOKEN" >&2
+            exit 1
+          fi
+
+      - name: Run tap sync dry run
+        run: bash scripts/update-homebrew-tap.sh

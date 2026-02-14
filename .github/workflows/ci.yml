@@ -31,12 +31,24 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Build workspace
-        run: cargo build --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+        run: cargo build --workspace --locked
 
       - name: Clippy
         env:
           PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
         run: cargo clippy --workspace --locked -- -D warnings
+
+      - name: Install nextest
+        uses: taiki-e/install-action@nextest
+
+      - name: Build print-client without serde
+        run: cargo build -p zpl_toolchain_print_client --locked --no-default-features --features tcp
+
+      - name: Test print-client without serde
+        run: cargo nextest run -p zpl_toolchain_print_client --locked --no-default-features --features tcp --lib
+
+      - name: Validate install.sh
+        run: ./scripts/validate-install-sh.sh
 
   # ── Core: build, lint, test across OS matrix ──────────────────────────
   build:
@@ -59,7 +71,7 @@ jobs:
         run: cargo fmt --all -- --check
 
       - name: Build workspace
-        run: cargo build --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+        run: cargo build --workspace --locked
 
       - name: Clippy
         env:
@@ -70,7 +82,7 @@ jobs:
         uses: taiki-e/install-action@nextest
 
       - name: Test
-        run: cargo nextest run --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+        run: cargo nextest run --workspace --locked
 
   # ── Spec-compiler: validate spec files ────────────────────────────────
   spec-check:
@@ -302,6 +314,8 @@ jobs:
           }
 
   # ── Python runtime tests (PyO3 linkable) ──────────────────────────────
+  # PRs: reduced subset (3.9, 3.12, 3.13) for faster feedback
+  # Push to main: full matrix (3.9–3.13) for release confidence
   python-runtime-tests:
     name: Python Runtime Tests (py${{ matrix.python-version }})
     needs: [fast-gate]
@@ -309,7 +323,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ${{ github.event_name == 'push' && fromJSON('["3.9","3.10","3.11","3.12","3.13"]') || fromJSON('["3.9","3.12","3.13"]') }}
     steps:
       - uses: actions/checkout@v4
 

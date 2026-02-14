@@ -384,3 +384,35 @@ jobs:
           fi
         env:
           TAG: ${{ needs.release.outputs.tag }}
+
+  # ── Update Homebrew tap formula ──────────────────────────────────────────
+  publish-homebrew-tap:
+    name: Publish Homebrew Formula
+    needs: [release, upload-artifacts]
+    if: needs.release.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ needs.release.outputs.tag }}
+      HOMEBREW_TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}
+      HOMEBREW_TAP_FORMULA_PATH: ${{ vars.HOMEBREW_TAP_FORMULA_PATH }}
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+
+      - name: Validate Homebrew automation configuration
+        run: |
+          if [[ -z "${HOMEBREW_TAP_REPO}" ]]; then
+            echo "Missing required repository variable: HOMEBREW_TAP_REPO" >&2
+            exit 1
+          fi
+          if [[ -z "${HOMEBREW_TAP_TOKEN}" ]]; then
+            echo "Missing required repository secret: HOMEBREW_TAP_TOKEN" >&2
+            exit 1
+          fi
+
+      - name: Update tap formula
+        run: bash scripts/update-homebrew-tap.sh

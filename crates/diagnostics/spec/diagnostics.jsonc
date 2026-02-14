@@ -145,7 +145,7 @@
       "category": "cross-command-constraints",
       "summary": "Required command missing",
       "description": "A required command was not found in the label where expected.",
-      "contextKeys": ["command", "target", "kind"]
+      "contextKeys": ["command", "target", "kind", "scope"]
     },
     {
       "id": "ZPL2102",
@@ -154,7 +154,7 @@
       "category": "cross-command-constraints",
       "summary": "Incompatible commands",
       "description": "This command is incompatible with another present in the label.",
-      "contextKeys": ["command", "target", "kind"]
+      "contextKeys": ["command", "target", "kind", "scope"]
     },
     {
       "id": "ZPL2103",
@@ -163,7 +163,7 @@
       "category": "cross-command-constraints",
       "summary": "Ordering violation (before)",
       "description": "Command ordering rule violated: this command should appear before the referenced one.",
-      "contextKeys": ["command", "target", "kind"]
+      "contextKeys": ["command", "target", "kind", "scope"]
     },
     {
       "id": "ZPL2104",
@@ -172,7 +172,7 @@
       "category": "cross-command-constraints",
       "summary": "Ordering violation (after)",
       "description": "Command ordering rule violated: this command should appear after the referenced one.",
-      "contextKeys": ["command", "target", "kind"]
+      "contextKeys": ["command", "target", "kind", "scope"]
     },
     {
       "id": "ZPL2201",
@@ -308,6 +308,15 @@
       "summary": "Missing explicit label dimensions",
       "description": "Label uses profile-provided dimensions but does not contain explicit ^PW or ^LL commands. Adding explicit dimension commands makes the label self-contained and portable across printers.",
       "contextKeys": ["missing_commands"]
+    },
+    {
+      "id": "ZPL2311",
+      "constName": "OBJECT_BOUNDS_OVERFLOW",
+      "severity": "warn",
+      "category": "semantic-validation",
+      "summary": "Text or barcode extends beyond label bounds",
+      "description": "A text field or barcode at the current ^FO/^FT position would extend beyond the effective label dimensions. Content may be clipped or misaligned on print.",
+      "contextKeys": ["object_type", "x", "y", "estimated_width", "estimated_height", "label_width", "label_height"]
     },
     {
       "id": "ZPL2401",

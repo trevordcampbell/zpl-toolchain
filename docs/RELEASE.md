@@ -15,8 +15,8 @@ Releases are fully automated via [release-plz](https://release-plz.ieni.dev/) an
    - Publishes crates to crates.io (dependency-ordered)
    - Creates a git tag (`v0.x.y`)
    - Creates a GitHub Release with changelog notes
-   - Triggers npm, PyPI, binary build, and Go module tagging jobs
-7. Done — all registries updated, artifacts uploaded, Go tag pushed
+   - Triggers npm, PyPI, binary build, Go module tagging, and Homebrew tap update jobs
+7. Done — all registries updated, artifacts uploaded, Go tag pushed, Homebrew formula synced
 
 > **Self-healing releases:** `release_always = true` in `release-plz.toml` means
 > the release step runs on every push to main, not only when the commit comes from
@@ -30,12 +30,18 @@ Releases are fully automated via [release-plz](https://release-plz.ieni.dev/) an
 |---------|---------|
 | Build from source | `cargo install zpl_toolchain_cli` |
 | Pre-built binary (binstall) | `cargo binstall zpl_toolchain_cli` |
+| Shell installer (checksum-verified) | `curl -fsSL https://raw.githubusercontent.com/trevordcampbell/zpl-toolchain/main/install.sh | sh` |
+| Homebrew (in-repo formula) | `brew install --formula Formula/zpl-toolchain.rb` |
+| Homebrew (tap) | `brew install trevordcampbell/zpl-toolchain/zpl-toolchain` |
 | Pre-built binary (download) | [GitHub Releases](https://github.com/trevordcampbell/zpl-toolchain/releases) |
 | npx wrapper (downloads binary on first run) | `npx @zpl-toolchain/cli --help` |
 
 `cargo binstall` metadata is configured in the CLI's `Cargo.toml` so that
 [`cargo-binstall`](https://github.com/cargo-bins/cargo-binstall) can download
 pre-built binaries directly from GitHub Releases instead of compiling from source.
+
+Tap publishing is automated from release CI. See
+[docs/HOMEBREW.md](HOMEBREW.md#automated-tap-updates-via-ci) for setup details.
 
 ### Parser tables
 
@@ -86,7 +92,7 @@ the automated upload failed), trigger the manual workflow from the GitHub Action
 To avoid repeat regressions and CI surprises, keep these guardrails in mind:
 
 - **Clippy policy:** run full-workspace clippy (`cargo clippy --workspace -- -D warnings`) before shipping. For PyO3 compatibility in CI/devcontainer environments, use `PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1`.
-- **Hook enforcement:** pre-commit runs clippy when Rust files are staged; pre-push runs full-workspace clippy plus the Rust test suite (excluding wasm/python runtime crates for nextest).
+- **Hook enforcement:** pre-commit runs clippy when Rust files are staged; pre-push runs full-workspace clippy plus full-workspace Rust tests.
 - **TypeScript core CI dependency:** `packages/ts/core` type-check/build depends on generated `wasm/pkg` artifacts, so CI must build WASM before TS core checks.
 - **Python runtime confidence:** runtime checks should validate the installed wheel behavior (build wheel, install wheel, run tests), not only `cargo test` for the PyO3 crate.
 - **release-plz scope:** release-plz PR package lists only crates with `publish = true` (Cargo ecosystem). npm/PyPI versions are synchronized in workflow steps and published by downstream jobs.
@@ -103,7 +109,7 @@ Quick smoke test:
 ```bash
 cargo fmt --all -- --check
 cargo clippy --workspace -- -D warnings
-cargo nextest run --workspace --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+cargo nextest run --workspace
 (cd packages/ts/print && npm ci && npm run build && npm test)
 (cd packages/ts/cli && npm test)
 bash scripts/test-python-wheel-local.sh
@@ -173,6 +179,14 @@ they are distributed through npm, PyPI, and binary downloads instead.
 | `CARGO_REGISTRY_TOKEN` | crates.io | release-plz.yml |
 | `NPM_TOKEN` | npmjs.com (`@zpl-toolchain/core`, `@zpl-toolchain/print`, `@zpl-toolchain/cli`) | release-plz.yml |
 | `PYPI_TOKEN` | pypi.org | release-plz.yml |
+| `HOMEBREW_TAP_TOKEN` | GitHub PAT for writing to Homebrew tap repo | release-plz.yml |
+
+## Required GitHub variables
+
+| Variable | Purpose | Used by |
+|----------|---------|---------|
+| `HOMEBREW_TAP_REPO` | Homebrew tap repository (`owner/repo`) | release-plz.yml |
+| `HOMEBREW_TAP_FORMULA_PATH` | Formula path inside tap repo (optional, defaults to `Formula/zpl-toolchain.rb`) | release-plz.yml |
 
 ## Git hooks
 
@@ -191,14 +205,16 @@ Skip any hook when needed: `git commit --no-verify` or `git push --no-verify`.
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `ci.yml` | Push / PR | Build, test, clippy, fmt |
-| `release-plz.yml` | Push to main | Release PR + automated publish (crates.io, npm, PyPI, binaries, Go tag) |
+| `release-plz.yml` | Push to main | Release PR + automated publish (crates.io, npm, PyPI, binaries, Go tag, Homebrew tap) |
 | `release.yml` | `workflow_dispatch` (manual) | Emergency fallback: rebuild binaries + upload to GitHub Release |
+| `homebrew-tap-validate.yml` | `workflow_dispatch` (manual) | Dry-run Homebrew tap sync for a specific tag (no commit/push) |
 
 ## Configuration files
 
 | File | Purpose |
 |------|---------|
 | `release-plz.toml` | release-plz workspace config (single-tag mode, changelog) |
+| `scripts/update-homebrew-tap.sh` | Regenerates and pushes tap formula from release checksums |
 | `scripts/publish.sh` | Manual publishing script (dry-run by default) |
 | `.githooks/*` | Git hooks (conventional commits, fmt, clippy, tests) |
 | `.env` | Local API tokens for manual publishing (gitignored) |

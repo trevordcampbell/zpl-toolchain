@@ -63,7 +63,7 @@ Before implementation work starts in `crates/renderer/`, complete these research
 
 #### Tier C1 (High Impact)
 
-- [x] **Diagnostic codes — single source of truth** — `spec/diagnostics.jsonc` is now the canonical source with `constName` field; `crates/diagnostics/build.rs` auto-generates `codes.rs` constants and `explain()` match arms at build time; fixed missing `ZPL.PARSER.1301`; `codes.rs` reduced from 148 lines to 7 lines (include!)
+- [x] **Diagnostic codes — single source of truth** — `crates/diagnostics/spec/diagnostics.jsonc` is now the canonical source with `constName` field; `crates/diagnostics/build.rs` auto-generates `codes.rs` constants and `explain()` match arms at build time; fixed missing `ZPL.PARSER.1301`; `codes.rs` reduced from 148 lines to 7 lines (include!)
 - [x] **Extract `bindings-common` crate** — `crates/bindings-common/` centralizes `embedded_tables()`, parse/validate/format/explain workflows, indent parsing, and `build.rs` table embedding; FFI/WASM/Python reduced to thin type-conversion wrappers; eliminated ~600 lines of duplication
 - [x] **Test organization** — centralized helpers (`extract_codes`, `find_args`, `find_diag`, severity checks, profile fixtures) in `common/mod.rs`; standardized all test files to `common::TABLES`; split 111 validator tests from `parser.rs` into new `validator.rs`; `parser.rs` now has 61 focused parsing tests
 
@@ -111,9 +111,10 @@ Before implementation work starts in `crates/renderer/`, complete these research
 
 #### Deferred (Usability Review — Distribution & DX)
 
-- [ ] **Shell installer script** — `curl -fsSL https://… | sh` one-liner for Linux/macOS; detect architecture, download from GitHub Releases
-- [ ] **Homebrew formula/tap** — `brew install zpl-toolchain` via a custom tap
-- [ ] **CI optimization: Python runtime matrix split by trigger** — keep full 3.9-3.13 on `main`/release, optionally run a reduced representative subset on PRs to reduce cycle time
+- [x] **Shell installer script** — `install.sh` with checksum verification (fail closed); supports Linux x64 and macOS ARM64; one-liner: `curl -fsSL …/install.sh | sh`; validated by `scripts/validate-install-sh.sh`
+- [x] **Homebrew formula** — `Formula/zpl-toolchain.rb` in-repo; `brew install --formula Formula/zpl-toolchain.rb`; docs in [HOMEBREW.md](HOMEBREW.md); macOS ARM64 and Linux x64 only (Intel Mac/Linux ARM64: use cargo install)
+- [x] **Homebrew tap CI automation** — release workflow now updates the configured formula path in the tap repo using release artifact checksums (`HOMEBREW_TAP_REPO` + `HOMEBREW_TAP_TOKEN`, optional `HOMEBREW_TAP_FORMULA_PATH`); idempotent (commits only when formula content changes)
+- [x] **CI optimization: Python runtime matrix split by trigger** — full 3.9-3.13 on push to main; reduced subset (3.9, 3.12, 3.13) on PRs to reduce cycle time
 - [x] **`zpl doctor` diagnostic command** — initial implementation ships table availability checks, profile validity checks, and optional TCP printer reachability diagnostics with pretty/JSON output
 - [x] **`zpl check` / `zpl validate` command aliases** — added as visible aliases for `syntax-check` and `lint` to improve CLI discoverability without breaking existing commands
 - [x] **Python bindings: return native dicts** — parse/validate/print/query APIs now return native dict/list objects directly
@@ -177,7 +178,8 @@ Before implementation work starts in `crates/renderer/`, complete these research
 - [x] **Preflight `^MU` + bounds tests** — added coverage for `^MUI`/`^MUM` interaction with ZPL2308 graphics bounds checks (with existing ZPL2302 `^MU` tests retained)
 - [x] **Preflight `^FT` bounds test** — added explicit in-bounds `^FT` position test (out-of-bounds coverage already existed)
 - [x] **Preflight boundary comparison** — evaluated and codified current strict-`>` behavior with an exact-boundary regression test (position == label dimension does not emit ZPL2302)
-- [ ] **Feature-gated `serde`** — make `serde` an optional feature on print-client for users who only need the transport layer
+- [x] **Preflight ZPL2311 object bounds** — text/barcode overflow beyond label dimensions; 4 validator tests; `validate_object_bounds()` in FieldTracker close path
+- [x] **Feature-gated `serde`** — make `serde` an optional feature on print-client for users who only need the transport layer
 - [x] **Mock TCP server for TS print-package tests** — added Node-based mock TCP printer server and happy-path integration tests for print, batch/partial failures, retry behavior, and proxy forwarding
 - [x] **TS print CI integration coverage guards** — CI explicitly verifies `dist/test/mock-tcp-server.js`, `dist/test/network-availability.js`, and `dist/test/print.test.js` exist, then asserts local TCP bind support before running tests to prevent silent skipping of network integration coverage
 - [x] **TS core runtime guard tests + CI job** — added `@zpl-toolchain/core` init-guard runtime tests and a dedicated CI job (`ts-core`) to run type-check/build/test for the package
@@ -198,6 +200,7 @@ Before implementation work starts in `crates/renderer/`, complete these research
 - [x] Document `^CI` variable-length remap limitation — documented in `^CI.jsonc` constraint note
 - [ ] Schema v2 refactor — normalized param schemas, command maps, structured effects, DSL-based constraints (see `docs/research/schema-v2-proposal.md`). *Deferred in ROADMAP.md — revisit when current schema becomes a bottleneck.*
 - [ ] Schema parity gaps — `argUnion` examples, richer constraints
+- [ ] **Preflight ZPL2311 precision upgrade (much later)** — current object-bounds check is intentionally heuristic (`validate_object_bounds()` estimates text width from char count/font defaults and barcode width from generic module heuristics). Revisit with a spec-driven estimator layer (per-symbology barcode sizing + device-font metrics table + orientation-aware geometry) to reduce false positives/negatives while staying renderer-independent.
 - ~~Query/response schemas for tilde commands (`~HM`, `~HS`, `~HQES`)~~ — *Dropped per ROADMAP.md. The print client (Phase 5a) can send `~HS` and parse the response without a formal schema system.*
 - [ ] Signature builder for exact `Format:` string emission
 - ~~RenderContract constants (stub)~~ — *Archived. Vestige of original plan; superseded by the renderer's direct AST consumption approach (ROADMAP Phase 3).*
@@ -302,7 +305,7 @@ Before implementation work starts in `crates/renderer/`, complete these research
 - [x] **Add `^GF` positional index comments** — documented arg layout and added inline comments on each positional reference
 - [x] **Add `type_valid` design comment** — documents why invalid enums intentionally keep `type_valid = true`
 - [x] **Create `docs/DIAGNOSTIC_CODES.md`** — comprehensive reference of all 40 diagnostic codes with descriptions, severities, examples, and fix guidance
-- [x] **Create `spec/diagnostics.jsonc`** — machine-readable diagnostic spec for auto-doc generation and coverage checking
+- [x] **Create `crates/diagnostics/spec/diagnostics.jsonc`** — machine-readable diagnostic spec for auto-doc generation and coverage checking
 - [x] Fix `^LL` vs profile height validation — now handled by generic `profileConstraint` (ZPL1401)
 - [x] Fix parser `unreachable!()` in `parse_field_data()` — replaced with informative `unreachable!()` message
 - [x] Add spans to parser diagnostics that had `span: None` — missing ^XZ now points to end of input; no-labels spans entire input
@@ -460,7 +463,7 @@ Before implementation work starts in `crates/renderer/`, complete these research
 - [x] Profiles: validate `^MT` print method against `media.print_method` — warn when thermal transfer is selected but profile only supports direct thermal
 - [x] Profiles: type `Media.print_method` as `PrintMethod` enum — `DirectThermal`, `ThermalTransfer`, `Both` with `#[serde(rename_all = "snake_case")]`; replaces stringly-typed `Option<String>`
 - [x] Profiles: add media validation diagnostic `ZPL1403` (MEDIA_MODE_UNSUPPORTED) — 6 tests covering `^MM`, `^MN`, `^MT` positive/negative cases
-- [x] **Diagnostic structured context** — added `Option<BTreeMap<String, String>>` `context` field to `Diagnostic` struct with `with_context()` builder and `ctx!` macro; context populated at all 42 emission sites (+ 2 intentional exceptions) across validator and parser; 11 new context assertion tests; `spec/diagnostics.jsonc` updated to v1.1.0 with `contextKeys`; docs updated (`DIAGNOSTIC_CODES.md`, `PROFILE_GUIDE.md`)
+- [x] **Diagnostic structured context** — added `Option<BTreeMap<String, String>>` `context` field to `Diagnostic` struct with `with_context()` builder and `ctx!` macro; context populated at all 42 emission sites (+ 2 intentional exceptions) across validator and parser; 11 new context assertion tests; `crates/diagnostics/spec/diagnostics.jsonc` updated to v1.1.0 with `contextKeys`; docs updated (`DIAGNOSTIC_CODES.md`, `PROFILE_GUIDE.md`)
 - [x] **Field-scoped state tracking via `requires_field`** — added `requires_field: true` to `^FH`, `^FR`, `^SN`, `^SF` spec files; validator now enforces that field-scoped commands appear within `^FO`…`^FS` blocks (ZPL2201); 7 new integration tests
 - [x] **`^FH` hex escape module** — new `hex_escape.rs` module with `decode_hex_escapes()` and `validate_hex_escapes()` functions; configurable indicator character (default `_`, set via `^FH` arg); `FieldTracker` now captures `fh_indicator` from `^FH` argument; validator refactored to use module instead of inline byte scanning; 14 unit tests + 2 integration tests (custom indicator, indicator reset between fields)
 - [x] **`^GF` raw data continuation** — `validate_semantic_state()` now receives `label_nodes` and accumulates data from `Node::RawData` continuation nodes when checking `^GF` data length (ZPL2307); whitespace stripped for ASCII hex format; 3 new tests (multi-line correct, multi-line mismatch, single-line regression)

@@ -35,13 +35,21 @@ println!("Paper out: {}, Paused: {}", status.paper_out, status.paused);
 | Feature | Default | Description |
 |---------|---------|-------------|
 | `tcp` | Yes | TCP transport via `socket2` |
+| `serde` | Yes | `Serialize`/`Deserialize` for `HostStatus`, `PrinterInfo`, `PrintMode` |
 | `usb` | No | USB transport via `nusb` |
 | `serial` | No | Serial/Bluetooth SPP via `serialport` |
 
+Transport-only (no serde) for minimal builds:
+
 ```toml
-[dependencies]
-zpl_toolchain_print_client = "0.1"                          # TCP only
-zpl_toolchain_print_client = { version = "0.1", features = ["usb", "serial"] }  # All transports
+zpl_toolchain_print_client = { version = "0.1", default-features = false, features = ["tcp"] }
+```
+
+With all transports and serde:
+
+```toml
+zpl_toolchain_print_client = "0.1"                          # TCP + serde
+zpl_toolchain_print_client = { version = "0.1", features = ["usb", "serial"] }  # All transports + serde
 ```
 
 ## Documentation

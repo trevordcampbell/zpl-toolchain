@@ -15,7 +15,7 @@ fi
 
 echo "pre-push: running tests..."
 if command -v cargo-nextest &>/dev/null; then
-    cargo nextest run --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+    cargo nextest run --workspace --locked
 else
-    cargo test --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+    cargo test --workspace --locked
 fi

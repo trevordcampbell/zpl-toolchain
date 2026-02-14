@@ -69,7 +69,8 @@ fn parse_memory_kb_field(raw: &str) -> Result<u32, PrintError> {
 
 /// Zebra print mode, as reported in `~HS` line 2 field 4.
 #[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum PrintMode {
     /// Tear-off mode (code 0) — labels are advanced past the tear bar.
     TearOff,
@@ -113,7 +114,8 @@ impl PrintMode {
 /// (each wrapped in STX/ETX framing). This struct contains every
 /// field from all three lines.
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct HostStatus {
     // ── Line 1 ──────────────────────────────────────────────────────
     /// Communication settings (field 0).
@@ -262,7 +264,8 @@ impl HostStatus {
 
 /// Parsed `~HI` (Host Identification) response.
 #[non_exhaustive]
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct PrinterInfo {
     /// Printer model string (e.g. `"ZTC ZD421-300dpi ZPL"`).
     pub model: String,
@@ -492,12 +495,12 @@ mod tests {
 
     #[test]
     fn parse_printer_info_normal() {
-        let input = frames(&["ZTC ZD421-300dpi ZPL,V85.20.19,12,131072"]);
+        let input = frames(&["ZTC ZD421-300dpi ZPL,V85.20.19,300,131072"]);
 
         let info = PrinterInfo::parse(&input).expect("should parse");
         assert_eq!(info.model, "ZTC ZD421-300dpi ZPL");
         assert_eq!(info.firmware, "V85.20.19");
-        assert_eq!(info.dpi, 12);
+        assert_eq!(info.dpi, 300);
         assert_eq!(info.memory_kb, 131072);
     }
 
@@ -546,8 +549,9 @@ mod tests {
         assert_eq!(info.memory_kb, 8176);
     }
 
-    // ── Serialization ───────────────────────────────────────────────
+    // ── Serialization (serde feature only) ────────────────────────────
 
+    #[cfg(feature = "serde")]
     #[test]
     fn host_status_serializes_to_json() {
         let input = frames(&[
@@ -563,6 +567,7 @@ mod tests {
         assert!(json.contains("\"print_mode\":\"TearOff\""));
     }
 
+    #[cfg(feature = "serde")]
     #[test]
     fn printer_info_serializes_to_json() {
         let input = frames(&["ZTC ZD421-300dpi ZPL,V85.20.19,12,131072"]);
@@ -571,5 +576,23 @@ mod tests {
         let json = serde_json::to_string(&info).expect("should serialize");
         assert!(json.contains("\"model\":\"ZTC ZD421-300dpi ZPL\""));
         assert!(json.contains("\"dpi\":12"));
+    }
+
+    /// Proves HostStatus and PrinterInfo parse successfully without serde feature.
+    #[cfg(not(feature = "serde"))]
+    #[test]
+    fn parse_works_without_serde() {
+        let hs_input = frames(&[
+            "030,0,0,1245,000,0,0,0,000,0,0,0",
+            "000,0,0,0,0,2,4,0,00000000,1,000",
+            "1234,0",
+        ]);
+        let hs = HostStatus::parse(&hs_input).unwrap();
+        assert_eq!(hs.label_length_dots, 1245);
+        assert_eq!(hs.print_mode, PrintMode::TearOff);
+
+        let info_input = frames(&["ZTC ZD421-300dpi ZPL,V85.20.19,300,131072"]);
+        let info = PrinterInfo::parse(&info_input).unwrap();
+        assert_eq!(info.dpi, 300);
     }
 }

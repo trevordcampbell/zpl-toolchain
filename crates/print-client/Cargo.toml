@@ -12,14 +12,15 @@ categories = ["hardware-support", "network-programming"]
 readme = "README.md"
 
 [features]
-default = ["tcp"]
+default = ["tcp", "serde"]
 tcp = ["dep:socket2"]
+serde = ["dep:serde"]
 usb = ["dep:nusb", "dep:futures-lite"]
 serial = ["dep:serialport"]
 
 [dependencies]
 thiserror = { workspace = true }
-serde = { workspace = true }
+serde = { workspace = true, optional = true }
 socket2 = { workspace = true, optional = true }
 
 # Optional transports

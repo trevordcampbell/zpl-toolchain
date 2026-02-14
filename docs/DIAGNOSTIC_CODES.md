@@ -173,7 +173,7 @@ Common context keys include:
 - **Description**: A required command was not found in the label where expected.
 - **Example**: Using ^FD without a preceding ^FO or ^FT
 - **Fix**: Add the required command in the correct location.
-- **Context keys**: `command`, `target`, `kind` (`"requires"`)
+- **Context keys**: `command`, `target`, `kind` (`"requires"`), `scope` (`"label"` or `"field"`)
 
 #### ZPL2102 — Incompatible Commands
 - **Severity**: Warn
@@ -181,7 +181,7 @@ Common context keys include:
 - **Description**: This command is incompatible with another present in the label.
 - **Example**: Using both ^FO and ^FT in conflicting ways
 - **Fix**: Remove one of the incompatible commands or restructure the label.
-- **Context keys**: `command`, `target`, `kind` (`"incompatible"`)
+- **Context keys**: `command`, `target`, `kind` (`"incompatible"`), `scope` (`"label"` or `"field"`)
 
 #### ZPL2103 — Ordering Violation (Before)
 - **Severity**: Warn
@@ -189,7 +189,7 @@ Common context keys include:
 - **Description**: Command ordering rule violated: this command should appear before the referenced one.
 - **Example**: ^LL appears after ^FO when it should appear before
 - **Fix**: Reorder commands to satisfy the ordering constraint.
-- **Context keys**: `command`, `target`, `kind` (`"order"`)
+- **Context keys**: `command`, `target`, `kind` (`"order"`), `scope` (`"label"` or `"field"`)
 
 #### ZPL2104 — Ordering Violation (After)
 - **Severity**: Warn
@@ -197,7 +197,7 @@ Common context keys include:
 - **Description**: Command ordering rule violated: this command should appear after the referenced one.
 - **Example**: ^FD appears before ^FO when it should appear after
 - **Fix**: Reorder commands to satisfy the ordering constraint.
-- **Context keys**: `command`, `target`, `kind` (`"order"`)
+- **Context keys**: `command`, `target`, `kind` (`"order"`), `scope` (`"label"` or `"field"`)
 
 ### 22xx: Structural Validation
 
@@ -321,6 +321,15 @@ Common context keys include:
 - **Example**: A label validated with a profile that has `page.width_dots` but no `^PW` command in the label
 - **Fix**: Add explicit `^PW` and/or `^LL` commands to the label for portability.
 - **Context keys**: `missing_commands`
+
+#### ZPL2311 — Text/Barcode Extends Beyond Label Bounds
+- **Severity**: Warn
+- **Category**: Semantic Validation
+- **Description**: A text field or barcode at the current ^FO/^FT position would extend beyond the effective label dimensions. Content may be clipped or misaligned on print.
+- **Implementation note (current)**: This preflight is estimate-based (heuristic), not pixel-accurate rendering. It is designed to be fast and renderer-independent, so edge-case false positives/negatives are possible.
+- **Example**: Text at x=50 with 30×30 font and 20 chars (600 dots wide) on a 100-dot label; barcode at y=50 with 30-dot height on a 60-dot label
+- **Fix**: Reduce font size, shorten text, move origin, or increase label dimensions.
+- **Context keys**: `object_type`, `x`, `y`, `estimated_width`, `estimated_height`, `label_width`, `label_height`
 
 ### 24xx: Barcode Field Data Validation
 

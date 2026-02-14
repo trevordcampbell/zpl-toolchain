@@ -1,6 +1,6 @@
 # ZPL Toolchain — Roadmap
 
-> **Status (2026-02-14):** Foundation complete. v0.1.11 published to crates.io, npm, and PyPI. This document captures the long-term vision, organized by phase, with honest assessments of complexity and approach.
+> **Status (2026-02-14):** Foundation complete. v0.1.12 published to crates.io, npm, and PyPI. This document captures the long-term vision, organized by phase, with honest assessments of complexity and approach.
 >
 > For tactical work items, see [BACKLOG.md](BACKLOG.md). For the original (pre-implementation) vision document, see [docs/research/archive/original-implementation-plan.md](research/archive/original-implementation-plan.md).
 
@@ -64,7 +64,7 @@ Expand from 5 samples (141 lines) to 30–50 curated labels. See [CORPUS_EXPANSI
 ### 1c. Cross-Binding Runtime Test Execution in CI (Completed)
 
 - Added CI jobs that execute wrapper/runtime regression tests for Go and .NET bindings
-- Added Python binding runtime-test coverage across Python 3.9-3.13 by building/installing the wheel and running `crates/python/tests` against the installed module (runtime API confidence, not only compile/link checks)
+- Added Python binding runtime-test coverage across Python 3.9-3.13 by building/installing the wheel and running `crates/python/tests` against the installed module (runtime API confidence, not only compile/link checks). Optimized: PRs run a reduced subset (3.9, 3.12, 3.13); push to main runs the full matrix.
 - Added a dedicated TypeScript core CI job (`ts-core`) that runs type-check/build/test and verifies the package-level init guard behavior
 - Added TS print CI integration guards: artifact assertions (`dist/test/mock-tcp-server.js`, `dist/test/network-availability.js`, `dist/test/print.test.js`) plus a local TCP bind precheck so integration suites cannot be silently skipped
 - Tightened CI reproducibility and policy gates (`npm ci`, locked FFI release builds, strict spec-table generation, constrained `maturin` install range)
@@ -394,11 +394,12 @@ Analyze a label before sending to printer. Initial preflight diagnostics are imp
 - [x] **ZPL2308** — Graphics bounds (`^GF` exceeds printable area based on `^PW`/`^LL` or profile page bounds)
 - [x] **ZPL2309** — Graphics memory estimation (`^GF` total memory exceeds printer RAM from profile)
 - [x] **ZPL2310** — Missing explicit label dimensions (`^PW`/`^LL` commands)
-- [ ] Object bounds checking (text/barcode overflow)
-- [ ] Media mode sanity (`^MN`/`^MT`/`^MM` vs profile)
-- [ ] Missing required commands
+- [x] **ZPL2311** — Object bounds checking (estimated text/barcode overflow beyond effective label bounds)
+- [x] Media mode sanity (`^MN`/`^MT`/`^MM` vs profile) via `ZPL1403` validator checks
+- [x] Missing required commands via spec-driven `requires` constraints (`ZPL2101`)
 
-This is an extension of the validator, not a new system. The initial implementation covers graphics-related preflight checks (10 tests). Remaining items extend the same pattern.
+This is an extension of the validator, not a new system. Preflight now covers graphics bounds/memory, explicit dimension portability hints, object bounds, media sanity, and required-command checks.
+For a future precision pass on heuristic object-bounds estimation (`ZPL2311`), see the deferred backlog item in [BACKLOG.md](BACKLOG.md) ("Preflight ZPL2311 precision upgrade (much later)").
 
 **Effort:** 1–2 weeks (remaining items) | **Risk:** Low | **Depends on:** Nothing (extends validator)
 

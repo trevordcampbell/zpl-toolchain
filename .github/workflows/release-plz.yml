@@ -69,9 +69,10 @@ jobs:
 
           gh pr checkout "$PR_NUMBER"
 
-          # npm: package.json (both TS packages)
+          # npm: package.json (all TS packages)
           (cd packages/ts/core && npm version "$VERSION" --no-git-tag-version)
           (cd packages/ts/print && npm version "$VERSION" --no-git-tag-version)
+          (cd packages/ts/cli && npm version "$VERSION" --no-git-tag-version)
 
           # PyPI: pyproject.toml
           sed -i "s/^version = \".*\"/version = \"$VERSION\"/" crates/python/pyproject.toml
@@ -79,7 +80,7 @@ jobs:
           if git diff --quiet; then
             echo "Versions already in sync"
           else
-            git add packages/ts/core/package.json packages/ts/print/package.json crates/python/pyproject.toml
+            git add packages/ts/core/package.json packages/ts/print/package.json packages/ts/cli/package.json crates/python/pyproject.toml
             git commit -m "chore: sync npm/PyPI versions to $VERSION"
             git push
             echo "Committed version sync to PR #$PR_NUMBER"
@@ -126,9 +127,9 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Release tag: $TAG"
 
-  # ── Publish TypeScript packages to npm ─────────────────────────────────
-  publish-npm:
-    name: Publish to npm
+  # ── Publish TypeScript runtime packages to npm ─────────────────────────
+  publish-npm-core-print:
+    name: Publish npm (core + print)
     needs: [release]
     if: needs.release.outputs.releases_created == 'true'
     runs-on: ubuntu-latest
@@ -147,7 +148,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24.13.1"
           registry-url: "https://registry.npmjs.org"
 
       # ── @zpl-toolchain/core (WASM) ──────────────────────────────────
@@ -156,7 +157,7 @@ jobs:
 
       - name: Install dependencies & build @zpl-toolchain/core
         working-directory: packages/ts/core
-        run: npm install && npm run build
+        run: npm ci && npm run build
 
       - name: Publish @zpl-toolchain/core to npm
         working-directory: packages/ts/core
@@ -167,10 +168,36 @@ jobs:
       # ── @zpl-toolchain/print (pure TS) ──────────────────────────────
       - name: Install dependencies & build @zpl-toolchain/print
         working-directory: packages/ts/print
-        run: npm install && npm run build
+        run: npm ci && npm run build
 
       - name: Publish @zpl-toolchain/print to npm
         working-directory: packages/ts/print
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ── Publish CLI wrapper to npm (after release assets are uploaded) ─────
+  publish-npm-cli:
+    name: Publish npm (@zpl-toolchain/cli)
+    needs: [release, upload-artifacts]
+    if: needs.release.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.13.1"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Test @zpl-toolchain/cli
+        working-directory: packages/ts/cli
+        run: npm test
+
+      - name: Publish @zpl-toolchain/cli to npm
+        working-directory: packages/ts/cli
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -195,7 +222,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install maturin
-        run: pip install maturin
+        run: pip install "maturin>=2,<3"
 
       - name: Build and publish to PyPI
         working-directory: crates/python

@@ -26,7 +26,9 @@
       "version": "1.93.0"
     },
     "ghcr.io/lee-orr/rusty-dev-containers/cargo-binstall:0": {},
-    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24.13.1"
+    },
     "ghcr.io/devcontainers/features/python:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },

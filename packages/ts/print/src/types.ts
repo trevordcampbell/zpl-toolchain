@@ -16,6 +16,9 @@ export interface PrinterConfig {
 
   /** Base delay between retries in milliseconds; grows with exponential backoff (default: 500). */
   retryDelay?: number;
+
+  /** Optional abort signal for cooperative cancellation. */
+  signal?: AbortSignal;
 }
 
 // ─── Print result ────────────────────────────────────────────────────────────
@@ -155,6 +158,15 @@ export interface ProxyConfig {
    */
   maxConnections?: number;
 
+  /**
+   * Optional per-client WebSocket rate limit.
+   * When set, each connection is limited to `maxRequests` per `windowMs`.
+   */
+  wsRateLimitPerClient?: {
+    maxRequests: number;
+    windowMs: number;
+  };
+
   /** Maximum request body size in bytes (default: 1 MiB). */
   maxPayloadSize?: number;
 
@@ -194,6 +206,9 @@ export interface BatchOptions {
    * When undefined or 0, no status polling is performed.
    */
   statusInterval?: number;
+
+  /** Optional abort signal for cooperative cancellation. */
+  signal?: AbortSignal;
 }
 
 /** Progress update emitted after each label in a batch. */
@@ -215,6 +230,17 @@ export interface BatchResult {
 
   /** Total number of labels in the batch. */
   total: number;
+
+  /**
+   * Present when the batch stops mid-stream due to an error.
+   * `sent` indicates how many labels were accepted before failure.
+   */
+  error?: {
+    /** 0-based index of the label that failed (or was about to send when aborted). */
+    index: number;
+    code: PrintErrorCode;
+    message: string;
+  };
 }
 
 // ─── Error classification ────────────────────────────────────────────────────

@@ -14,7 +14,7 @@ Expand the ZPL test corpus from 5 samples (141 lines) to 30-50 curated real-worl
 
 ## Current State
 
-### Test Coverage (As of v0.1.0)
+### Test Coverage (As of v0.1.11)
 
 - ✅ **11 golden snapshot tests** — parser/validator AST output across key scenarios
 - ✅ **5 real-world samples** (141 lines total):
@@ -23,7 +23,7 @@ Expand the ZPL test corpus from 5 samples (141 lines) to 30-50 curated real-worl
   - `shipping_label.zpl` (18 lines) — basic shipping
   - `product_label.zpl` (16 lines) — product info
   - `warehouse_label.zpl` (11 lines) — warehouse tracking
-- ✅ **465+ passing tests** — parser, validator, emitter, fuzz smoke tests, print client
+- ✅ **Hundreds of passing tests** — parser, validator, emitter, fuzz smoke tests, and print client/runtime coverage
 - ✅ **100% command coverage** — 223/223 ZPL II commands across 216 spec files
 
 ### Testing Infrastructure

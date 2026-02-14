@@ -10,8 +10,8 @@ how tests work in CI.
 cargo nextest run --workspace --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
 ```
 
-This runs **395+ Rust tests** across 9 crates. Combined with the TypeScript tests (71+),
-the project has **465+ tests** total.
+This runs the Rust workspace tests (excluding WASM/Python crates that require extra toolchains).
+For current TypeScript coverage, see the package-level sections below.
 
 ## Rust tests
 
@@ -29,7 +29,7 @@ The `--exclude` flags are required because:
 
 ```bash
 cargo nextest run -p zpl_toolchain_core           # parser, validator, emitter (255 tests)
-cargo nextest run -p zpl_toolchain_print_client    # print client (71 tests)
+cargo nextest run -p zpl_toolchain_print_client    # print client tests
 cargo nextest run -p zpl_toolchain_profile         # printer profiles
 cargo nextest run -p zpl_toolchain_diagnostics     # diagnostic types
 cargo nextest run -p zpl_toolchain_spec_tables     # shared data structures
@@ -95,14 +95,15 @@ cargo nextest run -p zpl_toolchain_cli -p zpl_toolchain_print_client \
 
 ### @zpl-toolchain/print
 
-The TypeScript print package has **71 tests** covering TCP connections, batch printing,
-status parsing, proxy (HTTP + WebSocket), browser API, `printValidated`, and error types.
+The TypeScript print package has **89 test cases** across the core test files
+covering TCP connections, batch printing, status parsing, proxy (HTTP + WebSocket),
+browser API, `printValidated`, and error types.
 
 ```bash
 cd packages/ts/print
-npm install        # install dependencies (first time only)
+npm ci             # install dependencies from lockfile
 npm run build      # compile TypeScript to dist/ (required before testing)
-npm test           # runs: node --test dist/test/*.js
+npm test           # runs: node --test --test-timeout=30000 dist/test/*.js
 ```
 
 **Important:** `npm test` runs the compiled JavaScript in `dist/test/`, not the TypeScript
@@ -112,18 +113,22 @@ The test files and what they cover:
 
 | Test file | Tests | What it covers |
 |-----------|-------|----------------|
-| `client.test.ts` | 14 | TCP connection, send/receive, reconnection, error handling |
 | `batch.test.ts` | 7 | Batch printing, inter-label delay, status polling, abort |
-| `proxy.test.ts` | 15 | HTTP proxy, WebSocket proxy, allowlist, SSRF protection, wildcard matching |
+| `browser.test.ts` | 19 | Browser print API (`ZebraBrowserPrint`) behavior and error handling |
+| `print.test.ts` | 8 | TCP print flows using a mock TCP server |
+| `printValidated.test.ts` | 13 | Validation behavior before printing (strict/non-strict, issue handling) |
+| `proxy.test.ts` | 32 | HTTP/WebSocket proxy behavior, security controls, and limits |
 | `status.test.ts` | 6 | `parseHostStatus` response parsing |
-| `printValidated.test.ts` | 8 | Profile-based validation before printing (requires `@zpl-toolchain/core` peer dep) |
-| `browser.test.ts` | 6 | Browser print API (`BrowserPrinter` via Zebra Browser Print) |
-| `types.test.ts` | 4 | `PrintError` class, error codes |
-| `preflight.test.ts` | 11 | Preflight checks (graphics bounds, memory estimation, label dimensions) |
+| `types.test.ts` | 4 | `PrintError` class and error code contracts |
 
 Some proxy tests use real TCP connections to `127.0.0.1` (which immediately
 return `ECONNREFUSED`). This is intentional — it validates the proxy's connection
 forwarding without requiring an actual printer, and fails fast (~3ms).
+
+The test runner timeout (`--test-timeout=30000`) is a safety guard against
+stuck tests, not a substitute for fixing failures. Network-dependent suites
+use runtime network-availability checks; in CI we assert local TCP bind support
+so these integration tests do not get silently skipped.
 
 ### @zpl-toolchain/core
 
@@ -132,8 +137,17 @@ The core TypeScript package wraps WASM and requires a full WASM build to test:
 ```bash
 wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
 cd packages/ts/core
-npm install
+npm ci
 npm run build
+npm test
+```
+
+### @zpl-toolchain/cli
+
+The CLI wrapper package has lightweight runtime mapping tests:
+
+```bash
+cd packages/ts/cli
 npm test
 ```
 
@@ -145,10 +159,7 @@ cargo fmt --all -- --check     # check only
 cargo fmt --all                # auto-fix
 
 # Rust linting (strict — warnings are errors)
-cargo clippy --workspace \
-  --exclude zpl_toolchain_wasm \
-  --exclude zpl_toolchain_python \
-  -- -D warnings
+cargo clippy --workspace -- -D warnings
 
 # TypeScript type-checking (no emit)
 cd packages/ts/print && npx tsc --noEmit
@@ -172,10 +183,15 @@ Tests run automatically on every push and PR via GitHub Actions:
 | Job | What it does |
 |-----|-------------|
 | `Build & Test (ubuntu/macos/windows)` | `cargo fmt`, `cargo build`, `cargo clippy`, `cargo nextest run` across 3 OS (all transports are default) |
-| `TypeScript Print Tests` | `npm install` → `tsc --noEmit` → `npm run build` → `npm test` |
+| `TypeScript Core Tests` | `npm ci` → `tsc --noEmit` → `npm run build` → `node --test dist/test/*.js` |
+| `TypeScript Print Tests` | `npm ci` → `tsc --noEmit` → `npm run build` → artifact assertions + local TCP bind precheck → `npm test` |
+| `TypeScript CLI Wrapper Tests` | `npm test` in `packages/ts/cli` (platform mapping + unsupported-runtime guard coverage) |
 | `Spec Validation & Coverage` | `zpl-spec-compiler check` + `build` + coverage report |
 | `WASM Build` | `wasm-pack build` + size check |
 | `Python Wheel` | `maturin build` |
+| `Python Runtime Tests (PyO3)` | `cargo test -p zpl_toolchain_python` in a Python-linkable environment |
+| `Go Bindings Runtime Tests` | Build FFI release library + `go test -v ./...` for Go wrapper runtime behavior |
+| `.NET Bindings Runtime Tests` | Build FFI release library + `dotnet test` for .NET wrapper runtime behavior |
 | `C FFI (ubuntu/macos/windows)` | Build + verify shared library exists |
 
 See `.github/workflows/ci.yml` for the full configuration.
@@ -200,8 +216,7 @@ Run `npm run build` before `npm test`.
 
 Previous versions required `libudev-dev` on Linux for serial port support.
 With the current configuration (`serialport` built with `default-features = false`),
-`libudev-dev` is **no longer required** for building. CI workflows still install it
-as a precaution, but it is not a build dependency. If you see this error from an
+`libudev-dev` is **no longer required** for building. If you see this error from an
 older build, update to the latest version.
 
 ### Slow proxy test

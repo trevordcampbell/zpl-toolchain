@@ -17,21 +17,17 @@ describe("TcpPrinter batch API", () => {
     }
   });
 
-  it("printBatch supports early abort via onProgress", async () => {
-    // We can't test with a real printer, but we can test the abort logic
-    // by verifying the callback contract.
+  it("printBatch returns partial error details on send failure", async () => {
     const printer = new TcpPrinter({ host: "127.0.0.1", port: 19999, timeout: 200, maxRetries: 0 });
     const labels = ["^XA^XZ", "^XA^XZ", "^XA^XZ"];
 
-    // The first print will fail (no printer), but we're testing that
-    // the onProgress callback returning false would abort.
     try {
-      await printer.printBatch(labels);
-      assert.fail("Should have thrown — no printer running");
-    } catch (err: unknown) {
-      assert(err instanceof PrintError);
-      // Expected: connection error, not a batch logic error
-      assert.notEqual(err.code, "VALIDATION_FAILED");
+      const result = await printer.printBatch(labels);
+      assert.equal(result.sent, 0);
+      assert.equal(result.total, labels.length);
+      assert.ok(result.error);
+      assert.equal(result.error?.index, 0);
+      assert.notEqual(result.error?.code, "VALIDATION_FAILED");
     } finally {
       await printer.close();
     }

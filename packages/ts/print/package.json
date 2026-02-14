@@ -26,7 +26,7 @@
   },
   "scripts": {
     "build": "tsc",
-    "test": "node --test dist/test/*.js",
+    "test": "node --test --test-timeout=30000 dist/test/*.js",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

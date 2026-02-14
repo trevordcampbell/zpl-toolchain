@@ -26,10 +26,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install system dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libudev-dev
-
       - uses: ./.github/actions/setup-rust
         with:
           components: rustfmt, clippy
@@ -42,7 +38,7 @@ jobs:
         run: cargo build --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
 
       - name: Clippy
-        run: cargo clippy --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python -- -D warnings
+        run: cargo clippy --workspace --locked -- -D warnings
 
       - name: Install nextest
         uses: taiki-e/install-action@nextest
@@ -57,9 +53,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y libudev-dev
-
       - uses: ./.github/actions/setup-rust
         with:
           cache-key: ci-spec-check
@@ -72,7 +65,7 @@ jobs:
         run: cargo run -p zpl_toolchain_spec_compiler --locked -- check --spec-dir spec
 
       - name: Build tables + coverage
-        run: cargo run -p zpl_toolchain_spec_compiler --locked -- build --spec-dir spec --out-dir generated
+        run: cargo run -p zpl_toolchain_spec_compiler --locked -- build --spec-dir spec --out-dir generated --strict
 
       - name: Verify committed tables are fresh
         run: |
@@ -88,6 +81,32 @@ jobs:
           fi
 
   # ── TypeScript print package: build + test ─────────────────────────────
+  ts-core:
+    name: TypeScript Core Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.13.1"
+
+      - name: Install dependencies
+        working-directory: packages/ts/core
+        run: npm ci
+
+      - name: Type-check
+        working-directory: packages/ts/core
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: packages/ts/core
+        run: npm run build
+
+      - name: Test
+        working-directory: packages/ts/core
+        run: node --test dist/test/*.js
+
   ts-print:
     name: TypeScript Print Tests
     runs-on: ubuntu-latest
@@ -96,11 +115,11 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24.13.1"
 
       - name: Install dependencies
         working-directory: packages/ts/print
-        run: npm install
+        run: npm ci
 
       - name: Type-check
         working-directory: packages/ts/print
@@ -110,8 +129,34 @@ jobs:
         working-directory: packages/ts/print
         run: npm run build
 
+      - name: Assert mock TCP test artifacts are built
+        working-directory: packages/ts/print
+        run: |
+          test -f dist/test/mock-tcp-server.js
+          test -f dist/test/network-availability.js
+          test -f dist/test/print.test.js
+
+      - name: Assert local TCP bind is available
+        working-directory: packages/ts/print
+        run: |
+          node --input-type=module -e "import { canBindLocalTcp } from './dist/test/network-availability.js'; const ok = await canBindLocalTcp(); if (!ok) { console.error('Local TCP bind unavailable; integration tests would be skipped.'); process.exit(1); } console.log('Local TCP bind available for integration tests.');"
+
       - name: Test
         working-directory: packages/ts/print
+        run: npm test
+
+  ts-cli:
+    name: TypeScript CLI Wrapper Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.13.1"
+
+      - name: Test wrapper package
+        working-directory: packages/ts/cli
         run: npm test
 
   # ── WASM build + size check ───────────────────────────────────────────
@@ -164,7 +209,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install maturin
-        run: pip install maturin
+        run: pip install "maturin>=2,<3"
 
       - name: Build Python wheel
         run: maturin build -m crates/python/Cargo.toml
@@ -185,7 +230,7 @@ jobs:
           cache-key: ci-ffi-${{ matrix.os }}
 
       - name: Build C FFI (release)
-        run: cargo build -p zpl_toolchain_ffi --release
+        run: cargo build -p zpl_toolchain_ffi --release --locked
 
       - name: Verify shared library (Unix)
         if: runner.os != 'Windows'
@@ -211,3 +256,73 @@ jobs:
             Write-Error "FFI shared library not found"
             exit 1
           }
+
+  # ── Python runtime tests (PyO3 linkable) ──────────────────────────────
+  python-runtime-tests:
+    name: Python Runtime Tests (PyO3)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-dev
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: ci-python-runtime-tests
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run Python crate runtime tests
+        run: cargo test -p zpl_toolchain_python --locked
+
+  # ── Go wrapper runtime tests ───────────────────────────────────────────
+  go-bindings:
+    name: Go Bindings Runtime Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: ci-go-bindings
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Build C FFI (release)
+        run: cargo build -p zpl_toolchain_ffi --release --locked
+
+      - name: Run Go wrapper tests
+        working-directory: packages/go/zpltoolchain
+        env:
+          CGO_LDFLAGS: -L${{ github.workspace }}/target/release -lzpl_toolchain_ffi
+          LD_LIBRARY_PATH: ${{ github.workspace }}/target/release
+        run: go test -v ./...
+
+  # ── .NET wrapper runtime tests ─────────────────────────────────────────
+  dotnet-bindings:
+    name: .NET Bindings Runtime Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: ci-dotnet-bindings
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build C FFI (release)
+        run: cargo build -p zpl_toolchain_ffi --release --locked
+
+      - name: Run .NET wrapper tests
+        working-directory: packages/dotnet
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/target/release
+        run: dotnet test ZplToolchain.Tests/ZplToolchain.Tests.csproj -v minimal

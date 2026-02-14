@@ -86,11 +86,11 @@ from zpl_toolchain import print_zpl, query_printer_status
 
 # Send ZPL to a network printer
 result = print_zpl("^XA^FO50,50^A0N,30,30^FDHello^FS^XZ", "192.168.1.55")
-# result is a JSON string: '{"success": true, "bytes_sent": 36}'
+# result is a native Python dict: {"success": True, "bytes_sent": 36, ...}
 
 # Query printer status (~HS)
 status = query_printer_status("192.168.1.55")
-# status is a JSON string with parsed ~HS fields
+# status is a native Python dict with parsed ~HS fields
 ```
 
 ### Go
@@ -99,7 +99,7 @@ status = query_printer_status("192.168.1.55")
 result, err := zpltoolchain.Print("^XA^FDHello^FS^XZ", "192.168.1.100", "", true)
 ```
 
-`Print()` sends ZPL over TCP (port 9100). The third argument is an optional printer profile JSON string (empty for no profile). The fourth argument enables/disables pre-print validation. `QueryStatus()` sends `~HS` and returns a parsed JSON status object.
+`Print()` sends ZPL over TCP (port 9100). The third argument is an optional printer profile JSON string (empty for no profile). The fourth argument enables/disables pre-print validation. `QueryStatus()` sends `~HS` and returns the raw JSON payload (`QueryStatusTyped()` returns a typed object).
 
 ```go
 status, err := zpltoolchain.QueryStatus("192.168.1.100")
@@ -140,19 +140,19 @@ Not all features are available in every binding. The table below summarises what
 | Feature | Rust (native) | Python / C FFI | Go | .NET (C#) | TypeScript (Node.js) |
 |---------|---------------|----------------|-----|-----------|----------------------|
 | Send ZPL | `printer.send_zpl()` | `print_zpl()` | `Print()` | `Zpl.Print()` | `printer.print()` |
-| Host Status (`~HS`) | `printer.query_status()` → `HostStatus` | `query_printer_status()` → JSON | `QueryStatus()` | `Zpl.QueryStatus()` | `printer.getStatus()` → `PrinterStatus` |
-| Host Identification (`~HI`) | `printer.query_info()` → `PrinterInfo` | — | — | — | `printer.query('~HI')` → raw string |
+| Host Status (`~HS`) | `printer.query_status()` → `HostStatus` | `query_printer_status()` (Python dict / C FFI JSON) | `QueryStatus()` / `QueryStatusTyped()` | `Zpl.QueryStatus()` / `Zpl.QueryStatusTyped()` | `printer.getStatus()` → `PrinterStatus` |
+| Host Identification (`~HI`) | `printer.query_info()` → `PrinterInfo` | `query_printer_info()` (Python dict / C FFI JSON) | `QueryInfo()` / `QueryInfoTyped()` | `Zpl.QueryInfo()` / `Zpl.QueryInfoTyped()` | `printer.query('~HI')` → raw string |
 | Raw command query | `printer.query_raw()` | — | — | — | `printer.query(cmd)` → raw string |
 | Batch printing | `send_batch()` / `send_batch_with_status()` | — | — | — | `printBatch()` / `printer.printBatch()` |
 | Wait for completion | `wait_for_completion()` (generic) | — | — | — | `printer.waitForCompletion()` |
 | USB transport | `UsbPrinter` + CLI `--printer usb` | — | — | — | — |
 | Serial / BT SPP transport | `SerialPrinter` + CLI `--serial` | — | — | — | — |
 
-> **Note:** `query_info()` is Rust-only. Batch printing is available in Rust and TypeScript. `wait_for_completion()` is available in Rust (generic, works with any `StatusQuery` implementor) and TypeScript (`TcpPrinter`). USB and serial transports are available from the CLI (`--printer usb`, `--serial`) and as Rust API. Python and C FFI expose `print_zpl()` and `query_printer_status()` over TCP. Go and .NET expose `Print()` and `QueryStatus()` over TCP via the C FFI. TypeScript has `printer.query('~HI')` for raw commands (returns the unparsed response string).
+> **Note:** Batch printing is available in Rust and TypeScript. `wait_for_completion()` is available in Rust (generic, works with any `StatusQuery` implementor) and TypeScript (`TcpPrinter`). USB and serial transports are available from the CLI (`--printer usb`, `--serial`) and as Rust API. Python and C FFI expose TCP print/status/info APIs; Python returns native dict/list objects while C FFI returns JSON strings. Go and .NET expose print/status/info via the C FFI (raw and typed query helpers). TypeScript has `printer.query('~HI')` for raw commands (returns the unparsed response string).
 >
 > **Naming conventions:** C FFI uses the `zpl_` prefix (`zpl_print()`, `zpl_query_status()`), Python uses snake_case without prefix (`print_zpl()`, `query_printer_status()`), Go uses PascalCase (`Print()`, `QueryStatus()`), .NET uses `Zpl.` prefix with PascalCase (`Zpl.Print()`, `Zpl.QueryStatus()`).
 
-### Return Values (Python / C FFI)
+### Return Values (Python vs C FFI)
 
 **`print_zpl(zpl, printer_addr, profile_json=None, validate=True)`**
 
@@ -172,11 +172,11 @@ On validation failure (when `validate=True`):
 }
 ```
 
-On connection/send error, a `RuntimeError` (Python) or error string (C FFI) is raised with the message.
+On connection/send error, a `RuntimeError` (Python) is raised, while C FFI returns an error JSON envelope.
 
 **`query_printer_status(printer_addr)`**
 
-Returns a JSON-serialised `HostStatus` object with 24 fields, including:
+Returns a parsed `HostStatus` object with 24 fields (Python dict; C FFI JSON), including:
 ```json
 {
   "paper_out": false,

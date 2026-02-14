@@ -481,6 +481,19 @@ fn diag_zpl2101_requires_missing() {
 }
 
 #[test]
+fn diag_zpl2101_br_requires_by_missing() {
+    let tables = &*common::TABLES;
+    // ^BR requires ^BY — ZPL2101 documents all barcode requires constraints
+    let result = parse_with_tables("^XA^FO10,10^BRN^FD1234567890123456789^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::REQUIRED_COMMAND),
+        "^BR without ^BY should emit ZPL2101: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
 fn diag_zpl2101_required_command_present_passes() {
     let tables = &*common::TABLES;
     // ^BC requires ^BY; include ^BY before ^BC — should NOT trigger ZPL2101
@@ -1694,6 +1707,88 @@ fn diag_zpl2310_has_pw_ll_no_diagnostic() {
     );
 }
 
+// ─── ZPL2311: Object Bounds (Text/Barcode Overflow) ───────────────────────────
+
+#[test]
+fn diag_zpl2311_text_overflow_x() {
+    let tables = &*common::TABLES;
+    // Label 100 dots wide. Text at x=80 with 30-dot chars (^A0N,30,30) + 20 chars = 600 dots
+    // → would overflow right. Use short label: 100 wide, text at 50 with 10-char "0123456789"
+    // at 30x30 = 300 dots → 50+300=350 > 100.
+    let profile = common::profile_from_json(
+        r#"{"id":"test","schema_version":"1.0.0","dpi":203,"page":{"width_dots":100,"height_dots":200}}"#,
+    );
+    let result = parse_with_tables(
+        "^XA^PW100^LL200^CF0,30,30^FO50,10^FD0123456789^FS^XZ",
+        Some(tables),
+    );
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        vr.issues
+            .iter()
+            .any(|d| d.id == codes::OBJECT_BOUNDS_OVERFLOW),
+        "text extending beyond label width should emit ZPL2311: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2311_barcode_overflow_y() {
+    let tables = &*common::TABLES;
+    // Label 60 dots tall. Barcode at y=50 with ^BY height 30 → 50+30=80 > 60.
+    let profile = common::profile_from_json(
+        r#"{"id":"test","schema_version":"1.0.0","dpi":203,"page":{"width_dots":400,"height_dots":60}}"#,
+    );
+    let result = parse_with_tables(
+        "^XA^PW400^LL60^BY2,3,30^FO10,50^BCN,30^FDABC123^FS^XZ",
+        Some(tables),
+    );
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        vr.issues
+            .iter()
+            .any(|d| d.id == codes::OBJECT_BOUNDS_OVERFLOW),
+        "barcode extending beyond label height should emit ZPL2311: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2311_text_within_bounds_no_diagnostic() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_800x1200();
+    let result = parse_with_tables(
+        "^XA^PW800^LL1200^CF0,24,24^FO50,50^FDHello^FS^XZ",
+        Some(tables),
+    );
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::OBJECT_BOUNDS_OVERFLOW),
+        "text within bounds should not emit ZPL2311: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2311_no_bounds_skips_check() {
+    let tables = &*common::TABLES;
+    // No profile, no ^PW/^LL → no bounds → no ZPL2311
+    let result = parse_with_tables(
+        "^XA^FO50,50^FDVeryLongTextThatCouldOverflow^FS^XZ",
+        Some(tables),
+    );
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::OBJECT_BOUNDS_OVERFLOW),
+        "no bounds should skip ZPL2311: {:?}",
+        vr.issues,
+    );
+}
+
 #[test]
 fn diag_zpl2310_no_profile_no_diagnostic() {
     let tables = &*common::TABLES;
@@ -2345,7 +2440,7 @@ fn all_profile_constraint_fields_are_resolvable() {
         assert!(
             resolved.is_some(),
             "profileConstraint references field '{}' but resolve_profile_field returns None for it. \
-             Add a match arm in resolve_profile_field() for this field path.",
+             Add an entry to PROFILE_FIELD_REGISTRY for this field path.",
             field
         );
     }
@@ -2755,6 +2850,28 @@ fn context_media_mode_unsupported() {
 }
 
 #[test]
+fn media_mode_context_mt_carries_profile_method() {
+    let tables = &*common::TABLES;
+    // ^MT T (thermal transfer) with profile direct_thermal only — ZPL1403 media sanity
+    let profile = common::profile_from_json(
+        r#"{"id":"test","schema_version":"1.0.0","dpi":203,"media":{"print_method":"direct_thermal"}}"#,
+    );
+    let ast = parse_with_tables("^XA^MTT^XZ", Some(tables));
+    let vr = validate_with_profile(&ast.ast, tables, Some(&profile));
+    let d = find_diag(&vr.issues, codes::MEDIA_MODE_UNSUPPORTED);
+    let ctx = d
+        .context
+        .as_ref()
+        .expect("^MT diagnostic should have context");
+    assert_eq!(ctx.get("command").unwrap(), "^MT");
+    assert_eq!(ctx.get("kind").unwrap(), "method");
+    assert!(
+        ctx.contains_key("profile_method"),
+        "ZPL1403 ^MT should carry profile_method"
+    );
+}
+
+#[test]
 fn context_structural_field_data_without_origin() {
     let tables = &*common::TABLES;
     let ast = parse_with_tables("^XA^FDHello^FS^XZ", Some(tables));
@@ -3128,6 +3245,7 @@ fn all_diagnostic_ids_have_explanations() {
         codes::GF_BOUNDS_OVERFLOW,
         codes::GF_MEMORY_EXCEEDED,
         codes::MISSING_EXPLICIT_DIMENSIONS,
+        codes::OBJECT_BOUNDS_OVERFLOW,
         codes::BARCODE_INVALID_CHAR,
         codes::BARCODE_DATA_LENGTH,
         codes::NOTE,

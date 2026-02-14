@@ -6,24 +6,27 @@ how tests work in CI.
 ## Quick start
 
 ```bash
-# Run everything (except WASM/Python binding crates which need special toolchains)
-cargo nextest run --workspace --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+# Run all Rust workspace tests
+cargo nextest run --workspace
 ```
 
-This runs the Rust workspace tests (excluding WASM/Python crates that require extra toolchains).
-For current TypeScript coverage, see the package-level sections below.
+This runs Rust tests across all workspace crates.
+For TypeScript and wheel/runtime binding coverage, see the package-level sections below.
 
 ## Rust tests
 
 ### Full workspace
 
 ```bash
-cargo nextest run --workspace --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+cargo nextest run --workspace
 ```
 
-The `--exclude` flags are required because:
-- `zpl_toolchain_wasm` needs `wasm-pack` and the `wasm32-unknown-unknown` target
-- `zpl_toolchain_python` needs `maturin` and a Python environment
+This is the project default and release-readiness Rust test path.
+Python binding confidence is additionally validated via wheel/runtime tests:
+
+```bash
+bash scripts/test-python-wheel-local.sh
+```
 
 For local Python/.NET binding confidence, use the helper scripts:
 
@@ -61,16 +64,14 @@ real TCP listeners (using `TcpListener::bind("127.0.0.1:0")`). These tests:
 `PermissionDenied` errors on `TcpListener::bind`, the environment doesn't
 allow TCP sockets.
 
-To run the workspace tests without the print-client integration tests:
+If your local environment blocks socket `bind()`, use a constrained fallback run:
 
 ```bash
 cargo nextest run --workspace \
-  --exclude zpl_toolchain_wasm \
-  --exclude zpl_toolchain_python \
   --exclude zpl_toolchain_print_client
 ```
 
-Then run the print-client tests separately in an unrestricted environment:
+Then run print-client tests separately in an unrestricted environment:
 
 ```bash
 cargo nextest run -p zpl_toolchain_print_client
@@ -199,7 +200,7 @@ Tests run automatically on every push and PR via GitHub Actions:
 | `Spec Validation & Coverage` | `zpl-spec-compiler check` + `build` + coverage report |
 | `WASM Build` | `wasm-pack build` + size check |
 | `Python Wheel` | `maturin build` |
-| `Python Runtime Tests (py3.9-3.13)` | Build wheel + install wheel + `python -m unittest discover -s crates/python/tests -v` |
+| `Python Runtime Tests (py3.9–3.13)` | Build wheel + install wheel + `python -m unittest discover -s crates/python/tests -v`. **PRs:** reduced subset (3.9, 3.12, 3.13). **Push to main:** full matrix (3.9–3.13). |
 | `Go Bindings Runtime Tests` | Build FFI release library + `go test -v ./...` for Go wrapper runtime behavior |
 | `.NET Bindings Runtime Tests` | Build FFI release library + `dotnet test` for .NET wrapper runtime behavior |
 | `C FFI (ubuntu/macos/windows)` | Build + verify shared library exists |
@@ -211,10 +212,10 @@ See `.github/workflows/ci.yml` for the full configuration.
 ### `PermissionDenied` on print-client tests
 
 The print-client integration tests need real TCP sockets. If your environment
-blocks `bind()` calls (e.g., sandboxed containers), exclude the crate:
+blocks `bind()` calls (e.g., sandboxed containers), use a constrained fallback:
 
 ```bash
-cargo nextest run --workspace --exclude zpl_toolchain_print_client ...
+cargo nextest run --workspace --exclude zpl_toolchain_print_client
 ```
 
 ### `ERR_MODULE_NOT_FOUND` in TypeScript tests
@@ -240,3 +241,13 @@ The test at `packages/ts/print/src/test/proxy.test.ts` should use `127.0.0.1:910
 If `bash scripts/test-dotnet-local.sh` reports `dotnet is required but not found on PATH`,
 rebuild the devcontainer after enabling the .NET feature in
 `.devcontainer/devcontainer.json`.
+
+### PyO3 / Python toolchain mismatches
+
+If Python-related builds fail after changing local Python versions, re-run:
+
+```bash
+bash scripts/setup-pyo3-env.sh
+```
+
+The devcontainer runs this automatically in `postCreateCommand`.

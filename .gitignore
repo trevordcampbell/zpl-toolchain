@@ -53,3 +53,8 @@ z.plan.md
 
 # Internal Notes
 /notes
+
+# temporary files
+*.tmp
+*.temp
+*.tmp-cache

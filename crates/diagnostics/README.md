@@ -6,7 +6,8 @@ Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) pr
 
 ## Code generation
 Diagnostic ID constants (`codes::ARITY`, etc.) and the `explain()` function are
-**auto-generated** from `spec/diagnostics.jsonc` at build time via `build.rs`.
+**auto-generated** from `spec/diagnostics.jsonc` (this crate's
+`crates/diagnostics/spec/diagnostics.jsonc`) at build time via `build.rs`.
 This makes the JSONC file the single source of truth — adding or updating a
 diagnostic only requires editing the spec, and the Rust code regenerates
 automatically.

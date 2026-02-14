@@ -26,5 +26,5 @@ Repository = "https://github.com/trevordcampbell/zpl-toolchain"
 Issues = "https://github.com/trevordcampbell/zpl-toolchain/issues"
 
 [tool.maturin]
-features = ["pyo3/extension-module"]
+features = ["extension-module"]
 module-name = "zpl_toolchain"

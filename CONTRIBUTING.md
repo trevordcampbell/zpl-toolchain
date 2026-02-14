@@ -28,8 +28,8 @@ Thanks for your interest in contributing to zpl-toolchain! This project is dual-
 
 4. Run tests:
    ```bash
-   # Rust (excludes WASM/Python crates that need special toolchains)
-   cargo nextest run --workspace --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+   # Rust (exclude WASM crate when wasm toolchain is unavailable)
+   cargo nextest run --workspace --exclude zpl_toolchain_wasm
 
    # TypeScript print package
    (cd packages/ts/print && npm install && npm run build && npm test)
@@ -40,7 +40,7 @@ Thanks for your interest in contributing to zpl-toolchain! This project is dual-
 
 5. Check for warnings:
    ```bash
-   cargo clippy --workspace --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python -- -D warnings
+   cargo clippy --workspace --exclude zpl_toolchain_wasm -- -D warnings
    ```
 
 ## Adding or updating a ZPL command spec

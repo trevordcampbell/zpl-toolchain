@@ -299,6 +299,7 @@ impl FieldTracker {
         &mut self,
         cmd_ctx: &CommandCtx,
         vctx: &ValidationContext,
+        label_state: &LabelState,
         issues: &mut Vec<Diagnostic>,
     ) {
         if cmd_ctx.cmd.opens_field {
@@ -321,7 +322,7 @@ impl FieldTracker {
         }
 
         if cmd_ctx.cmd.closes_field {
-            self.validate_field_close(cmd_ctx, vctx, issues);
+            self.validate_field_close(cmd_ctx, vctx, label_state, issues);
         }
 
         if (cmd_ctx.cmd.field_data || cmd_ctx.cmd.requires_field) && !self.open {
@@ -375,6 +376,7 @@ impl FieldTracker {
         &mut self,
         cmd_ctx: &CommandCtx,
         vctx: &ValidationContext,
+        label_state: &LabelState,
         issues: &mut Vec<Diagnostic>,
     ) {
         // ZPL2204: Orphaned field separator — check first and skip field
@@ -497,8 +499,112 @@ impl FieldTracker {
             }
         }
 
+        // ZPL2311: Object bounds check (text/barcode overflow)
+        validate_object_bounds(self, cmd_ctx, vctx, label_state, issues);
+
         self.open = false;
         self.reset();
+    }
+}
+
+/// ZPL2311: Check if text or barcode content extends beyond label bounds.
+///
+/// Uses conservative estimates: text width = chars × char_width (height if
+/// width unset); barcode dimensions from ^BY + data-length heuristics.
+fn validate_object_bounds(
+    field: &FieldTracker,
+    cmd_ctx: &CommandCtx,
+    vctx: &ValidationContext,
+    label_state: &LabelState,
+    issues: &mut Vec<Diagnostic>,
+) {
+    let Some(fo_x) = label_state.last_fo_x else {
+        return;
+    };
+    let Some(fo_y) = label_state.last_fo_y else {
+        return;
+    };
+    let max_x = label_state.effective_width.or_else(|| {
+        vctx.profile
+            .and_then(|p| resolve_profile_field(p, "page.width_dots"))
+    });
+    let max_y = label_state.effective_height.or_else(|| {
+        vctx.profile
+            .and_then(|p| resolve_profile_field(p, "page.height_dots"))
+    });
+    let (Some(max_x), Some(max_y)) = (max_x, max_y) else {
+        return;
+    };
+
+    // Gather full field content (all ^FD/^FV + FieldData)
+    let mut combined_fd = String::new();
+    for node in &vctx.label_nodes[field.start_idx..cmd_ctx.node_idx] {
+        match node {
+            crate::grammar::ast::Node::Command { code, args, .. }
+                if code == "^FD" || code == "^FV" =>
+            {
+                if let Some(slot) = args.first().and_then(|a| a.value.as_deref()) {
+                    combined_fd.push_str(slot);
+                }
+            }
+            crate::grammar::ast::Node::FieldData { content, .. } => combined_fd.push_str(content),
+            _ => {}
+        }
+    }
+    let char_count = combined_fd.chars().count();
+    if char_count == 0 {
+        return;
+    }
+
+    let is_barcode = !field.active_barcodes.is_empty();
+    let (est_width, est_height, object_type) = if is_barcode {
+        // Barcode: height from ^BY, width from modules (Code 128 ~11 mod/char + overhead)
+        let height = label_state.value_state.barcode.height.unwrap_or(50) as f64;
+        let mw = label_state.value_state.barcode.module_width.unwrap_or(2) as f64;
+        let modules_per_char = 11.0_f64;
+        let modules = (modules_per_char * char_count as f64 + 22.0).ceil();
+        let width = (modules * mw).ceil();
+        (width, height, "barcode")
+    } else {
+        // Text: font height/width from ^CF or ^A defaults
+        let fh = label_state.value_state.font.height.unwrap_or(20) as f64;
+        let fw = label_state
+            .value_state
+            .font
+            .width
+            .unwrap_or_else(|| label_state.value_state.font.height.unwrap_or(20))
+            as f64;
+        let width = (char_count as f64 * fw).ceil();
+        let height = fh;
+        (width, height, "text")
+    };
+
+    let overflows_x = fo_x + est_width > max_x;
+    let overflows_y = fo_y + est_height > max_y;
+    if overflows_x || overflows_y {
+        issues.push(
+            Diagnostic::warn(
+                codes::OBJECT_BOUNDS_OVERFLOW,
+                format!(
+                    "{} at ({}, {}) extends beyond label bounds ({}×{} dots)",
+                    object_type,
+                    trim_f64(fo_x),
+                    trim_f64(fo_y),
+                    trim_f64(max_x),
+                    trim_f64(max_y)
+                ),
+                cmd_ctx.span,
+            )
+            .with_context(ctx!(
+                "object_type" => object_type,
+                "x" => trim_f64(fo_x),
+                "y" => trim_f64(fo_y),
+                "estimated_width" => trim_f64(est_width),
+                "estimated_height" => trim_f64(est_height),
+                "label_width" => trim_f64(max_x),
+                "label_height" => trim_f64(max_y),
+            )),
+        );
     }
 }
 
@@ -2293,7 +2399,7 @@ pub fn validate_with_profile(
                     }
 
                     // ─── Structural validation (spec-driven) ─────────────
-                    field_tracker.process_command(&cmd_ctx, &vctx, &mut issues);
+                    field_tracker.process_command(&cmd_ctx, &vctx, &label_state, &mut issues);
 
                     // Track session-scoped state in DeviceState
                     // (placed after all validation so device_state isn't mutably

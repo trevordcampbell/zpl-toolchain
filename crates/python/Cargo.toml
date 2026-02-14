@@ -10,10 +10,17 @@ publish = false
 name = "zpl_toolchain"
 crate-type = ["cdylib"]
 
+[features]
+default = []
+extension-module = ["pyo3/extension-module"]
+
 [dependencies]
-pyo3 = { workspace = true }
+pyo3 = { workspace = true, features = ["auto-initialize"] }
 serde_json = { workspace = true }
 zpl_toolchain_bindings_common = { path = "../bindings-common" }
+
+[build-dependencies]
+pyo3-build-config = "0.23"
 
 [lints]
 workspace = true

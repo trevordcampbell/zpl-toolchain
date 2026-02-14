@@ -30,7 +30,7 @@ ZPL II is the standard language for Zebra thermal label printers, used across lo
 ### Validation
 
 - **Table-driven validator** — arity, types, ranges, enums, typed cross-command state defaults (`defaultFrom` + `defaultFromStateKey`), constraint DSL (`requires`, `incompatible`, `order`, `emptyData`), profile-aware bounds checking
-- **Preflight diagnostics** — graphics bounds checking (`^GF` exceeds printable area), memory estimation (`^GF` total exceeds printer RAM), and missing explicit label dimension warnings — catch layout issues before printing
+- **Preflight diagnostics** — graphics bounds (`^GF`), memory estimation, missing explicit dimensions, and estimated object overflow checks for text/barcodes — catch layout issues before printing
 - **Barcode data validation** — field data checked against barcode symbology rules (Code 128, QR, EAN/UPC, etc.)
 
 ### Formatting
@@ -65,6 +65,13 @@ ZPL II is the standard language for Zebra thermal label printers, used across lo
 cargo install zpl_toolchain_cli
 # Or use cargo-binstall for a pre-built binary (no compile wait):
 cargo binstall zpl_toolchain_cli
+# Or one-line shell installer (Linux x64, macOS ARM64 — checksum-verified):
+curl -fsSL https://raw.githubusercontent.com/trevordcampbell/zpl-toolchain/main/install.sh | sh
+# Or Homebrew (from in-repo formula):
+brew install --formula Formula/zpl-toolchain.rb
+# Or Homebrew via tap:
+brew tap trevordcampbell/zpl-toolchain https://github.com/trevordcampbell/homebrew-zpl-toolchain
+brew install trevordcampbell/zpl-toolchain/zpl-toolchain
 # Or use the npm wrapper (downloads a pre-built binary on first run):
 npx @zpl-toolchain/cli --help
 
@@ -80,7 +87,7 @@ go get github.com/trevordcampbell/zpl-toolchain/packages/go/zpltoolchain
 ```
 
 > Pre-built binaries are also available from [GitHub Releases](https://github.com/trevordcampbell/zpl-toolchain/releases).
-> The npm wrapper currently supports `linux/x64`, `darwin/arm64`, and `win32/x64`. For unsupported platforms (for example Intel Mac or Linux ARM64), use `cargo install zpl_toolchain_cli`.
+> The shell installer and npm wrapper support `linux/x64` and `darwin/arm64`. Windows: use the npm wrapper or download from releases. For Intel Mac or Linux ARM64, use `cargo install zpl_toolchain_cli`. See [docs/HOMEBREW.md](docs/HOMEBREW.md) for Homebrew usage.
 
 ### Lint a label
 
@@ -392,6 +399,7 @@ cargo run -p zpl_toolchain_spec_compiler -- build --spec-dir spec --out-dir gene
 | [State Map](docs/STATE_MAP.md) | Cross-command state tracking |
 | [Roadmap](docs/ROADMAP.md) | Long-term vision, phases, and priorities |
 | [Release Process](docs/RELEASE.md) | Automated release workflow and publishing |
+| [Homebrew](docs/HOMEBREW.md) | Install via Homebrew, formula update guide |
 | [Changelog](CHANGELOG.md) | Release history |
 | [Contributing](CONTRIBUTING.md) | Development workflow and guidelines |
 

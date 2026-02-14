@@ -1189,6 +1189,7 @@ name = "zpl_toolchain_python"
 version = "0.1.0"
 dependencies = [
  "pyo3",
+ "pyo3-build-config",
  "serde_json",
  "zpl_toolchain_bindings_common",
 ]

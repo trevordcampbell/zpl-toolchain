@@ -1,6 +1,6 @@
 [package]
 name = "zpl_toolchain_core"
-version = "0.2.0"
+version = "0.2.1"
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -18,7 +18,7 @@ path = "src/lib.rs"
 [dependencies]
 serde = { workspace = true }
 serde_json = { workspace = true }
-zpl_toolchain_diagnostics = { path = "../diagnostics", version = "0.1.6" }
+zpl_toolchain_diagnostics = { path = "../diagnostics", version = "0.1.7" }
 zpl_toolchain_spec_tables = { path = "../spec-tables", version = "0.3.0" }
 zpl_toolchain_profile = { path = "../profile", version = "0.1.4" }
 

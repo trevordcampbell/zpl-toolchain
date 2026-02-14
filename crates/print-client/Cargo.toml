@@ -1,6 +1,6 @@
 [package]
 name = "zpl_toolchain_print_client"
-version = "0.1.6"
+version = "0.1.7"
 edition.workspace = true
 license.workspace = true
 description = "Print client for sending ZPL to Zebra and ZPL-compatible printers over TCP, USB, and serial"

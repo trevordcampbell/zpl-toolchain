@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.13](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.12...v0.1.13) - 2026-02-14
+
+### Added
+
+- *(release)* automate Homebrew tap sync and complete DX preflight updates
+
 ## [0.1.12](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.11...v0.1.12) - 2026-02-14
 
 ### Added

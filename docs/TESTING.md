@@ -6,11 +6,12 @@ how tests work in CI.
 ## Quick start
 
 ```bash
-# Run all Rust tests across the full workspace
-cargo nextest run --workspace
+# Run Rust workspace tests (Python binding crate is runtime-tested via wheel flow)
+cargo nextest run --workspace --exclude zpl_toolchain_python
 ```
 
-This runs Rust tests across all crates in the workspace.
+This runs Rust tests across the workspace while excluding `zpl_toolchain_python`
+from direct nextest execution.
 For TypeScript and runtime binding coverage, see the package-level sections below.
 
 ## Rust tests
@@ -18,10 +19,16 @@ For TypeScript and runtime binding coverage, see the package-level sections belo
 ### Full workspace
 
 ```bash
-cargo nextest run --workspace
+cargo nextest run --workspace --exclude zpl_toolchain_python
 ```
 
-This is the project default and release-readiness path.
+This is the project default and release-readiness Rust test path.
+
+Python binding confidence is validated via wheel/runtime tests:
+
+```bash
+bash scripts/test-python-wheel-local.sh
+```
 
 For local Python/.NET binding confidence, use the helper scripts:
 
@@ -59,11 +66,11 @@ real TCP listeners (using `TcpListener::bind("127.0.0.1:0")`). These tests:
 `PermissionDenied` errors on `TcpListener::bind`, the environment doesn't
 allow TCP sockets.
 
-If your local environment blocks socket `bind()` or lacks required toolchains,
-use a constrained fallback run:
+If your local environment blocks socket `bind()`, use a constrained fallback run:
 
 ```bash
 cargo nextest run --workspace \
+  --exclude zpl_toolchain_python \
   --exclude zpl_toolchain_print_client
 ```
 
@@ -189,7 +196,7 @@ Tests run automatically on every push and PR via GitHub Actions:
 
 | Job | What it does |
 |-----|-------------|
-| `Build & Test (ubuntu/macos/windows)` | `cargo fmt`, `cargo build`, `cargo clippy`, `cargo nextest run` across 3 OS (all transports are default) |
+| `Build & Test (ubuntu/macos/windows)` | `cargo fmt`, `cargo build`, `cargo clippy`, `cargo nextest run --exclude zpl_toolchain_python` across 3 OS (all transports are default) |
 | `TypeScript Core Tests` | `wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg` → `npm ci` → `tsc --noEmit` → `npm run build` → `node --test dist/test/*.js` |
 | `TypeScript Print Tests` | `npm ci` → `tsc --noEmit` → `npm run build` → artifact assertions + local TCP bind precheck → `npm test` |
 | `TypeScript CLI Wrapper Tests` | `npm test` in `packages/ts/cli` (platform mapping + unsupported-runtime guard coverage) |
@@ -211,7 +218,7 @@ The print-client integration tests need real TCP sockets. If your environment
 blocks `bind()` calls (e.g., sandboxed containers), use a constrained fallback:
 
 ```bash
-cargo nextest run --workspace --exclude zpl_toolchain_print_client
+cargo nextest run --workspace --exclude zpl_toolchain_python --exclude zpl_toolchain_print_client
 ```
 
 ### `ERR_MODULE_NOT_FOUND` in TypeScript tests
@@ -237,3 +244,15 @@ The test at `packages/ts/print/src/test/proxy.test.ts` should use `127.0.0.1:910
 If `bash scripts/test-dotnet-local.sh` reports `dotnet is required but not found on PATH`,
 rebuild the devcontainer after enabling the .NET feature in
 `.devcontainer/devcontainer.json`.
+
+### PyO3 link errors (direct python crate tests)
+
+If direct `zpl_toolchain_python` test runs fail with unresolved `Py*` symbols,
+refresh the PyO3 linker env:
+
+```bash
+bash scripts/setup-pyo3-env.sh
+. "$HOME/.zpl-pyo3-env"
+```
+
+The devcontainer runs this automatically in `postCreateCommand`.

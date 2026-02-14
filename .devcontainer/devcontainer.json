@@ -40,5 +40,5 @@
     "ghcr.io/devcontainers/features/rust",
     "ghcr.io/lee-orr/rusty-dev-containers/cargo-binstall"
   ],
-  "postCreateCommand": "cargo binstall cargo-nextest wasm-pack maturin --no-confirm && git config core.hooksPath .githooks"
+  "postCreateCommand": "bash scripts/setup-pyo3-env.sh && . \"$HOME/.zpl-pyo3-env\" && cargo binstall cargo-nextest wasm-pack maturin --no-confirm && git config core.hooksPath .githooks"
 }

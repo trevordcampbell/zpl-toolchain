@@ -92,7 +92,7 @@ the automated upload failed), trigger the manual workflow from the GitHub Action
 To avoid repeat regressions and CI surprises, keep these guardrails in mind:
 
 - **Clippy policy:** run full-workspace clippy (`cargo clippy --workspace -- -D warnings`) before shipping. For PyO3 compatibility in CI/devcontainer environments, use `PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1`.
-- **Hook enforcement:** pre-commit runs clippy when Rust files are staged; pre-push runs full-workspace clippy plus full-workspace Rust tests.
+- **Hook enforcement:** pre-commit runs clippy when Rust files are staged; pre-push runs full-workspace clippy, workspace nextest (excluding `zpl_toolchain_python`), and Python wheel runtime tests (`scripts/test-python-wheel-local.sh`).
 - **TypeScript core CI dependency:** `packages/ts/core` type-check/build depends on generated `wasm/pkg` artifacts, so CI must build WASM before TS core checks.
 - **Python runtime confidence:** runtime checks should validate the installed wheel behavior (build wheel, install wheel, run tests), not only `cargo test` for the PyO3 crate.
 - **release-plz scope:** release-plz PR package lists only crates with `publish = true` (Cargo ecosystem). npm/PyPI versions are synchronized in workflow steps and published by downstream jobs.
@@ -109,10 +109,10 @@ Quick smoke test:
 ```bash
 cargo fmt --all -- --check
 cargo clippy --workspace -- -D warnings
-cargo nextest run --workspace
+cargo nextest run --workspace --exclude zpl_toolchain_python
+bash scripts/test-python-wheel-local.sh
 (cd packages/ts/print && npm ci && npm run build && npm test)
 (cd packages/ts/cli && npm test)
-bash scripts/test-python-wheel-local.sh
 bash scripts/test-dotnet-local.sh
 ```
 

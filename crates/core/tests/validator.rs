@@ -13,6 +13,7 @@ use common::{extract_codes, find_args, find_diag};
 use zpl_toolchain_core::grammar::parser::parse_with_tables;
 use zpl_toolchain_core::validate::{self, validate_with_profile};
 use zpl_toolchain_diagnostics::{Severity, codes};
+use zpl_toolchain_spec_tables::{ArgUnion, Constraint, ConstraintKind};
 
 // ─── Validator Basics ────────────────────────────────────────────────────────
 
@@ -67,6 +68,30 @@ fn diag_no_false_positives_valid_label() {
         "well-formed label should have no errors: {:?}",
         errors,
     );
+}
+
+#[test]
+fn validation_result_includes_resolved_labels_per_input_label() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^BY2,3,40^XZ^XA^BY3,2.5,60^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert_eq!(
+        vr.resolved_labels.len(),
+        2,
+        "expected one resolved state per input label"
+    );
+    assert_eq!(vr.resolved_labels[0].values.barcode.height, Some(40));
+    assert_eq!(vr.resolved_labels[1].values.barcode.height, Some(60));
+}
+
+#[test]
+fn resolved_label_state_tracks_effective_dimensions() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^PW800^LL1200^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert_eq!(vr.resolved_labels.len(), 1);
+    assert_eq!(vr.resolved_labels[0].effective_width, Some(800.0));
+    assert_eq!(vr.resolved_labels[0].effective_height, Some(1200.0));
 }
 
 // ─── ZPL1101: Arity ─────────────────────────────────────────────────────────
@@ -906,6 +931,36 @@ fn diag_zpl2302_ft_position_out_of_bounds() {
 }
 
 #[test]
+fn diag_zpl2302_ft_position_within_bounds() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_800x1200();
+    let result = parse_with_tables("^XA^FT799,1199^FDtest^FS^XZ", Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::POSITION_OUT_OF_BOUNDS),
+        "^FT position within bounds should not emit ZPL2302: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2302_exact_boundary_is_currently_allowed() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_800x1200();
+    let result = parse_with_tables("^XA^PW800^LL1200^FO800,1200^FDtest^FS^XZ", Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::POSITION_OUT_OF_BOUNDS),
+        "exact boundary position currently uses strict '>' (no ZPL2302): {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
 fn diag_zpl2302_pw_overrides_profile() {
     let tables = &*common::TABLES;
     let profile = common::profile_800x1200();
@@ -917,6 +972,62 @@ fn diag_zpl2302_pw_overrides_profile() {
             .iter()
             .any(|d| d.id == codes::POSITION_OUT_OF_BOUNDS),
         "^PW should override profile width for bounds check: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2302_lh_offsets_field_position() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_800x1200();
+    // ^LH offsets ^FO, so effective x = 700 + 200 = 900 > profile width 800
+    let result = parse_with_tables("^XA^LH700,0^FO200,50^FDtest^FS^XZ", Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        vr.issues
+            .iter()
+            .any(|d| d.id == codes::POSITION_OUT_OF_BOUNDS),
+        "^LH should offset ^FO/^FT bounds checks: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2302_lh_resets_per_label() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_800x1200();
+    // Label 1: effective x=900 -> out of bounds.
+    // Label 2: ^LH is reset; x=200 -> in bounds.
+    let result = parse_with_tables(
+        "^XA^LH700,0^FO200,50^FDL1^FS^XZ^XA^FO200,50^FDL2^FS^XZ",
+        Some(tables),
+    );
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    let out_of_bounds_count = vr
+        .issues
+        .iter()
+        .filter(|d| d.id == codes::POSITION_OUT_OF_BOUNDS)
+        .count();
+    assert_eq!(
+        out_of_bounds_count, 1,
+        "^LH should apply per-label only: {:?}",
+        vr.issues
+    );
+}
+
+#[test]
+fn diag_zpl2302_lh_with_mu_inches_conversion() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_800x1200();
+    // ^MUI,203,203 => inches to dots. ^LH1,0 => x home = 203 dots.
+    // ^FO598,0 => effective x = 801 > 800.
+    let result = parse_with_tables("^XA^MUI,203,203^LH1,0^FO598,0^FDx^FS^XZ", Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        vr.issues
+            .iter()
+            .any(|d| d.id == codes::POSITION_OUT_OF_BOUNDS),
+        "^LH should be normalized using active ^MU units: {:?}",
         vr.issues,
     );
 }
@@ -1100,6 +1211,157 @@ fn diag_zpl2305_consumed_state_passes() {
     assert!(
         !vr.issues.iter().any(|d| d.id == codes::REDUNDANT_STATE),
         "consumed state should not emit ZPL2305: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2305_alias_forms_share_same_producer_state() {
+    let tables = &*common::TABLES;
+    // ^CC and ~CC are aliases for the same producer command.
+    let result = parse_with_tables("^XA^CC^^~CC^^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::REDUNDANT_STATE),
+        "alias producer forms should participate in the same redundant-state tracking: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl1201_bt_row_height_default_from_by_is_validated() {
+    let mut tables = (*common::TABLES).clone();
+    let bt_cmd = tables
+        .commands
+        .iter_mut()
+        .find(|cmd| cmd.codes.iter().any(|c| c == "^BT"))
+        .expect("^BT command entry should exist");
+    let bt_args = bt_cmd
+        .args
+        .as_mut()
+        .expect("^BT should have args in generated tables");
+    for arg_union in bt_args {
+        if let zpl_toolchain_spec_tables::ArgUnion::Single(arg) = arg_union
+            && arg.key.as_deref() == Some("h2")
+        {
+            arg.default_from_state_key = Some("barcode.height".to_string());
+        }
+    }
+
+    // ^BT h2 defaults from ^BY barcode.height; 9999 is out of h2's [1,255] range.
+    let result = parse_with_tables("^XA^BY2,3,9999^BTN^FDtest^FS^XZ", Some(&tables));
+    let vr = validate::validate(&result.ast, &tables);
+    assert!(
+        vr.issues
+            .iter()
+            .any(|d| d.id == codes::OUT_OF_RANGE && d.message.contains("^BT")),
+        "resolved ^BT defaults should be validated against arg range: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn bt_row_height_without_state_key_uses_non_state_default() {
+    let mut tables = (*common::TABLES).clone();
+    let bt_cmd = tables
+        .commands
+        .iter_mut()
+        .find(|cmd| cmd.codes.iter().any(|c| c == "^BT"))
+        .expect("^BT command entry should exist");
+    let bt_args = bt_cmd
+        .args
+        .as_mut()
+        .expect("^BT should have args in generated tables");
+    for arg_union in bt_args {
+        if let zpl_toolchain_spec_tables::ArgUnion::Single(arg) = arg_union
+            && arg.key.as_deref() == Some("h2")
+        {
+            // Explicitly clear mapping to simulate ambiguous defaultFrom config.
+            arg.default_from_state_key = None;
+        }
+    }
+
+    // With no explicit state key and ^BY having multiple effects.sets, validator
+    // should not infer ambiguous mapping and should fall back to ^BT's static default.
+    let result = parse_with_tables("^XA^BY2,3,9999^BTN^FDtest^FS^XZ", Some(&tables));
+    let vr = validate::validate(&result.ast, &tables);
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::OUT_OF_RANGE && d.message.contains("^BT")),
+        "ambiguous defaultFrom without state key should not use ^BY height implicitly: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn by_defaults_do_not_leak_across_labels() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables(
+        "^XA^FO10,10^BY2,3,9999^BTN^FDa^FS^XZ^XA^FO10,10^BTN^FDb^FS^XZ",
+        Some(tables),
+    );
+    let vr = validate::validate(&result.ast, tables);
+    let bt_requires_warnings = vr
+        .issues
+        .iter()
+        .filter(|d| {
+            d.id == codes::REQUIRED_COMMAND
+                && d.message.contains("^BT")
+                && d.message.contains("^BY")
+        })
+        .count();
+    assert_eq!(
+        bt_requires_warnings, 1,
+        "label-scoped ^BY defaults should not leak into the next label: {:?}",
+        vr.issues
+    );
+}
+
+#[test]
+fn gs_height_width_resolve_from_cf_defaults() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^FO10,10^CFA,24,12^GS^FDx^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::REQUIRED_MISSING),
+        "^GS should resolve h/w defaults from ^CF via explicit state keys: {:?}",
+        vr.issues
+    );
+}
+
+#[test]
+fn required_arg_with_ambiguous_default_from_without_state_key_is_missing() {
+    let mut tables = (*common::TABLES).clone();
+    let bo_cmd = tables
+        .commands
+        .iter_mut()
+        .find(|cmd| cmd.codes.iter().any(|c| c == "^BO"))
+        .expect("^BO command entry should exist");
+    let bo_args = bo_cmd
+        .args
+        .as_mut()
+        .expect("^BO should have args in generated tables");
+    for arg_union in bo_args {
+        if let zpl_toolchain_spec_tables::ArgUnion::Single(arg) = arg_union
+            && arg.key.as_deref() == Some("a")
+        {
+            arg.optional = false;
+            arg.default_from_state_key = None;
+            arg.default = None;
+            arg.default_by_dpi = None;
+        }
+    }
+
+    // ^FW has multiple effects.sets keys, so defaultFrom is ambiguous without
+    // defaultFromStateKey and should not satisfy required presence.
+    let result = parse_with_tables("^XA^FWR^BO,2,N,0,N,1^FDtest^FS^XZ", Some(&tables));
+    let vr = validate::validate(&result.ast, &tables);
+    assert!(
+        vr.issues
+            .iter()
+            .any(|d| d.id == codes::REQUIRED_MISSING || d.id == codes::REQUIRED_EMPTY),
+        "ambiguous unresolved defaultFrom should not suppress required-arg diagnostics: {:?}",
         vr.issues,
     );
 }
@@ -1303,6 +1565,40 @@ fn diag_zpl2308_gf_fits_no_diagnostic() {
     assert!(
         !vr.issues.iter().any(|d| d.id == codes::GF_BOUNDS_OVERFLOW),
         "^GF that fits should not emit ZPL2308: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2308_gf_bounds_respect_mu_inches_conversion() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_800x1200();
+    // ^MUI converts ^FO coordinates to dots. ^FO4,0 => x=812 dots at 203 dpi.
+    // ^GF width is 10 bytes/row => 80 dots; 812 + 80 > 800, so this must overflow.
+    let data = "FF".repeat(10);
+    let input = format!("^XA^MUI,203,203^FO4,0^GFA,10,10,10,{}^FS^XZ", data);
+    let result = parse_with_tables(&input, Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::GF_BOUNDS_OVERFLOW),
+        "^MU inches conversion should apply to ^GF bounds checks (ZPL2308): {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2308_gf_bounds_respect_mu_mm_conversion() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_800x1200();
+    // ^MUM converts millimeters to dots. ^FO100,0 => ~799 dots at 203 dpi.
+    // ^GF width is 80 dots, so effective max x exceeds 800.
+    let data = "FF".repeat(10);
+    let input = format!("^XA^MUM^FO100,0^GFA,10,10,10,{}^FS^XZ", data);
+    let result = parse_with_tables(&input, Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::GF_BOUNDS_OVERFLOW),
+        "^MU mm conversion should apply to ^GF bounds checks (ZPL2308): {:?}",
         vr.issues,
     );
 }
@@ -2680,6 +2976,113 @@ fn mu_units_dots_default() {
     );
 }
 
+// ─── Synthetic Coverage for Currently Unused Spec Paths ──────────────────────
+
+fn mutate_command_in_tables<F>(
+    base: &zpl_toolchain_spec_tables::ParserTables,
+    code: &str,
+    f: F,
+) -> zpl_toolchain_spec_tables::ParserTables
+where
+    F: FnOnce(&mut zpl_toolchain_spec_tables::CommandEntry),
+{
+    let mut tables = base.clone();
+    let idx = tables
+        .commands
+        .iter()
+        .position(|cmd| cmd.codes.iter().any(|c| c == code))
+        .unwrap_or_else(|| panic!("expected command {code} in parser tables"));
+    f(&mut tables.commands[idx]);
+    tables
+}
+
+#[test]
+fn diag_zpl1105_string_too_short_via_synthetic_constraint() {
+    let tables = mutate_command_in_tables(&common::TABLES, "^BY", |cmd| {
+        let args = cmd.args.as_mut().expect("^BY should have args");
+        let first_arg = args.get_mut(0).expect("^BY first arg should exist");
+        match first_arg {
+            ArgUnion::Single(arg) => arg.min_length = Some(2),
+            ArgUnion::OneOf { .. } => panic!("expected ^BY arg 0 to be single"),
+        }
+    });
+
+    let result = parse_with_tables("^XA^BY1,2,10^XZ", Some(&tables));
+    let vr = validate::validate(&result.ast, &tables);
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::STRING_TOO_SHORT),
+        "expected STRING_TOO_SHORT from synthetic min_length: {:?}",
+        vr.issues
+    );
+}
+
+#[test]
+fn diag_zpl1106_string_too_long_via_synthetic_constraint() {
+    let tables = mutate_command_in_tables(&common::TABLES, "^BY", |cmd| {
+        let args = cmd.args.as_mut().expect("^BY should have args");
+        let first_arg = args.get_mut(0).expect("^BY first arg should exist");
+        match first_arg {
+            ArgUnion::Single(arg) => arg.max_length = Some(1),
+            ArgUnion::OneOf { .. } => panic!("expected ^BY arg 0 to be single"),
+        }
+    });
+
+    let result = parse_with_tables("^XA^BY12,2,10^XZ", Some(&tables));
+    let vr = validate::validate(&result.ast, &tables);
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::STRING_TOO_LONG),
+        "expected STRING_TOO_LONG from synthetic max_length: {:?}",
+        vr.issues
+    );
+}
+
+#[test]
+fn diag_zpl2102_incompatible_command_via_synthetic_constraint() {
+    let tables = mutate_command_in_tables(&common::TABLES, "^A", |cmd| {
+        let constraints = cmd.constraints.get_or_insert_with(Vec::new);
+        constraints.push(Constraint {
+            kind: ConstraintKind::Incompatible,
+            expr: Some("^FO".to_string()),
+            message: "synthetic incompatible test".to_string(),
+            severity: None,
+            scope: None,
+        });
+    });
+
+    let result = parse_with_tables("^XA^FO10,10^A0N,30,30^FDx^FS^XZ", Some(&tables));
+    let vr = validate::validate(&result.ast, &tables);
+    assert!(
+        vr.issues
+            .iter()
+            .any(|d| d.id == codes::INCOMPATIBLE_COMMAND),
+        "expected INCOMPATIBLE_COMMAND from synthetic incompatible constraint: {:?}",
+        vr.issues
+    );
+}
+
+#[test]
+fn diag_zpl2104_order_after_via_synthetic_constraint() {
+    let tables = mutate_command_in_tables(&common::TABLES, "^A", |cmd| {
+        let constraints = cmd.constraints.get_or_insert_with(Vec::new);
+        constraints.push(Constraint {
+            kind: ConstraintKind::Order,
+            expr: Some("after:^FO".to_string()),
+            message: "synthetic order-after test".to_string(),
+            severity: None,
+            scope: None,
+        });
+    });
+
+    // ^A appears before ^FO so synthetic "after:^FO" should fail.
+    let result = parse_with_tables("^XA^A0N,30,30^FO10,10^FDx^FS^XZ", Some(&tables));
+    let vr = validate::validate(&result.ast, &tables);
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::ORDER_AFTER),
+        "expected ORDER_AFTER from synthetic order-after constraint: {:?}",
+        vr.issues
+    );
+}
+
 // ─── Diagnostic ID Compile-Time Safety ───────────────────────────────────────
 
 /// Verify that all diagnostic codes used in the validator have corresponding
@@ -2755,30 +3158,7 @@ fn all_diagnostic_ids_have_explanations() {
     );
 }
 
-// ─── Untested Diagnostic Code Comments ───────────────────────────────────────
-//
-// ZPL1105 (string too short): No spec commands currently define a `minLength`
-// constraint on any argument, so this diagnostic code path cannot be triggered
-// with real ZPL. The validator code exists in validate/mod.rs and checks
-// spec_arg.min_length. Test deferred until a spec command adds a minLength
-// constraint.
-//
-// ZPL1106 (string too long): No spec commands currently define a `maxLength`
-// constraint on any argument, so this diagnostic code path cannot be triggered
-// with real ZPL. The validator code exists in validate/mod.rs and checks
-// spec_arg.max_length. Test deferred until a spec command adds a maxLength
-// constraint.
-//
-// ZPL2102 (incompatible commands): No spec commands currently use the
-// "incompatible" constraint kind, so this diagnostic cannot be triggered.
-// The validator code exists in validate/mod.rs (ConstraintKind::Incompatible).
-// Test deferred until a spec command adds an incompatible constraint.
-//
-// ZPL2104 (ordering after:): All order constraints in spec files use "before:"
-// prefix exclusively; none use "after:". The validator code handles "after:"
-// expressions in validate/mod.rs, but no spec command triggers it today.
-// Test deferred until a spec command adds an "after:" order constraint.
-//
-// NOTE: ComparisonOp coverage gap — only `lte` is used in current specs (^PW, ^LL).
-// Tests for Gte, Lt, Gt, Eq operators cannot be exercised without spec commands that
-// use those operators. This will be addressed when new specs use other operators.
+// NOTE: Some validator code paths are not currently exercised by real spec data
+// (e.g., arg-level minLength/maxLength and certain constraint expressions). The
+// synthetic tests above intentionally mutate parser tables in-memory so those
+// diagnostic paths remain covered against regressions.

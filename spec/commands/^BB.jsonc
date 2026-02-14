@@ -10,9 +10,9 @@
       "arity": 6,
       "signature": { "params": ["o","h","s","c","r","m"], "joiner": ",", "allowEmptyTrailing": true },
       "args": [
-        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW", "defaultFromStateKey": "field.orientation",
           "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
-        { "name": "row_height", "key": "h", "type": "int", "range": [2, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+        { "name": "row_height", "key": "h", "type": "int", "range": [2, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY", "defaultFromStateKey": "barcode.height",
           "doc": "Height of each row in dots (minimum 2)" },
         { "name": "security_level", "key": "s", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "Y",
           "doc": "Whether to add a row security indicator" },

@@ -65,6 +65,17 @@ fn snapshot_json(input: &str, tables: &ParserTables) -> String {
     serde_json::to_string_pretty(&pv.json).unwrap()
 }
 
+/// Snapshot only the renderer-facing resolved label state.
+fn snapshot_resolved_labels_json(input: &str, tables: &ParserTables) -> String {
+    let res = parse_with_tables(input, Some(tables));
+    let vr = validate::validate(&res.ast, tables);
+    let json = serde_json::json!({
+        "label_count": res.ast.labels.len(),
+        "resolved_labels": vr.resolved_labels,
+    });
+    serde_json::to_string_pretty(&json).unwrap()
+}
+
 /// Compare `actual` against a golden file.
 ///
 /// * If `UPDATE_GOLDEN` env var is set, writes (or overwrites) the golden file.
@@ -225,4 +236,34 @@ fn golden_cross_command_state() {
     let tables = &*common::TABLES;
     let input = "^XA\n^BY3,2,100\n^FO50,50\n^BCN,100,Y,N,N\n^FD12345^FS\n^XZ";
     assert_golden("cross_command_state", &snapshot_json(input, tables));
+}
+
+#[test]
+fn golden_resolved_state_barcode_defaults() {
+    let tables = &*common::TABLES;
+    let input = "^XA\n^BY3,2,100\n^FO50,50\n^BCN,100,Y,N,N\n^FD12345^FS\n^XZ";
+    assert_golden(
+        "resolved_state_barcode_defaults",
+        &snapshot_resolved_labels_json(input, tables),
+    );
+}
+
+#[test]
+fn golden_resolved_state_font_and_orientation_defaults() {
+    let tables = &*common::TABLES;
+    let input = "^XA\n^CF0,30,20\n^FWB\n^FO40,60^A0,,^FDHello^FS\n^XZ";
+    assert_golden(
+        "resolved_state_font_orientation_defaults",
+        &snapshot_resolved_labels_json(input, tables),
+    );
+}
+
+#[test]
+fn golden_resolved_state_label_layout_defaults() {
+    let tables = &*common::TABLES;
+    let input = "^XA\n^PW800\n^LL600\n^LH20,30\n^LT5\n^LS10\n^POI\n^PMY\n^LRN\n^XZ";
+    assert_golden(
+        "resolved_state_layout_defaults",
+        &snapshot_resolved_labels_json(input, tables),
+    );
 }

@@ -147,7 +147,11 @@ fn build(spec_dir: PathBuf, out_dir: PathBuf, strict: bool) -> Result<()> {
     );
     write_json_pretty(out_dir.join("coverage.json"), &coverage)?;
 
-    // 9. Write parser tables
+    // 9. Generate canonical state-keys artifact from effects.sets declarations.
+    let state_keys = pipeline::generate_state_keys(&loaded.commands, &loaded.schema_versions);
+    write_json_pretty(out_dir.join("state_keys.json"), &state_keys)?;
+
+    // 10. Write parser tables
     write_json_pretty(out_dir.join("parser_tables.json"), &tables)?;
 
     println!("{}", serde_json::json!({"ok": true}));

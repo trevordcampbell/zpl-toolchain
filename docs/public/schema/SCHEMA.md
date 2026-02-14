@@ -70,7 +70,7 @@ This document summarizes the ZPL spec registry schema used by the spec-compiler.
   "enum": [ "N", "Y" ],
   "optional": true,
   "presence": "emptyMeansUseDefault",          // unset|empty|value|...
-  "default": 0, "defaultFrom": "^FW",
+  "default": 0, "defaultFrom": "^BY", "defaultFromStateKey": "barcode.height",
   "rangeWhen": [ { "when": "fontIsBitmap", "range": [0,32000] } ],
   "roundingPolicy": { "mode": "nearest" },
   "roundingPolicyWhen": [ { "when": "fontIsBitmap", "mode": "toNearestMultipleOfBaseHeight" } ],
@@ -108,19 +108,21 @@ Validator enforces presence/order, numeric ranges/enums via `args`, conditional 
 - `signatureOverrides`: passed through for per-opcode tweaks; not yet consumed by parser/validator (reserved for docs and future correctness cases).
 - `composites`: passed through and validated for linkage; not yet rendered in parser output; intended for documentation and advanced formatting.
 - `defaults`, `units`: passed through; `units` used by `^MU` conversion in validator.
-- `effects`: consumed by validator for cross-command state tracking (redundant-state detection via `LabelState`).
+- `effects`: consumed by validator for cross-command state tracking and default resolution.
+- `defaultFromStateKey`: required when `defaultFrom` is present; explicit mapping from `defaultFrom` producer -> concrete state key.
+  - must be one of producer `effects.sets`
 - `printerGates`: enforced via profile `features` — command-level and enum-value-level gate resolution; emits `ZPL1402` diagnostics.
 
 ## Status
 
 - The schema (`spec/schema/zpl-spec.schema.jsonc`) implements v1.1.1 features: signatures/composites, `args`/`argUnion`, `constraints`, conditional range and rounding, enums (string/object), and examples.
 - The spec-compiler validates per-command files against this schema and passes through fields into generated tables and bundles.
-- The validator consumes `args` and enforces presence/order, ranges/enums, conditional range/rounding, profile constraints (`profileConstraint`), printer gates (`printerGates`), media validation, barcode `fieldDataRules` validation (ZPL2401/2402), `^MU` unit conversion, device-level state tracking, and structural/semantic checks.
+- The validator consumes `args` and enforces presence/order, ranges/enums, conditional range/rounding, profile constraints (`profileConstraint`), printer gates (`printerGates`), media validation, barcode `fieldDataRules` validation (ZPL2401/2402), `^MU` unit conversion, typed value-state default resolution (`defaultFrom` + `defaultFromStateKey`), device-level state tracking, and structural/semantic checks.
 
 ## Versioning
 
 - Schema version (input): Derived from per-command JSONC files: the compiler reads each file’s `schemaVersion` and sets `schema_version` in `generated/parser_tables.json` to the highest value encountered. Coverage and bundles also include a `schema_versions` array for transparency.
-- Table format version (output): Centralized in code at `zpl_toolchain_spec_tables::TABLE_FORMAT_VERSION`. Emitted as `format_version` in `parser_tables.json`, and included in `docs_bundle.json` and `constraints_bundle.json`.
-- Generated bundles: `docs_bundle.json` and `constraints_bundle.json` include `schema_versions` and `format_version` to make downstream tooling robust to changes.
+- Table format version (output): Centralized in code at `zpl_toolchain_spec_tables::TABLE_FORMAT_VERSION`. Emitted as `format_version` in `parser_tables.json`, and included in generated artifacts.
+- Generated artifacts: `docs_bundle.json`, `constraints_bundle.json`, and `state_keys.json` include `schema_versions` and `format_version` to make downstream tooling robust to changes.
 
 

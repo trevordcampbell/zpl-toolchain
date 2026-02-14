@@ -553,6 +553,11 @@ pub struct Arg {
     /// Command that provides this arg's default (e.g., `"^CF"`, `"^BY"`).
     #[serde(default)]
     pub default_from: Option<String>,
+    /// Optional explicit state key used when resolving `default_from`.
+    ///
+    /// Example: `"barcode.height"` for a barcode arg that resolves from `^BY`.
+    #[serde(default)]
+    pub default_from_state_key: Option<String>,
 
     /// Profile-driven constraint on this argument's value.
     #[serde(default)]

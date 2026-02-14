@@ -56,6 +56,7 @@ fn tables_with_spacing_command(
                     default: None,
                     default_by_dpi: None,
                     default_from: None,
+                    default_from_state_key: None,
                     profile_constraint: None,
                     range_when: None,
                     rounding_policy: None,

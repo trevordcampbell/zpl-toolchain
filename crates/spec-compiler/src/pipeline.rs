@@ -271,6 +271,7 @@ fn validate_arg_hygiene(
     cmd: &SourceCommand,
     all_codes: &HashSet<String>,
     has_effects: &HashMap<String, bool>,
+    effects_sets: &HashMap<String, HashSet<String>>,
     errors: &mut Vec<String>,
 ) {
     if let Some(args) = &cmd.args {
@@ -308,6 +309,12 @@ fn validate_arg_hygiene(
 
             // defaultFrom must reference a known command with effects.sets
             if let Some(df) = &arg.default_from {
+                if !df.starts_with('^') && !df.starts_with('~') {
+                    errors.push(format!(
+                        "arg[{}] defaultFrom '{}' must start with ^ or ~",
+                        idx, df
+                    ));
+                }
                 if !all_codes.contains(df) {
                     errors.push(format!(
                         "arg[{}] defaultFrom '{}' references unknown command",
@@ -318,6 +325,33 @@ fn validate_arg_hygiene(
                         "arg[{}] defaultFrom '{}' references command with no effects.sets",
                         idx, df
                     ));
+                }
+
+                if arg.default_from_state_key.is_none() {
+                    let hint = effects_sets
+                        .get(df)
+                        .map(|keys| format!(" (choices: {:?})", keys))
+                        .unwrap_or_default();
+                    errors.push(format!(
+                        "arg[{}] defaultFrom '{}' requires defaultFromStateKey{}",
+                        idx, df, hint
+                    ));
+                }
+
+                if let Some(state_key) = &arg.default_from_state_key {
+                    if let Some(effect_keys) = effects_sets.get(df) {
+                        if !effect_keys.contains(state_key) {
+                            errors.push(format!(
+                                "arg[{}] defaultFromStateKey '{}' is not in effects.sets of '{}': {:?}",
+                                idx, state_key, df, effect_keys
+                            ));
+                        }
+                    } else {
+                        errors.push(format!(
+                            "arg[{}] defaultFromStateKey '{}' references '{}' which has no effects.sets",
+                            idx, state_key, df
+                        ));
+                    }
                 }
             }
         });
@@ -531,6 +565,17 @@ pub fn validate_cross_field(commands: &[SourceCommand], spec_dir: &Path) -> Vec<
             cmd.all_codes().into_iter().map(move |c| (c, has))
         })
         .collect();
+    let effects_sets: HashMap<String, HashSet<String>> = commands
+        .iter()
+        .flat_map(|cmd| {
+            let keys: HashSet<String> = cmd
+                .effects
+                .as_ref()
+                .map(|e| e.sets.iter().cloned().collect())
+                .unwrap_or_default();
+            cmd.all_codes().into_iter().map(move |c| (c, keys.clone()))
+        })
+        .collect();
 
     let mut results = validate_duplicate_opcodes(commands);
 
@@ -540,7 +585,7 @@ pub fn validate_cross_field(commands: &[SourceCommand], spec_dir: &Path) -> Vec<
 
         validate_command_arity(cmd, &mut errors);
         validate_signature_linkage(cmd, &mut errors);
-        validate_arg_hygiene(cmd, &all_codes, &has_effects, &mut errors);
+        validate_arg_hygiene(cmd, &all_codes, &has_effects, &effects_sets, &mut errors);
         validate_signature_overrides(cmd, &mut errors);
         validate_command_constraints_spec(cmd, &all_codes, &mut errors);
         validate_composites_linkage(cmd, &mut errors);
@@ -1009,6 +1054,41 @@ pub fn generate_coverage(
     })
 }
 
+/// Generate canonical state-keys artifact from declared producer effects.
+pub fn generate_state_keys(
+    commands: &[SourceCommand],
+    schema_versions: &BTreeSet<String>,
+) -> serde_json::Value {
+    let mut keys = BTreeSet::new();
+    let mut by_producer = serde_json::Map::new();
+
+    for cmd in commands {
+        let Some(effects) = cmd.effects.as_ref() else {
+            continue;
+        };
+        let producer_keys: Vec<String> = effects.sets.clone();
+        for k in &producer_keys {
+            keys.insert(k.clone());
+        }
+        let producer_json = serde_json::Value::Array(
+            producer_keys
+                .iter()
+                .map(|k| serde_json::Value::String(k.clone()))
+                .collect(),
+        );
+        for code in cmd.all_codes() {
+            by_producer.insert(code, producer_json.clone());
+        }
+    }
+
+    serde_json::json!({
+        "schema_versions": schema_versions.iter().cloned().collect::<Vec<_>>(),
+        "format_version": TABLE_FORMAT_VERSION,
+        "state_keys": keys.into_iter().collect::<Vec<_>>(),
+        "by_producer": by_producer,
+    })
+}
+
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 fn anchor_from_code(code: &str) -> String {
@@ -1233,5 +1313,90 @@ mod tests {
             "expected 'not used in template' error: {:?}",
             err.errors
         );
+    }
+
+    #[test]
+    fn validate_default_from_always_requires_default_from_state_key() {
+        use super::validate_cross_field;
+        use crate::source::SourceSpecFile;
+        use std::path::Path;
+
+        let json = r#"{"schemaVersion":"1.1.1","commands":[{"codes":["^P"],"arity":0,"effects":{"sets":["font.height","font.width"]}},{"codes":["^C"],"arity":1,"signature":{"params":["x"],"joiner":","},"args":[{"name":"x","key":"x","type":"int","defaultFrom":"^P"}]}]}"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec");
+        let errs = validate_cross_field(&spec.commands, &spec_dir);
+        assert!(!errs.is_empty(), "expected validation errors");
+        assert!(
+            errs.iter()
+                .flat_map(|e| e.errors.iter())
+                .any(|e| e.contains("requires defaultFromStateKey")),
+            "expected required defaultFromStateKey error: {:?}",
+            errs
+        );
+    }
+
+    #[test]
+    fn validate_default_from_requires_state_key_even_for_single_effect_value() {
+        use super::validate_cross_field;
+        use crate::source::SourceSpecFile;
+        use std::path::Path;
+
+        let json = r#"{"schemaVersion":"1.1.1","commands":[{"codes":["^P"],"arity":0,"effects":{"sets":["font.height"]}},{"codes":["^C"],"arity":1,"signature":{"params":["x"],"joiner":","},"args":[{"name":"x","key":"x","type":"int","defaultFrom":"^P"}]}]}"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec");
+        let errs = validate_cross_field(&spec.commands, &spec_dir);
+        assert!(!errs.is_empty(), "expected validation errors");
+        assert!(
+            errs.iter()
+                .flat_map(|e| e.errors.iter())
+                .any(|e| e.contains("requires defaultFromStateKey")),
+            "expected required defaultFromStateKey error: {:?}",
+            errs
+        );
+    }
+
+    #[test]
+    fn validate_default_from_with_state_key_passes() {
+        use super::validate_cross_field;
+        use crate::source::SourceSpecFile;
+        use std::path::Path;
+
+        let json = r#"{"schemaVersion":"1.1.1","commands":[{"codes":["^P"],"arity":0,"effects":{"sets":["font.height"]}},{"codes":["^C"],"arity":1,"signature":{"params":["x"],"joiner":","},"args":[{"name":"x","key":"x","type":"int","defaultFrom":"^P","defaultFromStateKey":"font.height"}]}]}"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec");
+        let errs = validate_cross_field(&spec.commands, &spec_dir);
+        assert!(errs.is_empty(), "expected no validation errors: {:?}", errs);
+    }
+
+    #[test]
+    fn generate_state_keys_collects_effect_sets() {
+        use super::generate_state_keys;
+        use crate::source::SourceSpecFile;
+        use std::collections::BTreeSet;
+
+        let json = r#"{"schemaVersion":"1.1.1","commands":[{"codes":["^P","~P"],"arity":0,"effects":{"sets":["font.height","font.width"]}},{"codes":["^Q"],"arity":0}]}"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let mut versions = BTreeSet::new();
+        versions.insert("1.1.1".to_string());
+        let out = generate_state_keys(&spec.commands, &versions);
+
+        let keys = out
+            .get("state_keys")
+            .and_then(|v| v.as_array())
+            .expect("state_keys array");
+        assert_eq!(keys.len(), 2);
+        assert!(keys.iter().any(|k| k == "font.height"));
+        assert!(keys.iter().any(|k| k == "font.width"));
+
+        let by = out
+            .get("by_producer")
+            .and_then(|v| v.as_object())
+            .expect("by_producer object");
+        assert!(by.contains_key("^P"));
+        assert!(by.contains_key("~P"));
     }
 }

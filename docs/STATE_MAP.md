@@ -199,22 +199,44 @@ Parser-level state (`^CC`, `^CD`, `^CT`) requires changes to the tokenizer/lexer
 "effects": { "sets": ["barcode.moduleWidth", "barcode.ratio", "barcode.height"] }
 ```
 
-### State consumers use `defaultFrom` on args
+### State consumers use `defaultFrom` + `defaultFromStateKey` on args
 
 ```jsonc
 // Example: ^BC height arg
-{ "name": "height", "key": "h", "type": "int", "defaultFrom": "^BY", "unit": "dots" }
+{
+  "name": "height",
+  "key": "h",
+  "type": "int",
+  "defaultFrom": "^BY",
+  "defaultFromStateKey": "barcode.height",
+  "unit": "dots"
+}
 ```
 
 ```jsonc
 // Example: ^A orientation arg
-{ "name": "orientation", "key": "o", "type": "enum", "defaultFrom": "^FW" }
+{
+  "name": "orientation",
+  "key": "o",
+  "type": "enum",
+  "defaultFrom": "^FW",
+  "defaultFromStateKey": "field.orientation"
+}
 ```
 
 ```jsonc
 // Example: ^A font arg
-{ "name": "font", "key": "f", "type": "enum", "defaultFrom": "^CF" }
+{
+  "name": "font",
+  "key": "f",
+  "type": "enum",
+  "defaultFrom": "^CF",
+  "defaultFromStateKey": "font.name"
+}
 ```
+
+> Rule: when using `defaultFrom`, always provide `defaultFromStateKey` (and it
+> must be a key present in the producer `effects.sets` list).
 
 ### Validator tracks state per-label
 
@@ -225,30 +247,13 @@ The validator maintains two state structs:
 
 Additionally, a **`FieldTracker`** manages field-level state within each label (open/close tracking, `^FH` hex escape, `^FN` field numbers, serialization, and active barcode command for `fieldDataRules` validation).
 
-`LabelState` accumulates values from state-setting commands as it walks the label's nodes. When validating a consumer command with an unset/empty arg that has `defaultFrom`, it looks up the effective default from `LabelState`.
+`LabelState` accumulates values from state-setting commands as it walks the label's nodes via typed `value_state`. When validating a consumer command with an unset/empty arg that has `defaultFrom`, it resolves defaults from `value_state` using `defaultFromStateKey`.
 
 ```rust
 struct LabelState {
-    // ^BY state
-    barcode_module_width: Option<u32>,   // 1–10, default 2
-    barcode_ratio: Option<f32>,          // 2.0–3.0, default 3.0
-    barcode_height: Option<u32>,         // default 10
-
-    // ^CF state
-    default_font: Option<char>,          // A–Z, 0–9, default 'A'
-    default_font_height: Option<u32>,    // default 9
-    default_font_width: Option<u32>,     // default 5
-
-    // ^FW state
-    default_orientation: Option<Rotation>, // N, R, I, B; default N
-    default_justification: Option<u8>,    // 0, 1, 2; default 0
-
-    // ^LH state
-    label_home_x: u32,                   // default 0
-    label_home_y: u32,                   // default 0
-
-    // ^MU state (system-level, but affects interpretation)
-    unit_of_measure: UnitOfMeasure,      // D, I, M; default D
+    // Cross-command producer values used by validator/renderer:
+    // barcode defaults, font defaults, field defaults, label home, layout defaults
+    value_state: LabelValueState,
 }
 ```
 

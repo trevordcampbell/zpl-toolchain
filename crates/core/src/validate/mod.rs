@@ -1,5 +1,6 @@
 pub use crate::grammar::diag::Diagnostic;
 use crate::grammar::{ast::Ast, diag::Severity, diag::Span, diag::codes, tables::ParserTables};
+use crate::state::{DeviceState, LabelValueState, ResolvedLabelState, Units, convert_to_dots};
 use serde::Serialize;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::OnceLock;
@@ -26,6 +27,8 @@ pub struct ValidationResult {
     pub ok: bool,
     /// All diagnostics produced during validation.
     pub issues: Vec<Diagnostic>,
+    /// Renderer-ready resolved state for each label.
+    pub resolved_labels: Vec<ResolvedLabelState>,
 }
 
 fn map_sev(sev: Option<&zpl_toolchain_spec_tables::ConstraintSeverity>) -> Severity {
@@ -63,13 +66,6 @@ fn predicate_matches(when: &str, args: &[crate::grammar::ast::ArgSlot]) -> bool 
         }
     }
     false
-}
-
-/// Parse the first argument as f64, if present and valid.
-fn first_arg_f64(args: &[crate::grammar::ast::ArgSlot]) -> Option<f64> {
-    args.first()
-        .and_then(|slot| slot.value.as_ref())
-        .and_then(|v| v.parse::<f64>().ok())
 }
 
 /// Check if an enum value list contains a given value.
@@ -197,40 +193,6 @@ fn any_target_in_set(targets: &str, seen: &HashSet<&str>) -> bool {
     targets.split('|').any(|target| seen.contains(target))
 }
 
-// ─── Device-level state tracking ────────────────────────────────────────────
-
-/// Unit system for measurement conversion.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-enum Units {
-    #[default]
-    Dots,
-    Inches,
-    Millimeters,
-}
-
-/// Device/session-scoped state that persists across labels.
-///
-/// Created once before the label loop and updated by session-scoped commands
-/// (e.g., `^MU`, `^MD`, `^PR`).
-#[derive(Debug, Default)]
-struct DeviceState {
-    /// Session-scoped producer tracking (persists across labels).
-    session_producers: HashSet<String>,
-    /// Active unit system from ^MU (default: dots).
-    units: Units,
-    /// DPI for unit conversion (from profile or ^MU).
-    dpi: Option<u32>,
-}
-
-/// Convert a value from the active unit system to dots.
-fn convert_to_dots(value: f64, units: Units, dpi: u32) -> f64 {
-    match units {
-        Units::Dots => value,
-        Units::Inches => value * dpi as f64,
-        Units::Millimeters => value * dpi as f64 / 25.4,
-    }
-}
-
 // ─── Cross-command state tracking ───────────────────────────────────────────
 
 /// Tracks which state-setting commands have been seen within a label.
@@ -259,6 +221,8 @@ struct LabelState {
     last_fo_y: Option<f64>,
     /// Accumulated total graphic bytes from ^GF commands (for memory estimation).
     gf_total_bytes: u32,
+    /// Typed producer values for renderer/validator default resolution.
+    value_state: LabelValueState,
 }
 
 impl LabelState {
@@ -1151,6 +1115,38 @@ fn validate_arg_value(
     validate_arg_enum_gates(cmd_ctx, vctx, lookup_key, val, spec_arg, issues);
 }
 
+fn value_to_arg_string(value: &serde_json::Value) -> Option<String> {
+    match value {
+        serde_json::Value::String(s) => Some(s.clone()),
+        serde_json::Value::Number(n) => Some(n.to_string()),
+        serde_json::Value::Bool(b) => Some(if *b { "Y".to_string() } else { "N".to_string() }),
+        _ => None,
+    }
+}
+
+fn resolve_effective_default_value(
+    arg: &zpl_toolchain_spec_tables::Arg,
+    vctx: &ValidationContext,
+    label_state: &LabelState,
+) -> Option<String> {
+    if let Some(df) = arg.default_from.as_deref()
+        && label_state.has_producer(df)
+        && let Some(key) = arg.default_from_state_key.as_deref()
+        && let Some(v) = label_state.value_state.state_value_by_key(key)
+    {
+        return Some(v);
+    }
+
+    if let Some(map) = arg.default_by_dpi.as_ref()
+        && let Some(dpi) = vctx.profile.map(|p| p.dpi)
+        && let Some(v) = map.get(&dpi.to_string()).and_then(value_to_arg_string)
+    {
+        return Some(v);
+    }
+
+    arg.default.as_ref().and_then(value_to_arg_string)
+}
+
 /// Validate command arguments: presence, enum, type, range, length, rounding, profile.
 fn validate_command_args(
     cmd_ctx: &CommandCtx,
@@ -1174,22 +1170,21 @@ fn validate_command_args(
         let lookup_key = idx.to_string();
         let slot_opt = key_to_slot.get(&lookup_key).copied();
         let eff = select_effective_arg(spec_arg, slot_opt);
+        let resolved_default =
+            eff.and_then(|arg| resolve_effective_default_value(arg, vctx, label_state));
 
-        // Presence checks (skip for args with defaultFrom when producer seen)
+        // Presence checks (resolved defaults count as present).
         if let Some(arg) = eff
             && !arg.optional
         {
-            let has_state_default = arg
-                .default_from
-                .as_ref()
-                .is_some_and(|df| label_state.has_producer(df));
             let has_static_default = arg.default.is_some()
                 || arg.default_by_dpi.as_ref().is_some_and(|m| {
                     vctx.profile
                         .map(|p| p.dpi)
                         .is_some_and(|d| m.contains_key(&d.to_string()))
                 });
-            let has_any_default = has_state_default || has_static_default;
+            // Presence should only be satisfied by defaults we can actually resolve.
+            let has_any_default = has_static_default || resolved_default.is_some();
 
             match slot_opt {
                 None if !has_any_default => {
@@ -1243,6 +1238,10 @@ fn validate_command_args(
             && let Some(val) = slot.value.as_ref()
         {
             validate_arg_value(cmd_ctx, vctx, &lookup_key, val, spec_arg, issues);
+        } else if let (Some(spec_arg), Some(default_val)) = (eff, resolved_default.as_ref()) {
+            // Validate resolved defaults too, so producer-provided values obey
+            // the same type/range/profile rules as explicit args.
+            validate_arg_value(cmd_ctx, vctx, &lookup_key, default_val, spec_arg, issues);
         }
     }
 }
@@ -1504,32 +1503,17 @@ fn validate_position_bounds(
     label_state: &mut LabelState,
     issues: &mut Vec<Diagnostic>,
 ) {
-    // Track ^PW and ^LL values for position bounds checking.
-    // Only store finite positive values — NaN/infinity would corrupt bounds.
-    if cmd_ctx.code == "^PW"
-        && let Some(w) = first_arg_f64(cmd_ctx.args)
-        && w.is_finite()
-        && w > 0.0
-    {
-        // Normalize to dots for consistent bounds checking.
-        label_state.effective_width = Some(if let Some(dpi) = vctx.device_state.dpi {
-            convert_to_dots(w, vctx.device_state.units, dpi)
-        } else {
-            w
-        });
+    // Track ^PW and ^LL values for position bounds checking from typed state.
+    if cmd_ctx.code == "^PW" {
+        if let Some(w) = label_state.value_state.layout.print_width {
+            label_state.effective_width = Some(w);
+        }
         label_state.has_explicit_pw = true;
     }
-    if cmd_ctx.code == "^LL"
-        && let Some(h) = first_arg_f64(cmd_ctx.args)
-        && h.is_finite()
-        && h > 0.0
-    {
-        // Normalize to dots for consistent bounds checking.
-        label_state.effective_height = Some(if let Some(dpi) = vctx.device_state.dpi {
-            convert_to_dots(h, vctx.device_state.units, dpi)
-        } else {
-            h
-        });
+    if cmd_ctx.code == "^LL" {
+        if let Some(h) = label_state.value_state.layout.label_length {
+            label_state.effective_height = Some(h);
+        }
         label_state.has_explicit_ll = true;
         // Profile height check is handled by the generic profileConstraint
         // mechanism in validate_command_args() — no hardcoded check here.
@@ -1538,8 +1522,8 @@ fn validate_position_bounds(
     // Track ^FO position for graphic bounds checking (ZPL2308)
     if cmd_ctx.code == "^FO" || cmd_ctx.code == "^FT" {
         // Reset to defaults before parsing — ZPL defaults to (0,0)
-        label_state.last_fo_x = Some(0.0);
-        label_state.last_fo_y = Some(0.0);
+        label_state.last_fo_x = Some(label_state.value_state.label_home.x);
+        label_state.last_fo_y = Some(label_state.value_state.label_home.y);
         if let Some(x_slot) = cmd_ctx.args.first()
             && let Some(x_val) = x_slot.value.as_ref()
             && let Ok(x) = x_val.parse::<f64>()
@@ -1547,21 +1531,25 @@ fn validate_position_bounds(
             // Normalize to dots for consistent bounds comparison (ZPL2308).
             // When ^MU sets inches/mm, ^FO values are in those units, but
             // ^GF dimensions and profile bounds are always in dots.
-            label_state.last_fo_x = Some(if let Some(dpi) = vctx.device_state.dpi {
-                convert_to_dots(x, vctx.device_state.units, dpi)
-            } else {
-                x
-            });
+            label_state.last_fo_x = Some(
+                if let Some(dpi) = vctx.device_state.dpi {
+                    convert_to_dots(x, vctx.device_state.units, dpi)
+                } else {
+                    x
+                } + label_state.value_state.label_home.x,
+            );
         }
         if let Some(y_slot) = cmd_ctx.args.get(1)
             && let Some(y_val) = y_slot.value.as_ref()
             && let Ok(y) = y_val.parse::<f64>()
         {
-            label_state.last_fo_y = Some(if let Some(dpi) = vctx.device_state.dpi {
-                convert_to_dots(y, vctx.device_state.units, dpi)
-            } else {
-                y
-            });
+            label_state.last_fo_y = Some(
+                if let Some(dpi) = vctx.device_state.dpi {
+                    convert_to_dots(y, vctx.device_state.units, dpi)
+                } else {
+                    y
+                } + label_state.value_state.label_home.y,
+            );
         }
     }
 
@@ -2068,6 +2056,7 @@ pub fn validate_with_profile(
     profile: Option<&Profile>,
 ) -> ValidationResult {
     let mut issues = Vec::new();
+    let mut resolved_labels = Vec::new();
     let known = tables.code_set();
 
     let mut device_state = DeviceState::default();
@@ -2158,24 +2147,31 @@ pub fn validate_with_profile(
                 if known.contains(code)
                     && let Some(cmd) = tables.cmd_by_code(code)
                 {
+                    let producer_key = cmd.codes.first().map(String::as_str).unwrap_or(code);
                     if cmd.opens_field {
                         seen_field_codes.clear();
                     }
                     // ZPL2305: Redundant state-setting detection (check BEFORE recording)
                     if cmd.effects.is_some()
-                        && let Some(&consumed) = label_state.producer_consumed.get(code.as_str())
+                        && let Some(&consumed) = label_state.producer_consumed.get(producer_key)
                         && !consumed
                     {
                         issues.push(Diagnostic::info(
                             codes::REDUNDANT_STATE,
-                            format!("{} overrides a previous {} without any command consuming the earlier value", code, code),
+                            format!(
+                                "{} overrides a previous {} without any command consuming the earlier value",
+                                code, producer_key
+                            ),
                             dspan,
-                        ).with_context(ctx!("command" => code)));
+                        ).with_context(ctx!("command" => code, "producer" => producer_key)));
                     }
 
                     // Record state effects before validation so later commands can reference
                     if cmd.effects.is_some() {
-                        label_state.record_producer(code, node_idx);
+                        label_state.record_producer(producer_key, node_idx);
+                        label_state
+                            .value_state
+                            .apply_producer(code, args, &device_state);
                     }
 
                     if !cmd.field_data && (args.len() as u32) > cmd.arity {
@@ -2303,32 +2299,12 @@ pub fn validate_with_profile(
                     // (placed after all validation so device_state isn't mutably
                     // borrowed while ValidationContext holds an immutable ref)
                     if cmd.scope == Some(CommandScope::Session) {
-                        // ^MU: update unit system
                         if code == "^MU" {
-                            if let Some(unit_arg) = args.first().and_then(|a| a.value.as_deref()) {
-                                device_state.units = match unit_arg.to_ascii_uppercase().as_str() {
-                                    "I" => Units::Inches,
-                                    "M" => Units::Millimeters,
-                                    _ => Units::Dots,
-                                };
-                            }
-                            // ^MU DPI conversion applies only when both b and c are provided.
-                            // For validator conversion, use desired_dpi (c) as the active DPI.
-                            let format_base_dpi = args
-                                .get(1)
-                                .and_then(|a| a.value.as_deref())
-                                .and_then(|s| s.parse::<u32>().ok());
-                            let desired_dpi = args
-                                .get(2)
-                                .and_then(|a| a.value.as_deref())
-                                .and_then(|s| s.parse::<u32>().ok());
-                            if format_base_dpi.is_some()
-                                && let Some(dpi) = desired_dpi
-                            {
-                                device_state.dpi = Some(dpi);
-                            }
+                            device_state.apply_mu(args);
                         }
-                        device_state.session_producers.insert(code.to_string());
+                        device_state
+                            .session_producers
+                            .insert(producer_key.to_string());
                     }
 
                     // Track field-local command order for field-scoped constraints.
@@ -2388,6 +2364,12 @@ pub fn validate_with_profile(
             validate_preflight(&vctx, &label_state, label_span, &mut issues);
         }
 
+        resolved_labels.push(ResolvedLabelState {
+            values: label_state.value_state.clone(),
+            effective_width: label_state.effective_width,
+            effective_height: label_state.effective_height,
+        });
+
         // ZPL2202: Empty label check (no printable content)
         if !has_printable {
             let dspan = label.nodes.first().and_then(|n| {
@@ -2406,7 +2388,11 @@ pub fn validate_with_profile(
     }
 
     let ok = !issues.iter().any(|d| matches!(d.severity, Severity::Error));
-    ValidationResult { ok, issues }
+    ValidationResult {
+        ok,
+        issues,
+        resolved_labels,
+    }
 }
 
 /// Validate a ZPL AST without a printer profile.

@@ -10,7 +10,7 @@
       "arity": 7,
       "signature": { "params": ["a","b","c","d","e","f","g"], "joiner": ",", "allowEmptyTrailing": true },
       "args": [
-        { "name": "orientation", "key": "a", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+        { "name": "orientation", "key": "a", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW", "defaultFromStateKey": "field.orientation",
           "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
         { "name": "magnification_factor", "key": "b", "type": "int", "range": [1, 10], "optional": true, "default": 2,
           "doc": "Size multiplier for the symbol modules (1-10)" },

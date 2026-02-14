@@ -10,9 +10,9 @@
       "arity": 8,
       "signature": { "params": ["o","h","s","c","r","f","g","a"], "joiner": ",", "allowEmptyTrailing": true },
       "args": [
-        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW", "defaultFromStateKey": "field.orientation",
           "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
-        { "name": "height", "key": "h", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+        { "name": "height", "key": "h", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY", "defaultFromStateKey": "barcode.height",
           "doc": "Individual symbol element height/width in dots" },
         { "name": "quality", "key": "s", "type": "enum", "enum": ["0", "50", "80", "100", "140", "200"], "optional": true, "default": "0",
           "doc": "Error correction quality level (0=ECC-000 to 200=ECC-200; 200 is recommended)" },

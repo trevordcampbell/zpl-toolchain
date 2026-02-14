@@ -83,7 +83,7 @@ jobs:
         uses: taiki-e/install-action@nextest
 
       - name: Test
-        run: cargo nextest run --workspace --locked --exclude zpl_toolchain_python
+        run: cargo nextest run --workspace --locked
 
   # ── Spec-compiler: validate spec files ────────────────────────────────
   spec-check:

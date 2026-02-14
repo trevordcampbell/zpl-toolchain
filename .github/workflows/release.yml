@@ -50,10 +50,10 @@ jobs:
         uses: taiki-e/install-action@nextest
 
       - name: Test
-        run: cargo nextest run --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+        run: cargo nextest run --workspace --locked --exclude zpl_toolchain_wasm
 
       - name: Clippy
-        run: cargo clippy --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python -- -D warnings
+        run: cargo clippy --workspace --locked --exclude zpl_toolchain_wasm -- -D warnings
 
   # ── Build CLI binaries for each platform ──────────────────────────────
   build-cli:

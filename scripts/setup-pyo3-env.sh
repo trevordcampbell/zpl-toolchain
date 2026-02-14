@@ -26,27 +26,32 @@ lib_dirs="$(
 )"
 
 env_file="${HOME}/.zpl-pyo3-env"
-if ! touch "${env_file}" 2>/dev/null; then
-  fallback_dir="${PWD}/.tmp"
-  mkdir -p "${fallback_dir}"
-  env_file="${fallback_dir}/.zpl-pyo3-env"
-fi
-cat > "${env_file}" <<EOF
+write_env_file() {
+  local target="$1"
+  cat > "${target}" <<EOF
 export PYO3_PYTHON="${PYTHON_BIN}"
 export PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1
 export LIBRARY_PATH="${lib_dirs}\${LIBRARY_PATH:+:\$LIBRARY_PATH}"
 export LD_LIBRARY_PATH="${lib_dirs}\${LD_LIBRARY_PATH:+:\$LD_LIBRARY_PATH}"
 EOF
+}
+
+if ! write_env_file "${env_file}" 2>/dev/null; then
+  fallback_dir="${PWD}/.tmp"
+  mkdir -p "${fallback_dir}"
+  env_file="${fallback_dir}/.zpl-pyo3-env"
+  write_env_file "${env_file}"
+fi
 
 for rc in "${HOME}/.bashrc" "${HOME}/.zshrc"; do
   if [[ "${env_file}" == "${HOME}/.zpl-pyo3-env" ]] && [[ -f "${rc}" ]] && ! grep -q '.zpl-pyo3-env' "${rc}"; then
     {
       echo ""
       echo "# zpl-toolchain PyO3 devcontainer environment"
-      echo "source \"${env_file}\""
+      echo ". \"${env_file}\""
     } >> "${rc}"
   fi
 done
 
 echo "setup-pyo3-env: wrote ${env_file}"
-echo "setup-pyo3-env: source it now with: source \"${env_file}\""
+echo "setup-pyo3-env: source it now with: . \"${env_file}\""

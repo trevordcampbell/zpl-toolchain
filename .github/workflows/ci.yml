@@ -89,6 +89,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: ./.github/actions/setup-rust
+        with:
+          targets: wasm32-unknown-unknown
+          cache-key: ci-ts-core-wasm
+
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@wasm-pack
+
+      - name: Build WASM package for @zpl-toolchain/core
+        run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
+
       - uses: actions/setup-node@v4
         with:
           node-version: "24.13.1"

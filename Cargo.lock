@@ -1119,7 +1119,7 @@ dependencies = [
 
 [[package]]
 name = "zpl_toolchain_cli"
-version = "0.1.11"
+version = "0.1.12"
 dependencies = [
  "anyhow",
  "ariadne",
@@ -1136,7 +1136,7 @@ dependencies = [
 
 [[package]]
 name = "zpl_toolchain_core"
-version = "0.1.7"
+version = "0.2.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -1164,7 +1164,7 @@ dependencies = [
 
 [[package]]
 name = "zpl_toolchain_print_client"
-version = "0.1.5"
+version = "0.1.6"
 dependencies = [
  "futures-lite",
  "nusb",
@@ -1195,7 +1195,7 @@ dependencies = [
 
 [[package]]
 name = "zpl_toolchain_spec_compiler"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "clap",
@@ -1207,7 +1207,7 @@ dependencies = [
 
 [[package]]
 name = "zpl_toolchain_spec_tables"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "serde_json",

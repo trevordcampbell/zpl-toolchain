@@ -1,6 +1,6 @@
 {
   "name": "@zpl-toolchain/cli",
-  "version": "0.1.11",
+  "version": "0.1.12",
   "description": "npx wrapper for the zpl CLI binary",
   "type": "module",
   "engines": {

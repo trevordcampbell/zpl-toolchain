@@ -1,7 +1,7 @@
 //! CLI tests for the `zpl print` subcommand.
 
 use std::fs;
-use std::process::Command;
+use std::process::{Command, Output};
 
 use assert_cmd::cargo;
 
@@ -15,6 +15,24 @@ fn write_temp_zpl(content: &str) -> (tempfile::TempDir, String) {
 
 fn zpl_cmd() -> Command {
     Command::new(cargo::cargo_bin!("zpl"))
+}
+
+fn error_text(output: &Output) -> String {
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    if !stderr.trim().is_empty() {
+        return stderr.to_string();
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    if let Ok(json) = serde_json::from_str::<serde_json::Value>(&stdout) {
+        if let Some(msg) = json.get("message").and_then(|v| v.as_str()) {
+            return msg.to_string();
+        }
+        if let Some(err) = json.get("error").and_then(|v| v.as_str()) {
+            return err.to_string();
+        }
+    }
+    stdout.to_string()
 }
 
 const SAMPLE_ZPL: &str = "^XA\n^FO50,50^A0N,50,50^FDHello World^FS\n^XZ\n";
@@ -215,7 +233,7 @@ fn print_dry_run_mac_without_serial_shows_helpful_error() {
         .unwrap();
 
     assert_eq!(output.status.code(), Some(1));
-    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stderr = error_text(&output);
     assert!(
         stderr.contains("Bluetooth MAC address") && stderr.contains("--serial"),
         "expected helpful MAC guidance, got: {stderr}"
@@ -328,7 +346,7 @@ fn print_serial_mac_address_shows_helpful_error() {
         .unwrap();
 
     assert!(!output.status.success());
-    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stderr = error_text(&output);
     assert!(
         stderr.contains("Bluetooth MAC address")
             && stderr.contains("OS serial port path")
@@ -533,7 +551,7 @@ fn print_tcp_path_rejects_bluetooth_mac_without_dry_run() {
         .unwrap();
 
     assert!(!output.status.success());
-    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stderr = error_text(&output);
     assert!(
         stderr.contains("Bluetooth MAC address")
             && stderr.contains("--serial")
@@ -553,7 +571,7 @@ fn print_serial_usb_conflict() {
         .unwrap();
 
     assert!(!output.status.success());
-    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stderr = error_text(&output);
     assert!(
         stderr.contains("--serial") && stderr.contains("usb") || stderr.contains("USB"),
         "expected serial/usb conflict error, got: {stderr}"
@@ -574,7 +592,7 @@ fn print_missing_file_fails() {
         .unwrap();
 
     assert!(!output.status.success());
-    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stderr = error_text(&output);
     assert!(
         stderr.contains("failed to read") || stderr.contains("No such file"),
         "expected file-not-found error, got: {stderr}"

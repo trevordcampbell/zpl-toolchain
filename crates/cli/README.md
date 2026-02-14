@@ -54,6 +54,13 @@ zpl explain ZPL1201
 |------|-------------|
 | `--output pretty\|json` | Output format (default: auto-detect TTY) |
 
+## JSON Output Contracts
+
+- Most command failures use the generic CLI error envelope:
+  - `{ "success": false, "error": "command_failed", "message": "..." }`
+- `zpl doctor` intentionally returns a structured diagnostics object in both success and failure cases:
+  - `{ "success": <bool>, "tables": {...}, "profile": {...|null}, "printer": {...|null} }`
+
 ## Print Command Flags
 
 | Flag | Description |

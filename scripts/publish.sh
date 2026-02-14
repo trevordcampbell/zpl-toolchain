@@ -198,7 +198,7 @@ cmd_npm() {
     success "WASM build complete"
 
     step "Installing dependencies & building @zpl-toolchain/core"
-    (cd "$ROOT_DIR/packages/ts/core" && npm install && npm run build)
+    (cd "$ROOT_DIR/packages/ts/core" && npm ci && npm run build)
     success "TypeScript build complete"
 
     step "Configuring npm auth (@zpl-toolchain/core)"
@@ -218,7 +218,7 @@ cmd_npm() {
     # ── @zpl-toolchain/print (pure TS) ────────────────────────────────────────
 
     step "Building @zpl-toolchain/print"
-    (cd "$ROOT_DIR/packages/ts/print" && npm install && npm run build)
+    (cd "$ROOT_DIR/packages/ts/print" && npm ci && npm run build)
     success "@zpl-toolchain/print build complete"
 
     step "Configuring npm auth (@zpl-toolchain/print)"
@@ -234,6 +234,26 @@ cmd_npm() {
     (cd "$ROOT_DIR/packages/ts/print" && NPM_TOKEN="$npmjs_api_key" npm publish "${npm_flags[@]}")
     rm -f "$npmrc_print"
     success "@zpl-toolchain/print published to npm!"
+
+    # ── @zpl-toolchain/cli (npx wrapper) ──────────────────────────────────────
+
+    step "Testing @zpl-toolchain/cli"
+    (cd "$ROOT_DIR/packages/ts/cli" && npm test)
+    success "@zpl-toolchain/cli tests passed"
+
+    step "Configuring npm auth (@zpl-toolchain/cli)"
+    local npmrc_cli="$ROOT_DIR/packages/ts/cli/.npmrc"
+    echo "//registry.npmjs.org/:_authToken=\${NPM_TOKEN}" > "$npmrc_cli"
+
+    step "Publishing @zpl-toolchain/cli to npm"
+    if [[ "$LIVE" != "true" ]]; then
+        info "(dry-run) npm publish ${npm_flags[*]}"
+    else
+        info "npm publish ${npm_flags[*]}"
+    fi
+    (cd "$ROOT_DIR/packages/ts/cli" && NPM_TOKEN="$npmjs_api_key" npm publish "${npm_flags[@]}")
+    rm -f "$npmrc_cli"
+    success "@zpl-toolchain/cli published to npm!"
 }
 
 cmd_pypi() {
@@ -277,7 +297,7 @@ Usage: $(basename "$0") <command> [--live]
 
 Commands:
   crates    Publish Rust crates to crates.io (7 crates, dependency-ordered)
-  npm       Build WASM + publish @zpl-toolchain/core and @zpl-toolchain/print to npm
+  npm       Build WASM + publish @zpl-toolchain/core, @zpl-toolchain/print, @zpl-toolchain/cli to npm
   pypi      Build Python wheel + publish zpl-toolchain to PyPI
   all       Publish to all registries (crates -> npm -> pypi)
 

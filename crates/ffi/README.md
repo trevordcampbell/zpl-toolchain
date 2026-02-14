@@ -35,12 +35,34 @@ char* zpl_parse_with_tables(const char* input, const char* tables_json);
 // profile_json may be NULL.
 char* zpl_validate(const char* input, const char* profile_json);
 
+// Parse + validate with explicit tables → JSON { "ok": ..., "issues": [...] }
+// profile_json may be NULL.
+char* zpl_validate_with_tables(const char* input, const char* tables_json, const char* profile_json);
+
 // Format ZPL → formatted string
 // indent may be NULL ("none"), "label", or "field".
 char* zpl_format(const char* input, const char* indent);
 
 // Explain a diagnostic code → string or NULL
 char* zpl_explain(const char* id);
+
+// Print and query APIs (non-WASM targets) --------------------------------
+// Print ZPL over TCP.
+char* zpl_print(const char* zpl, const char* printer_addr, const char* profile_json, bool validate);
+char* zpl_print_with_options(
+  const char* zpl,
+  const char* printer_addr,
+  const char* profile_json,
+  bool validate,
+  unsigned long long timeout_ms,
+  const char* config_json
+);
+
+// Query ~HS / ~HI.
+char* zpl_query_status(const char* printer_addr);
+char* zpl_query_status_with_options(const char* printer_addr, unsigned long long timeout_ms, const char* config_json);
+char* zpl_query_info(const char* printer_addr);
+char* zpl_query_info_with_options(const char* printer_addr, unsigned long long timeout_ms, const char* config_json);
 
 // Free a string returned by any zpl_* function. NULL-safe.
 void zpl_free(char* ptr);

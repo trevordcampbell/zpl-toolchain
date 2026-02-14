@@ -312,6 +312,10 @@
           "description": "DPI-dependent default values: keys are DPI strings (e.g., '203', '300'), values are the defaults at that DPI"
         },
         "defaultFrom": { "type": "string", "description": "Dependency command or state (e.g., ^FW, ^CF)" },
+        "defaultFromStateKey": {
+          "type": "string",
+          "description": "Required when defaultFrom is present. Explicit state key resolved from the defaultFrom producer effects.sets (e.g., barcode.height)"
+        },
 
         // Conditional numeric rules (handled by validator)
         "rangeWhen": { "type": "array", "items": { "$ref": "#/$defs/conditionalRange" } },
@@ -340,6 +344,9 @@
         "extras": { "type": "object", "additionalProperties": true }
       },
       "required": ["name", "type"],
+      "dependentRequired": {
+        "defaultFrom": ["defaultFromStateKey"]
+      },
       "additionalProperties": false
     },
 

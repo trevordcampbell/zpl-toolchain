@@ -31,6 +31,7 @@ Releases are fully automated via [release-plz](https://release-plz.ieni.dev/) an
 | Build from source | `cargo install zpl_toolchain_cli` |
 | Pre-built binary (binstall) | `cargo binstall zpl_toolchain_cli` |
 | Pre-built binary (download) | [GitHub Releases](https://github.com/trevordcampbell/zpl-toolchain/releases) |
+| npx wrapper (downloads binary on first run) | `npx @zpl-toolchain/cli --help` |
 
 `cargo binstall` metadata is configured in the CLI's `Cargo.toml` so that
 [`cargo-binstall`](https://github.com/cargo-bins/cargo-binstall) can download
@@ -59,6 +60,16 @@ For emergencies or manual one-off publishes, use `scripts/publish.sh`:
 ./scripts/publish.sh all --live       # publish everything
 ```
 
+> When publishing npm packages manually, ensure the GitHub Release for the target version already exists and includes uploaded CLI binaries. The `@zpl-toolchain/cli` package downloads those release assets at runtime.
+
+For manual publishing, create a repo-root `.env` with:
+
+```bash
+crates_api_key=...
+npmjs_api_key=...
+pypi_api_key=...
+```
+
 To rebuild CLI/FFI binaries and upload them to an existing GitHub Release (e.g. if
 the automated upload failed), trigger the manual workflow from the GitHub Actions UI:
 **Actions → Release (manual) → Run workflow → enter the tag (e.g. `v0.3.0`)**.
@@ -80,9 +91,12 @@ Quick smoke test:
 
 ```bash
 cargo fmt --all -- --check
-cargo clippy --workspace --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python -- -D warnings
+cargo clippy --workspace -- -D warnings
 cargo nextest run --workspace --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
-(cd packages/ts/print && npm install && npm run build && npm test)
+(cd packages/ts/print && npm ci && npm run build && npm test)
+(cd packages/ts/cli && npm test)
+bash scripts/test-python-wheel-local.sh
+bash scripts/test-dotnet-local.sh
 ```
 
 ## Version scheme
@@ -146,7 +160,7 @@ they are distributed through npm, PyPI, and binary downloads instead.
 |--------|---------|---------|
 | `RELEASE_PLZ_TOKEN` | GitHub PAT (contents + PRs) | release-plz.yml |
 | `CARGO_REGISTRY_TOKEN` | crates.io | release-plz.yml |
-| `NPM_TOKEN` | npmjs.com (`@zpl-toolchain/core` + `@zpl-toolchain/print`) | release-plz.yml |
+| `NPM_TOKEN` | npmjs.com (`@zpl-toolchain/core`, `@zpl-toolchain/print`, `@zpl-toolchain/cli`) | release-plz.yml |
 | `PYPI_TOKEN` | pypi.org | release-plz.yml |
 
 ## Git hooks
@@ -156,7 +170,7 @@ The `.githooks/` directory contains three hooks, activated via `git config core.
 | Hook | Trigger | Checks |
 |------|---------|--------|
 | `commit-msg` | Every commit | Conventional Commits format |
-| `pre-commit` | Every commit | Parser tables sync + `cargo fmt --check` |
+| `pre-commit` | Every commit | Parser tables sync + `cargo fmt --check` + clippy on staged Rust changes |
 | `pre-push` | Every push | `cargo clippy -D warnings` + full test suite |
 
 Skip any hook when needed: `git commit --no-verify` or `git push --no-verify`.

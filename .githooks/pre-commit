@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 #
-# pre-commit — Fast checks before every commit.
-# Runs: parser-tables sync + formatting check (< 1 second total).
-# Heavier checks (clippy, tests) go in pre-push.
+# pre-commit — Checks before every commit.
+# Runs parser-tables sync + formatting check, and runs clippy when Rust files are staged.
 
 set -e
 
@@ -37,4 +36,24 @@ if ! cargo fmt --all -- --check; then
     echo "  Formatting check failed. Run 'cargo fmt' to fix, then re-stage."
     echo ""
     exit 1
+fi
+
+rust_changes=0
+while IFS= read -r path; do
+    case "$path" in
+        *.rs|Cargo.toml|Cargo.lock)
+            rust_changes=1
+            break
+            ;;
+    esac
+done < <(git diff --cached --name-only --diff-filter=ACMR)
+
+if [ "$rust_changes" -eq 1 ]; then
+    echo "pre-commit: running clippy..."
+    if ! PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 cargo clippy --workspace --locked -- -D warnings; then
+        echo ""
+        echo "  Clippy found warnings. Fix them before committing."
+        echo ""
+        exit 1
+    fi
 fi

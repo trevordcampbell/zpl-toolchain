@@ -1,6 +1,6 @@
 # Publish All Packages — Plan
 
-> **Status (2026-02-09):** All phases complete. v0.1.4 published to crates.io, npm, and PyPI. All future releases are automated via release-plz (including Go module tagging).
+> **Status (2026-02-14):** All phases complete. v0.1.11 published to crates.io, npm, and PyPI. All future releases are automated via release-plz (including Go module tagging).
 
 ## How releases work
 

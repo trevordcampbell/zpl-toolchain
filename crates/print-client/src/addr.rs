@@ -55,56 +55,56 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_ip_with_port() {
+    fn resolves_ipv4_with_explicit_port() {
         let addr = resolve_printer_addr("192.168.1.55:9100").unwrap();
         assert_eq!(addr.ip().to_string(), "192.168.1.55");
         assert_eq!(addr.port(), 9100);
     }
 
     #[test]
-    fn test_ip_with_custom_port() {
+    fn resolves_ipv4_with_custom_port() {
         let addr = resolve_printer_addr("10.0.0.1:6101").unwrap();
         assert_eq!(addr.ip().to_string(), "10.0.0.1");
         assert_eq!(addr.port(), 6101);
     }
 
     #[test]
-    fn test_ip_without_port_defaults_to_9100() {
+    fn defaults_ipv4_to_port_9100_when_port_missing() {
         let addr = resolve_printer_addr("192.168.1.55").unwrap();
         assert_eq!(addr.ip().to_string(), "192.168.1.55");
         assert_eq!(addr.port(), DEFAULT_PORT);
     }
 
     #[test]
-    fn test_ipv6_with_port() {
+    fn resolves_ipv6_with_explicit_port() {
         let addr = resolve_printer_addr("[::1]:9100").unwrap();
         assert!(addr.ip().is_loopback());
         assert_eq!(addr.port(), 9100);
     }
 
     #[test]
-    fn test_ipv6_without_port() {
+    fn defaults_ipv6_to_port_9100_when_port_missing() {
         let addr = resolve_printer_addr("::1").unwrap();
         assert!(addr.ip().is_loopback());
         assert_eq!(addr.port(), DEFAULT_PORT);
     }
 
     #[test]
-    fn test_localhost_with_port() {
+    fn resolves_localhost_with_explicit_port() {
         let addr = resolve_printer_addr("localhost:9100").unwrap();
         assert!(addr.ip().is_loopback());
         assert_eq!(addr.port(), 9100);
     }
 
     #[test]
-    fn test_localhost_without_port() {
+    fn resolves_localhost_with_default_port() {
         let addr = resolve_printer_addr("localhost").unwrap();
         assert!(addr.ip().is_loopback());
         assert_eq!(addr.port(), DEFAULT_PORT);
     }
 
     #[test]
-    fn test_unresolvable_hostname() {
+    fn returns_no_address_found_for_unresolvable_hostname() {
         let result = resolve_printer_addr("no-such-host.invalid");
         assert!(result.is_err());
         match result.unwrap_err() {
@@ -114,7 +114,7 @@ mod tests {
     }
 
     #[test]
-    fn test_garbage_input() {
+    fn returns_no_address_found_for_invalid_address_text() {
         let result = resolve_printer_addr("not a valid address!!!");
         assert!(result.is_err());
         match result.unwrap_err() {

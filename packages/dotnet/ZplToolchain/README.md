@@ -41,6 +41,10 @@ var formatted = Zpl.Format("^XA^FD Hello ^FS^XZ", "label");
 var validation = Zpl.Validate("^XA^FDHello^FS^XZ");
 Console.WriteLine($"OK: {validation.Ok}");
 
+// Validate with explicit parser tables
+string parserTablesJson = "{}"; // parser tables JSON payload
+var validation2 = Zpl.ValidateWithTables("^XA^FDHello^FS^XZ", parserTablesJson);
+
 // Explain a diagnostic code
 var explanation = Zpl.Explain("ZPL1201");
 
@@ -52,9 +56,13 @@ Console.WriteLine($"Sent {printResult.BytesSent} bytes");
 string profileJson = File.ReadAllText("my-printer-profile.json");
 var result2 = Zpl.Print("^XA^FDHello^FS^XZ", "192.168.1.100", profileJson: profileJson);
 
-// Query printer status
-string statusJson = Zpl.QueryStatus("192.168.1.100");
-Console.WriteLine(statusJson);
+// Query printer status (typed)
+HostStatus status = Zpl.QueryStatusTyped("192.168.1.100");
+Console.WriteLine(status.PrintMode);
+
+// Query printer info (typed)
+PrinterInfo info = Zpl.QueryInfoTyped("192.168.1.100");
+Console.WriteLine($"{info.Model} ({info.Firmware})");
 ```
 
 ## API
@@ -64,14 +72,23 @@ Console.WriteLine(statusJson);
 | `Zpl.Parse` | `(string input) → ParseResult` | Parse ZPL, return AST + diagnostics |
 | `Zpl.ParseWithTables` | `(string input, string tablesJson) → ParseResult` | Parse with explicit tables |
 | `Zpl.Validate` | `(string input, string? profileJson) → ValidationResult` | Parse + validate |
+| `Zpl.ValidateWithTables` | `(string input, string tablesJson, string? profileJson) → ValidationResult` | Parse + validate with explicit tables |
 | `Zpl.Format` | `(string input, string? indent) → string` | Format ZPL |
 | `Zpl.Explain` | `(string id) → string?` | Explain a diagnostic code |
 | `Zpl.Print` | `(string zpl, string printerAddr, string? profileJson, bool validate) → PrintResult` | Send ZPL to a network printer |
-| `Zpl.QueryStatus` | `(string printerAddr) → string` | Query printer host status |
+| `Zpl.PrintWithOptions` | `(string zpl, string printerAddr, string? profileJson, bool validate, ulong? timeoutMs, string? configJson) → PrintResult` | Print with timeout/config overrides |
+| `Zpl.QueryStatus` | `(string printerAddr) → string` | Query printer host status (raw JSON) |
+| `Zpl.QueryStatusWithOptions` | `(string printerAddr, ulong? timeoutMs, string? configJson) → string` | Query status with timeout/config overrides |
+| `Zpl.QueryStatusTyped` | `(string printerAddr, ulong? timeoutMs, string? configJson) → HostStatus` | Query printer host status (typed) |
+| `Zpl.QueryInfo` | `(string printerAddr) → string` | Query printer identification (raw JSON) |
+| `Zpl.QueryInfoWithOptions` | `(string printerAddr, ulong? timeoutMs, string? configJson) → string` | Query info with timeout/config overrides |
+| `Zpl.QueryInfoTyped` | `(string printerAddr, ulong? timeoutMs, string? configJson) → PrinterInfo` | Query printer identification (typed) |
 
 ## Types
 
 The `Node` type uses a custom `JsonConverter` to handle Rust's internally-tagged enum format (`{"kind": "Command", ...}`). Check the `Kind` property to determine which fields are populated.
+
+`ValidationResult` also includes optional `resolved_labels` entries that expose renderer-ready per-label resolved state snapshots (`values`, `effective_width`, `effective_height`).
 
 See `Types.cs` for full type definitions.
 

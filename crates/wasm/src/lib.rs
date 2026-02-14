@@ -32,11 +32,25 @@ pub fn parse_with_tables_js(input: &str, tables_json: &str) -> Result<JsValue, J
 
 /// Parse and validate a ZPL string.
 ///
-/// Returns `{ ok, issues }`. Optionally accepts a printer profile JSON
+/// Returns `{ ok, issues, resolved_labels }`. Optionally accepts a printer profile JSON
 /// string for contextual validation (e.g., print width bounds).
 #[wasm_bindgen(js_name = "validate")]
 pub fn validate_zpl(input: &str, profile_json: Option<String>) -> Result<JsValue, JsError> {
     let vr = common::validate_zpl(input, profile_json.as_deref()).map_err(|e| JsError::new(&e))?;
+    to_js(&vr)
+}
+
+/// Parse and validate a ZPL string with explicitly provided parser tables (JSON string).
+///
+/// Returns `{ ok, issues, resolved_labels }`.
+#[wasm_bindgen(js_name = "validateWithTables")]
+pub fn validate_with_tables_js(
+    input: &str,
+    tables_json: &str,
+    profile_json: Option<String>,
+) -> Result<JsValue, JsError> {
+    let vr = common::validate_zpl_with_tables_json(input, profile_json.as_deref(), tables_json)
+        .map_err(|e| JsError::new(&e))?;
     to_js(&vr)
 }
 

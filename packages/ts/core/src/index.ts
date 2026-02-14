@@ -106,10 +106,64 @@ export interface ParseResult {
   diagnostics: Diagnostic[];
 }
 
+/** Typed defaults from `^BY`. */
+export interface BarcodeDefaults {
+  module_width?: number | null;
+  ratio?: number | null;
+  height?: number | null;
+}
+
+/** Typed defaults from `^CF`. */
+export interface FontDefaults {
+  font?: string | null;
+  height?: number | null;
+  width?: number | null;
+}
+
+/** Typed defaults from `^FW`. */
+export interface FieldOrientationDefaults {
+  orientation?: string | null;
+  justification?: number | null;
+}
+
+/** Typed label-home from `^LH` (always present). */
+export interface LabelHome {
+  x: number;
+  y: number;
+}
+
+/** Typed layout defaults (`^PW`, `^LL`, `^PO`, `^PM`, `^LR`, `^LT`, `^LS`). */
+export interface LayoutDefaults {
+  print_width?: number | null;
+  label_length?: number | null;
+  print_orientation?: string | null;
+  mirror_image?: string | null;
+  reverse_print?: string | null;
+  label_top?: number | null;
+  label_shift?: number | null;
+}
+
+/** Typed per-label state snapshot. */
+export interface LabelValueState {
+  barcode: BarcodeDefaults;
+  font: FontDefaults;
+  field: FieldOrientationDefaults;
+  label_home: LabelHome;
+  layout: LayoutDefaults;
+}
+
+/** Renderer-ready resolved label state from validator output. */
+export interface ResolvedLabelState {
+  values: LabelValueState;
+  effective_width?: number | null;
+  effective_height?: number | null;
+}
+
 /** Result of validating a ZPL string. */
 export interface ValidationResult {
   ok: boolean;
   issues: Diagnostic[];
+  resolved_labels?: ResolvedLabelState[];
 }
 
 /** Indentation style for the formatter. */
@@ -152,6 +206,20 @@ function ensureInit(): NonNullable<typeof wasmModule> {
   return wasmModule;
 }
 
+function invokeWasm<T>(op: string, fn: () => T): T {
+  try {
+    return fn();
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : String(error ?? "unknown error");
+    const wrapped = new Error(`@zpl-toolchain/core ${op} failed: ${message}`);
+    if (error instanceof Error) {
+      wrapped.cause = error;
+    }
+    throw wrapped;
+  }
+}
+
 // ── Public API ──────────────────────────────────────────────────────────
 
 /**
@@ -161,7 +229,7 @@ function ensureInit(): NonNullable<typeof wasmModule> {
  */
 export function parse(input: string): ParseResult {
   const wasm = ensureInit();
-  return wasm.parse(input) as ParseResult;
+  return invokeWasm("parse", () => wasm.parse(input) as ParseResult);
 }
 
 /**
@@ -172,7 +240,10 @@ export function parseWithTables(
   tablesJson: string
 ): ParseResult {
   const wasm = ensureInit();
-  return wasm.parseWithTables(input, tablesJson) as ParseResult;
+  return invokeWasm(
+    "parseWithTables",
+    () => wasm.parseWithTables(input, tablesJson) as ParseResult
+  );
 }
 
 /**
@@ -186,7 +257,29 @@ export function validate(
   profileJson?: string
 ): ValidationResult {
   const wasm = ensureInit();
-  return wasm.validate(input, profileJson) as ValidationResult;
+  return invokeWasm(
+    "validate",
+    () => wasm.validate(input, profileJson) as ValidationResult
+  );
+}
+
+/**
+ * Parse and validate a ZPL string with explicitly provided parser tables.
+ *
+ * @param input ZPL source code.
+ * @param tablesJson Parser tables JSON string.
+ * @param profileJson Optional printer profile JSON string.
+ */
+export function validateWithTables(
+  input: string,
+  tablesJson: string,
+  profileJson?: string
+): ValidationResult {
+  const wasm = ensureInit();
+  return invokeWasm(
+    "validateWithTables",
+    () => wasm.validateWithTables(input, tablesJson, profileJson) as ValidationResult
+  );
 }
 
 /**
@@ -197,7 +290,7 @@ export function validate(
  */
 export function format(input: string, indent?: IndentStyle): string {
   const wasm = ensureInit();
-  return wasm.format(input, indent);
+  return invokeWasm("format", () => wasm.format(input, indent));
 }
 
 /**
@@ -207,5 +300,5 @@ export function format(input: string, indent?: IndentStyle): string {
  */
 export function explain(id: string): string | null {
   const wasm = ensureInit();
-  return wasm.explain(id) ?? null;
+  return invokeWasm("explain", () => wasm.explain(id) ?? null);
 }

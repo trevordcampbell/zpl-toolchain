@@ -29,7 +29,7 @@ ZPL II is the standard language for Zebra thermal label printers, used across lo
 
 ### Validation
 
-- **Table-driven validator** — arity, types, ranges, enums, cross-command state, constraint DSL (`requires`, `incompatible`, `order`, `emptyData`), profile-aware bounds checking
+- **Table-driven validator** — arity, types, ranges, enums, typed cross-command state defaults (`defaultFrom` + `defaultFromStateKey`), constraint DSL (`requires`, `incompatible`, `order`, `emptyData`), profile-aware bounds checking
 - **Preflight diagnostics** — graphics bounds checking (`^GF` exceeds printable area), memory estimation (`^GF` total exceeds printer RAM), and missing explicit label dimension warnings — catch layout issues before printing
 - **Barcode data validation** — field data checked against barcode symbology rules (Code 128, QR, EAN/UPC, etc.)
 
@@ -50,7 +50,7 @@ ZPL II is the standard language for Zebra thermal label printers, used across lo
 
 ### Developer Experience
 
-- **CLI** — `parse`, `syntax-check`, `lint`, `format`, `print`, `explain` with `--output pretty|json` auto-detection
+- **CLI** — `parse`, `syntax-check` (`check` alias), `lint` (`validate` alias), `format`, `print`, `explain`, `doctor` with `--output pretty|json` auto-detection
 - **Language bindings** — unified API across WASM, Python, C FFI, Go, and .NET
 - **Zero clippy warnings, 465+ passing tests** — parser, validator, emitter, print client, preflight, batch API, browser SDK, and more
 
@@ -65,6 +65,8 @@ ZPL II is the standard language for Zebra thermal label printers, used across lo
 cargo install zpl_toolchain_cli
 # Or use cargo-binstall for a pre-built binary (no compile wait):
 cargo binstall zpl_toolchain_cli
+# Or use the npm wrapper (downloads a pre-built binary on first run):
+npx @zpl-toolchain/cli --help
 
 # TypeScript
 npm install @zpl-toolchain/core     # parsing, validation, formatting (WASM)
@@ -78,6 +80,7 @@ go get github.com/trevordcampbell/zpl-toolchain/packages/go/zpltoolchain
 ```
 
 > Pre-built binaries are also available from [GitHub Releases](https://github.com/trevordcampbell/zpl-toolchain/releases).
+> The npm wrapper currently supports `linux/x64`, `darwin/arm64`, and `win32/x64`. For unsupported platforms (for example Intel Mac or Linux ARM64), use `cargo install zpl_toolchain_cli`.
 
 ### Lint a label
 
@@ -128,11 +131,15 @@ COMMANDS:
   lint           Parse + validate with optional printer profile
   format         Auto-format ZPL files
   print          Send ZPL to a printer (TCP, USB, or serial)
+  serial-probe   Probe serial/Bluetooth endpoint health
   explain        Explain a diagnostic code (e.g., ZPL1401)
+  doctor         Run environment/configuration diagnostics
 
 GLOBAL OPTIONS:
   --output <pretty|json>   Output format (default: auto-detect TTY)
 ```
+
+`parse`, `syntax-check`, `lint`, and `format` accept `-` as the file path to read ZPL from stdin.
 
 ### Print command
 
@@ -235,15 +242,15 @@ All bindings expose the same core API: **parse**, **validate**, **format**, **ex
 Transport scope for printing is runtime-specific:
 - CLI + Rust print-client API: TCP + USB + serial/Bluetooth
 - TypeScript `@zpl-toolchain/print`: TCP (plus browser proxy/Browser Print integrations)
-- Python / Go / .NET / C FFI wrappers: TCP print + status
+- Python / Go / .NET / C FFI wrappers: TCP print + `~HS` status + `~HI` info
 
 | Language | Package | Mechanism | Print Support |
 |----------|---------|-----------|---------------|
 | TypeScript | [`@zpl-toolchain/core`](packages/ts/core/) | WASM | [`@zpl-toolchain/print`](packages/ts/print/) — TCP, batch, proxy, browser |
-| Python | [`zpl_toolchain`](crates/python/) | PyO3 / maturin | `print_zpl()`, `query_printer_status()` |
-| Go | [`zpltoolchain`](packages/go/zpltoolchain/) | cgo over C FFI | `Print()`, `QueryStatus()` |
-| .NET (C#) | [`ZplToolchain`](packages/dotnet/ZplToolchain/) | P/Invoke over C FFI | `Zpl.Print()`, `Zpl.QueryStatus()` |
-| C | [`zpl_toolchain_ffi`](crates/ffi/) | cdylib + staticlib | `zpl_print()`, `zpl_query_status()` |
+| Python | [`zpl_toolchain`](crates/python/) | PyO3 / maturin | `print_zpl[_with_options]()`, `query_printer_status[_with_options]()`, `query_printer_info[_with_options]()` |
+| Go | [`zpltoolchain`](packages/go/zpltoolchain/) | cgo over C FFI | `ValidateWithTables()`, `Print[WithOptions]()`, `QueryStatus[Typed|WithOptions]()`, `QueryInfo[Typed|WithOptions]()` |
+| .NET (C#) | [`ZplToolchain`](packages/dotnet/ZplToolchain/) | P/Invoke over C FFI | `Zpl.ValidateWithTables()`, `Zpl.Print[WithOptions]()`, `Zpl.QueryStatus[Typed|WithOptions]()`, `Zpl.QueryInfo[Typed|WithOptions]()` |
+| C | [`zpl_toolchain_ffi`](crates/ffi/) | cdylib + staticlib | `zpl_validate_with_tables()`, `zpl_print[_with_options]()`, `zpl_query_status[_with_options]()`, `zpl_query_info[_with_options]()` |
 
 ### TypeScript
 
@@ -252,8 +259,8 @@ import { validate } from '@zpl-toolchain/core';
 import { print, TcpPrinter } from '@zpl-toolchain/print';
 
 // One-shot: validate and print
-const issues = validate('^XA^FO50,50^FDHello^FS^XZ');
-if (issues.length === 0) {
+const validation = validate('^XA^FO50,50^FDHello^FS^XZ');
+if (validation.ok) {
   await print('^XA^FO50,50^FDHello^FS^XZ', { host: '192.168.1.55' });
 }
 
@@ -270,7 +277,7 @@ await printer.close();
 ```python
 from zpl_toolchain import validate, print_zpl
 
-issues = validate("^XA^FO50,50^FDHello^FS^XZ")
+validation = validate("^XA^FO50,50^FDHello^FS^XZ")
 result = print_zpl("^XA^FO50,50^FDHello^FS^XZ", "192.168.1.55")
 ```
 
@@ -335,7 +342,7 @@ See the [Profile Guide](docs/PROFILE_GUIDE.md) for details on creating custom pr
 zpl-toolchain/
   crates/
     core/              Parser, validator, emitter, AST
-    cli/               CLI (parse, lint, format, print, coverage, explain)
+    cli/               CLI (parse, syntax-check, lint, format, print, explain)
     print-client/      TCP, USB, serial print client with retry and batch
     diagnostics/       46 diagnostic codes (auto-generated from spec)
     spec-tables/       Shared types (CommandEntry, Arg, Constraint, etc.)
@@ -348,6 +355,7 @@ zpl-toolchain/
   packages/
     ts/core/           @zpl-toolchain/core (TypeScript, WASM-based)
     ts/print/          @zpl-toolchain/print (TypeScript, Node.js TCP)
+    ts/cli/            @zpl-toolchain/cli (npx wrapper for pre-built CLI binary)
     go/zpltoolchain/   Go wrapper (cgo)
     dotnet/ZplToolchain/  .NET wrapper (P/Invoke)
   spec/

@@ -103,6 +103,41 @@ Notes:
 
 Use `args[]` for numeric ranges and enums (e.g., module width/ratio/height, orientation and flags). Prefer `constraints[]` for ordering/requirements (e.g., `requires:^BY` for barcodes needing module width default).
 
+## Cross-command defaults (`defaultFrom`)
+
+When a consumer arg inherits from producer state:
+
+- declare producer state keys in `effects.sets` on the producer command
+- declare `defaultFrom` on the consumer arg
+- add `defaultFromStateKey` whenever `defaultFrom` is used
+
+Example (`^BY` producer + barcode consumer):
+
+```jsonc
+// producer
+"effects": { "sets": ["barcode.moduleWidth", "barcode.ratio", "barcode.height"] }
+```
+
+```jsonc
+// consumer arg
+{
+  "name": "height",
+  "key": "h",
+  "type": "int",
+  "unit": "dots",
+  "optional": true,
+  "defaultFrom": "^BY",
+  "defaultFromStateKey": "barcode.height"
+}
+```
+
+Compiler validation rules:
+
+- `defaultFrom` must reference a known command with `effects.sets`
+- `defaultFromStateKey` is required when `defaultFrom` is present
+- `defaultFromStateKey` must exist in producer `effects.sets`
+- use canonical keys declared by producers in `effects.sets` (see `docs/STATE_MAP.md` and generated `state_keys.json`)
+
 ## Validation & build
 
 - Run `zpl-spec-compiler build` to validate files against the schema and emit parser tables.

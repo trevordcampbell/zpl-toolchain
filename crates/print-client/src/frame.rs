@@ -129,7 +129,7 @@ mod tests {
     use std::io::Cursor;
 
     #[test]
-    fn test_single_frame() {
+    fn reads_single_framed_payload() {
         let data = [0x02, b'H', b'e', b'l', b'l', b'o', 0x03];
         let mut cursor = Cursor::new(data);
         let frames = read_frames(
@@ -144,7 +144,7 @@ mod tests {
     }
 
     #[test]
-    fn test_three_frames_like_hs() {
+    fn reads_three_frames_for_hs_like_response() {
         let mut data = Vec::new();
         data.push(STX);
         data.extend_from_slice(b"030,0,0,1245,000,0,0,0,000,0,0,0");
@@ -173,7 +173,7 @@ mod tests {
     }
 
     #[test]
-    fn test_garbage_before_first_frame() {
+    fn skips_leading_garbage_before_first_stx() {
         let mut data = Vec::new();
         data.extend_from_slice(b"\r\n\r\n");
         data.push(STX);
@@ -193,7 +193,7 @@ mod tests {
     }
 
     #[test]
-    fn test_frame_too_large() {
+    fn errors_when_frame_exceeds_max_size() {
         let mut data = Vec::new();
         data.push(STX);
         data.extend(vec![b'X'; 2000]);
@@ -209,7 +209,7 @@ mod tests {
     }
 
     #[test]
-    fn test_empty_frame() {
+    fn allows_empty_frame_between_stx_etx() {
         let data = [STX, ETX];
         let mut cursor = Cursor::new(data);
         let frames = read_frames(
@@ -224,7 +224,7 @@ mod tests {
     }
 
     #[test]
-    fn test_empty_input() {
+    fn returns_connection_closed_on_empty_input() {
         let data: &[u8] = &[];
         let mut cursor = Cursor::new(data);
         let result = read_frames(
@@ -237,7 +237,7 @@ mod tests {
     }
 
     #[test]
-    fn test_expected_count_zero() {
+    fn returns_immediately_when_expected_count_is_zero() {
         let data = [STX, b'A', ETX];
         let mut cursor = Cursor::new(data);
         let frames = read_frames(
@@ -251,7 +251,7 @@ mod tests {
     }
 
     #[test]
-    fn test_back_to_back_frames() {
+    fn parses_back_to_back_frames_in_single_buffer() {
         let data = [STX, b'A', ETX, STX, b'B', ETX];
         let mut cursor = Cursor::new(data);
         let frames = read_frames(
@@ -267,7 +267,7 @@ mod tests {
     }
 
     #[test]
-    fn test_garbage_only_no_stx() {
+    fn returns_connection_closed_when_no_stx_is_seen() {
         let data = [0x0D, 0x0A, b'x', b'y'];
         let mut cursor = Cursor::new(data);
         let result = read_frames(
@@ -280,7 +280,7 @@ mod tests {
     }
 
     #[test]
-    fn test_frame_at_exact_max_size() {
+    fn accepts_frame_at_exact_max_size() {
         let mut data = Vec::new();
         data.push(STX);
         data.extend(vec![b'X'; 1024]);
@@ -293,7 +293,7 @@ mod tests {
     }
 
     #[test]
-    fn test_frame_one_byte_over_max() {
+    fn rejects_frame_one_byte_over_max_size() {
         let mut data = Vec::new();
         data.push(STX);
         data.extend(vec![b'X'; 1025]);
@@ -305,7 +305,7 @@ mod tests {
     }
 
     #[test]
-    fn test_connection_closed_mid_frame() {
+    fn errors_when_connection_closes_mid_frame() {
         let data = [STX, b'p', b'a', b'r', b't', b'i', b'a', b'l'];
         let mut cursor = Cursor::new(data);
         let result = read_frames(

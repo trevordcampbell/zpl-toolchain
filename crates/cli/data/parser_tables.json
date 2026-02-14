@@ -6,6 +6,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^CF",
+          "defaultFromStateKey": "font.name",
           "enum": null,
           "key": "f",
           "maxLength": null,
@@ -26,6 +27,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -51,6 +53,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^CF",
+          "defaultFromStateKey": "font.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -74,6 +77,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^CF",
+          "defaultFromStateKey": "font.width",
           "enum": null,
           "key": "w",
           "maxLength": null,
@@ -149,6 +153,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -174,6 +179,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^CF",
+          "defaultFromStateKey": "font.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -197,6 +203,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^CF",
+          "defaultFromStateKey": "font.width",
           "enum": null,
           "key": "w",
           "maxLength": null,
@@ -220,6 +227,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "n",
           "maxLength": null,
@@ -279,6 +287,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -310,6 +319,7 @@
             "600": 6
           },
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -333,6 +343,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -356,6 +367,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -379,6 +391,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -402,6 +415,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "f",
           "maxLength": null,
@@ -425,6 +439,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "g",
           "maxLength": null,
@@ -490,6 +505,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -515,6 +531,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -538,6 +555,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -561,6 +579,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -584,6 +603,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -657,6 +677,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -682,6 +703,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -705,6 +727,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -728,6 +751,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -751,6 +775,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -774,6 +799,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -849,6 +875,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -874,6 +901,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -897,6 +925,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -920,6 +949,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -943,6 +973,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -1016,6 +1047,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -1041,6 +1073,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -1064,6 +1097,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N",
             "A",
@@ -1088,6 +1122,7 @@
           "default": "A",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1",
@@ -1164,6 +1199,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -1189,6 +1225,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -1212,6 +1249,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -1235,6 +1273,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -1307,6 +1346,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -1332,6 +1372,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -1355,6 +1396,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "s",
           "maxLength": null,
@@ -1378,6 +1420,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -1401,6 +1444,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "r",
           "maxLength": null,
@@ -1424,6 +1468,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -1498,6 +1543,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -1523,6 +1569,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -1546,6 +1593,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -1569,6 +1617,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -1642,6 +1691,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -1667,6 +1717,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -1690,6 +1741,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -1713,6 +1765,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -1736,6 +1789,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -1810,6 +1864,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -1835,6 +1890,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -1858,6 +1914,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -1881,6 +1938,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -1904,6 +1962,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -1976,6 +2035,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -2001,6 +2061,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -2024,6 +2085,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -2047,6 +2109,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -2070,6 +2133,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "r",
           "maxLength": null,
@@ -2093,6 +2157,7 @@
           "default": "F",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "E",
@@ -2167,6 +2232,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -2192,6 +2258,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -2215,6 +2282,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -2238,6 +2306,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -2261,6 +2330,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -2284,6 +2354,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N",
             "U",
@@ -2359,6 +2430,7 @@
           "default": 2,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "m",
           "maxLength": null,
@@ -2382,6 +2454,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "n",
           "maxLength": null,
@@ -2405,6 +2478,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "t",
           "maxLength": null,
@@ -2470,6 +2544,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -2495,6 +2570,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -2518,6 +2594,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -2541,6 +2618,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -2614,6 +2692,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -2639,6 +2718,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -2662,6 +2742,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "m",
           "maxLength": null,
@@ -2733,6 +2814,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -2758,6 +2840,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -2781,6 +2864,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -2804,6 +2888,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -2876,6 +2961,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -2901,6 +2987,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -2924,6 +3011,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -2947,6 +3035,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -3019,6 +3108,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -3044,6 +3134,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N"
           ],
@@ -3066,6 +3157,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -3089,6 +3181,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -3112,6 +3205,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -3135,6 +3229,7 @@
           "default": "A",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "B",
@@ -3160,6 +3255,7 @@
           "default": "A",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "B",
@@ -3237,6 +3333,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -3262,6 +3359,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -3285,6 +3383,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -3356,6 +3455,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -3381,6 +3481,7 @@
           "default": "B",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "B",
@@ -3406,6 +3507,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -3429,6 +3531,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -3452,6 +3555,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -3475,6 +3579,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -3551,6 +3656,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -3576,6 +3682,7 @@
           "default": 2,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -3599,6 +3706,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -3622,6 +3730,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -3645,6 +3754,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -3668,6 +3778,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "f",
           "maxLength": null,
@@ -3691,6 +3802,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "g",
           "maxLength": null,
@@ -3756,6 +3868,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -3781,6 +3894,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -3804,6 +3918,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -3827,6 +3942,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -3850,6 +3966,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -3923,6 +4040,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N"
           ],
@@ -3945,6 +4063,7 @@
           "default": "2",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "1",
             "2"
@@ -3974,6 +4093,7 @@
             "600": 6
           },
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -3997,6 +4117,7 @@
           "default": "Q",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "H",
             "Q",
@@ -4022,6 +4143,7 @@
           "default": 7,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "e",
           "maxLength": null,
@@ -4088,6 +4210,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -4113,6 +4236,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -4136,6 +4260,7 @@
           "default": 2,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -4159,6 +4284,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -4182,6 +4308,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "e",
           "maxLength": null,
@@ -4205,6 +4332,7 @@
           "default": 22,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "f",
           "maxLength": null,
@@ -4278,6 +4406,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -4303,6 +4432,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -4326,6 +4456,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -4349,6 +4480,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -4425,6 +4557,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -4450,6 +4583,7 @@
           "default": 2,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.moduleWidth",
           "enum": null,
           "key": "w1",
           "maxLength": null,
@@ -4473,6 +4607,7 @@
           "default": 2.0,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.ratio",
           "enum": null,
           "key": "r1",
           "maxLength": null,
@@ -4496,6 +4631,7 @@
           "default": 40,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h1",
           "maxLength": null,
@@ -4519,6 +4655,7 @@
           "default": 2,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.moduleWidth",
           "enum": null,
           "key": "w2",
           "maxLength": null,
@@ -4542,6 +4679,7 @@
           "default": 4,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h2",
           "maxLength": null,
@@ -4616,6 +4754,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -4641,6 +4780,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -4664,6 +4804,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -4687,6 +4828,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -4710,6 +4852,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -4784,6 +4927,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -4809,6 +4953,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -4832,6 +4977,7 @@
           "default": "0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "50",
@@ -4859,6 +5005,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -4882,6 +5029,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "r",
           "maxLength": null,
@@ -4905,6 +5053,7 @@
           "default": 6,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "f",
           "maxLength": null,
@@ -4928,6 +5077,7 @@
           "default": "~",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "g",
           "maxLength": null,
@@ -4948,6 +5098,7 @@
           "default": "1",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "1",
             "2"
@@ -5018,6 +5169,7 @@
           "default": 2,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "w",
           "maxLength": null,
@@ -5041,6 +5193,7 @@
           "default": 3.0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "r",
           "maxLength": null,
@@ -5064,6 +5217,7 @@
           "default": 10,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -5131,6 +5285,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -5156,6 +5311,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^BY",
+          "defaultFromStateKey": "barcode.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -5179,6 +5335,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -5202,6 +5359,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -5225,6 +5383,7 @@
           "default": "0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1",
@@ -5301,6 +5460,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -5362,6 +5522,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -5423,6 +5584,7 @@
           "default": "A",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "f",
           "maxLength": null,
@@ -5443,6 +5605,7 @@
           "default": 9,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -5466,6 +5629,7 @@
           "default": 5,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "w",
           "maxLength": null,
@@ -5526,6 +5690,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -5549,6 +5714,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "s1",
           "maxLength": null,
@@ -5572,6 +5738,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d1",
           "maxLength": null,
@@ -5643,6 +5810,7 @@
           "default": "B:",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -5663,6 +5831,7 @@
           "default": "E:",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -5683,6 +5852,7 @@
           "default": "R:",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -5745,6 +5915,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1"
@@ -5807,6 +5978,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -5830,6 +6002,7 @@
           "default": 40,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -5853,6 +6026,7 @@
           "default": "0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1"
@@ -5920,6 +6094,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1",
@@ -5980,6 +6155,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -6041,6 +6217,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N",
             "Y"
@@ -6097,6 +6274,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -6117,6 +6295,7 @@
           "default": "R:",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -6137,6 +6316,7 @@
           "default": "UNKNOWN",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -6157,6 +6337,7 @@
           "default": "FNT",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -6224,6 +6405,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -6249,6 +6431,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -6269,6 +6452,7 @@
           "default": "ZPL",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -6320,6 +6504,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -6343,6 +6528,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -6366,6 +6552,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -6389,6 +6576,7 @@
           "default": "L",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "L",
             "C",
@@ -6414,6 +6602,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "e",
           "maxLength": null,
@@ -6484,6 +6673,7 @@
           "default": "%",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -6504,6 +6694,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -6524,6 +6715,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -6611,6 +6803,7 @@
           "default": "#",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -6667,6 +6860,7 @@
           "default": "_",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "i",
           "maxLength": null,
@@ -6723,6 +6917,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "ext",
           "maxLength": null,
@@ -6743,6 +6938,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "base",
           "maxLength": null,
@@ -6763,6 +6959,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1"
@@ -6828,6 +7025,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x1",
           "maxLength": null,
@@ -6851,6 +7049,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "y1",
           "maxLength": null,
@@ -6911,6 +7110,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "n",
           "maxLength": null,
@@ -6934,6 +7134,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p",
           "maxLength": null,
@@ -6984,6 +7185,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -7007,6 +7209,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "y",
           "maxLength": null,
@@ -7030,6 +7233,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.justification",
           "enum": [
             "0",
             "1",
@@ -7092,6 +7296,7 @@
           "default": "H",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "H",
             "V",
@@ -7116,6 +7321,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "g",
           "maxLength": null,
@@ -7215,6 +7421,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -7238,6 +7445,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "y",
           "maxLength": null,
@@ -7261,6 +7469,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.justification",
           "enum": [
             "0",
             "1",
@@ -7323,6 +7532,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N",
             "R",
@@ -7348,6 +7558,7 @@
           "default": "0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1",
@@ -7407,6 +7618,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -7456,6 +7668,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "w",
           "maxLength": null,
@@ -7479,6 +7692,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -7502,6 +7716,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "t",
           "maxLength": null,
@@ -7525,6 +7740,7 @@
           "default": "B",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "B",
             "W"
@@ -7548,6 +7764,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "r",
           "maxLength": null,
@@ -7611,6 +7828,7 @@
           "default": 3,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -7634,6 +7852,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "t",
           "maxLength": null,
@@ -7657,6 +7876,7 @@
           "default": "B",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "B",
             "W"
@@ -7718,6 +7938,7 @@
           "default": 3,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "w",
           "maxLength": null,
@@ -7741,6 +7962,7 @@
           "default": 3,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -7764,6 +7986,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "t",
           "maxLength": null,
@@ -7787,6 +8010,7 @@
           "default": "B",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "B",
             "W"
@@ -7810,6 +8034,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "L"
@@ -7873,6 +8098,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "w",
           "maxLength": null,
@@ -7896,6 +8122,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -7919,6 +8146,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "t",
           "maxLength": null,
@@ -7942,6 +8170,7 @@
           "default": "B",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "B",
             "W"
@@ -8004,6 +8233,7 @@
           "default": "A",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "B",
@@ -8028,6 +8258,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -8051,6 +8282,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -8074,6 +8306,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -8097,6 +8330,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "data",
           "maxLength": null,
@@ -8157,6 +8391,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^FW",
+          "defaultFromStateKey": "field.orientation",
           "enum": [
             "N",
             "R",
@@ -8182,6 +8417,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^CF",
+          "defaultFromStateKey": "font.height",
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -8205,6 +8441,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": "^CF",
+          "defaultFromStateKey": "font.width",
           "enum": null,
           "key": "w",
           "maxLength": null,
@@ -8266,6 +8503,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -8291,6 +8529,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -8311,6 +8550,7 @@
           "default": "ZPL",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -8366,6 +8606,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -8391,6 +8632,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -8411,6 +8653,7 @@
           "default": "GRF",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -8524,6 +8767,7 @@
           "default": "start",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -8544,6 +8788,7 @@
           "default": "end",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -8564,6 +8809,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -8584,6 +8830,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -8604,6 +8851,7 @@
           "default": "A",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "M"
@@ -8627,6 +8875,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "f",
           "maxLength": null,
@@ -8650,6 +8899,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "g",
           "maxLength": null,
@@ -8673,6 +8923,7 @@
           "default": "A1",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -8693,6 +8944,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "i",
           "maxLength": null,
@@ -8796,6 +9048,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "num",
           "maxLength": null,
@@ -8819,6 +9072,7 @@
           "default": 64,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "n",
           "maxLength": null,
@@ -8842,6 +9096,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -8862,6 +9117,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "t",
           "maxLength": null,
@@ -8882,6 +9138,7 @@
           "default": "F",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "F",
             "L"
@@ -8942,6 +9199,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -8968,6 +9226,7 @@
           "default": "*",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -8988,6 +9247,7 @@
           "default": "*",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -9050,6 +9310,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -9075,6 +9336,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -9095,6 +9357,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "G",
             "P"
@@ -9160,6 +9423,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "a",
             "A",
@@ -9191,6 +9455,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "obj",
           "maxLength": null,
@@ -9211,6 +9476,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -9276,6 +9542,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -9301,6 +9568,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -9321,6 +9589,7 @@
           "default": "GRF",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -9372,6 +9641,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -9397,6 +9667,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -9417,6 +9688,7 @@
           "default": "GRF",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "GRF",
             "PNG"
@@ -9471,6 +9743,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -9496,6 +9769,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -9516,6 +9790,7 @@
           "default": "GRF",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "GRF",
             "PNG"
@@ -9577,6 +9852,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -9602,6 +9878,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -9622,6 +9899,7 @@
           "default": "GRF",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "GRF",
             "PNG"
@@ -9645,6 +9923,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -9700,6 +9979,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "B",
@@ -9753,6 +10033,7 @@
           "default": "D",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "E",
             "D"
@@ -9776,6 +10057,7 @@
           "default": 900,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -9799,6 +10081,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -9822,6 +10105,7 @@
           "default": "7",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -9842,6 +10126,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -9865,6 +10150,7 @@
           "default": "D",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "E",
             "D"
@@ -9888,6 +10174,7 @@
           "default": "7",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "g",
           "maxLength": null,
@@ -9908,6 +10195,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -9931,6 +10219,7 @@
           "default": 1000000,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "i",
           "maxLength": null,
@@ -9954,6 +10243,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -10025,6 +10315,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -10050,6 +10341,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -10070,6 +10362,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "BAS",
             "BAE"
@@ -10093,6 +10386,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -10116,6 +10410,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -10139,6 +10434,7 @@
           "default": "50K",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "m",
           "maxLength": null,
@@ -10196,6 +10492,7 @@
           "default": "0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1",
@@ -10220,6 +10517,7 @@
           "default": "0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1",
@@ -10246,6 +10544,7 @@
           "default": "p",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "p",
             "l"
@@ -10269,6 +10568,7 @@
           "default": "f",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "e",
             "f"
@@ -10292,6 +10592,7 @@
           "default": "d",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "e",
             "d"
@@ -10315,6 +10616,7 @@
           "default": "e",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "e",
             "d"
@@ -10384,6 +10686,7 @@
           "default": "A",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "B"
@@ -10447,6 +10750,7 @@
           "default": "A",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "R",
@@ -10504,6 +10808,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "n",
           "maxLength": null,
@@ -10527,6 +10832,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -10550,6 +10856,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -10573,6 +10880,7 @@
           "default": 9999,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -10635,6 +10943,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "S",
             "R",
@@ -10690,6 +10999,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "L",
             "M",
@@ -10747,6 +11057,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -10803,6 +11114,7 @@
           "default": "0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1",
@@ -10828,6 +11140,7 @@
           "default": "1",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1",
@@ -10853,6 +11166,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -10873,6 +11187,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -10936,6 +11251,7 @@
           "default": "0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1",
@@ -11005,6 +11321,7 @@
           "default": "1",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "1",
             "2",
@@ -11082,6 +11399,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -11102,6 +11420,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -11164,6 +11483,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -11184,6 +11504,7 @@
           "default": "3",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "1",
             "2",
@@ -11254,6 +11575,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -11277,6 +11599,7 @@
           "default": 9,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -11300,6 +11623,7 @@
           "default": "0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1",
@@ -11324,6 +11648,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -11347,6 +11672,7 @@
           "default": 400,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "e",
           "maxLength": null,
@@ -11446,6 +11772,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -11469,6 +11796,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "y",
           "maxLength": null,
@@ -11527,6 +11855,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -11553,6 +11882,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N",
             "Y"
@@ -11610,6 +11940,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N",
             "Y"
@@ -11666,6 +11997,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -11729,6 +12061,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -11792,6 +12125,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "C"
@@ -11815,6 +12149,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -11838,6 +12173,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "printlabel_threshold",
           "maxLength": null,
@@ -11861,6 +12197,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "frequency",
           "maxLength": null,
@@ -11884,6 +12221,7 @@
           "default": "I",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "C",
             "I",
@@ -11956,6 +12294,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -12015,6 +12354,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -12078,6 +12418,7 @@
           "default": "C",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "F",
             "C",
@@ -12104,6 +12445,7 @@
           "default": "C",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "F",
             "C",
@@ -12172,6 +12514,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "C"
@@ -12195,6 +12538,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "message",
           "maxLength": null,
@@ -12256,6 +12600,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -12319,6 +12664,7 @@
           "default": "T",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "T",
             {
@@ -12392,6 +12738,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N",
             "Y"
@@ -12456,6 +12803,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N",
             "Y",
@@ -12483,6 +12831,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -12548,6 +12897,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "D",
             "P",
@@ -12618,6 +12968,7 @@
           "default": "T",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "T",
             "D"
@@ -12674,6 +13025,7 @@
           "default": "D",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "D",
             "I",
@@ -12698,6 +13050,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "150",
             "200",
@@ -12723,6 +13076,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "150",
             "200",
@@ -12791,6 +13145,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -12854,6 +13209,7 @@
           "default": "S",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "C",
             "S"
@@ -12913,6 +13269,7 @@
           "default": "1",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "1",
             "2"
@@ -12972,6 +13329,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "1",
             "2",
@@ -12996,6 +13354,7 @@
           "default": "A",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "B",
@@ -13024,6 +13383,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -13044,6 +13404,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -13064,6 +13425,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "e",
           "maxLength": null,
@@ -13084,6 +13446,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "f",
           "maxLength": null,
@@ -13104,6 +13467,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -13127,6 +13491,7 @@
           "default": 300,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -13150,6 +13515,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "i",
           "maxLength": null,
@@ -13173,6 +13539,7 @@
           "default": 9100,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "j",
           "maxLength": null,
@@ -13234,6 +13601,7 @@
           "default": "000",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -13290,6 +13658,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -13310,6 +13679,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -13330,6 +13700,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -13350,6 +13721,7 @@
           "default": "public",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -13370,6 +13742,7 @@
           "default": "public",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "e",
           "maxLength": null,
@@ -13390,6 +13763,7 @@
           "default": "public",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "f",
           "maxLength": null,
@@ -13444,6 +13818,7 @@
           "default": "P",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "P",
             "M"
@@ -13503,6 +13878,7 @@
           "default": "A",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "B",
@@ -13531,6 +13907,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -13551,6 +13928,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -13571,6 +13949,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -13591,6 +13970,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "e",
           "maxLength": null,
@@ -13611,6 +13991,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -13634,6 +14015,7 @@
           "default": 300,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "g",
           "maxLength": null,
@@ -13657,6 +14039,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -13680,6 +14063,7 @@
           "default": 9100,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "i",
           "maxLength": null,
@@ -13747,6 +14131,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -13767,6 +14152,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -13817,6 +14203,7 @@
           "default": 5,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -13869,6 +14256,7 @@
           "default": "0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1"
@@ -13892,6 +14280,7 @@
           "default": "0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1"
@@ -13915,6 +14304,7 @@
           "default": "0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1"
@@ -13938,6 +14328,7 @@
           "default": "0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1"
@@ -14007,6 +14398,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "n",
           "maxLength": null,
@@ -14088,6 +14480,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N",
             "Y"
@@ -14144,6 +14537,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -14203,6 +14597,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N",
             "I"
@@ -14288,6 +14683,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "q",
           "maxLength": null,
@@ -14311,6 +14707,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p",
           "maxLength": null,
@@ -14334,6 +14731,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "r",
           "maxLength": null,
@@ -14357,6 +14755,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N",
             "Y"
@@ -14380,6 +14779,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N",
             "Y"
@@ -14436,6 +14836,7 @@
           "default": "A",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p",
           "maxLength": null,
@@ -14456,6 +14857,7 @@
           "default": "D",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "s",
           "maxLength": null,
@@ -14476,6 +14878,7 @@
           "default": "A",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -14540,6 +14943,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "w",
           "maxLength": null,
@@ -14599,6 +15003,7 @@
           "default": 96,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "n",
           "maxLength": null,
@@ -14622,6 +15027,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p0",
           "maxLength": null,
@@ -14645,6 +15051,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p1",
           "maxLength": null,
@@ -14668,6 +15075,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p2",
           "maxLength": null,
@@ -14691,6 +15099,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p3",
           "maxLength": null,
@@ -14714,6 +15123,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p4",
           "maxLength": null,
@@ -14737,6 +15147,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p5",
           "maxLength": null,
@@ -14760,6 +15171,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p6",
           "maxLength": null,
@@ -14783,6 +15195,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p7",
           "maxLength": null,
@@ -14806,6 +15219,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p8",
           "maxLength": null,
@@ -14829,6 +15243,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p9",
           "maxLength": null,
@@ -14852,6 +15267,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p10",
           "maxLength": null,
@@ -14875,6 +15291,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p11",
           "maxLength": null,
@@ -14898,6 +15315,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p12",
           "maxLength": null,
@@ -14921,6 +15339,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p13",
           "maxLength": null,
@@ -14944,6 +15363,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p14",
           "maxLength": null,
@@ -14967,6 +15387,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p15",
           "maxLength": null,
@@ -15049,6 +15470,7 @@
           "default": "W",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "W",
             "L",
@@ -15075,6 +15497,7 @@
           "default": "H",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "H",
@@ -15099,6 +15522,7 @@
           "default": "0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -15119,6 +15543,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "n",
           "maxLength": null,
@@ -15142,6 +15567,7 @@
           "default": "E",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "E",
             "A",
@@ -15212,6 +15638,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "P",
             "B",
@@ -15236,6 +15663,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -15256,6 +15684,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -15276,6 +15705,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -15296,6 +15726,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "e",
           "maxLength": null,
@@ -15359,6 +15790,7 @@
           "default": "8",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "8"
           ],
@@ -15381,6 +15813,7 @@
           "default": "F0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "p",
           "maxLength": null,
@@ -15401,6 +15834,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "v",
           "maxLength": null,
@@ -15421,6 +15855,7 @@
           "default": 3,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "n",
           "maxLength": null,
@@ -15444,6 +15879,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N",
             "P",
@@ -15468,6 +15904,7 @@
           "default": "S",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "S",
             "D"
@@ -15491,6 +15928,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -15511,6 +15949,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "s",
           "maxLength": null,
@@ -15584,6 +16023,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -15604,6 +16044,7 @@
           "default": "#",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -15657,6 +16098,7 @@
           "default": "16",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "r",
           "maxLength": null,
@@ -15677,6 +16119,7 @@
           "default": "16",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "w",
           "maxLength": null,
@@ -15697,6 +16140,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -15764,6 +16208,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "110",
             "300",
@@ -15798,6 +16243,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "7",
             "8"
@@ -15821,6 +16267,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N",
             "E",
@@ -15845,6 +16292,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "1",
             "2"
@@ -15868,6 +16316,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "X",
             "D",
@@ -15893,6 +16342,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "N",
@@ -15967,6 +16417,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -15992,6 +16443,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -16012,6 +16464,7 @@
           "default": "DAT",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -16067,6 +16520,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -16087,6 +16541,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -16137,6 +16592,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "1",
             "2"
@@ -16160,6 +16616,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -16224,6 +16681,7 @@
           "default": "S",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -16244,6 +16702,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "1",
             "2",
@@ -16328,6 +16787,7 @@
           "default": "1",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "v",
           "maxLength": null,
@@ -16348,6 +16808,7 @@
           "default": "1",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "n",
           "maxLength": null,
@@ -16368,6 +16829,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -16429,6 +16891,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "2",
             "3"
@@ -16452,6 +16915,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -16475,6 +16939,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -16498,6 +16963,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -16521,6 +16987,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "e",
           "maxLength": null,
@@ -16544,6 +17011,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "f",
           "maxLength": null,
@@ -16567,6 +17035,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "g",
           "maxLength": null,
@@ -16632,6 +17101,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -16691,6 +17161,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "B",
@@ -16735,6 +17206,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "B",
@@ -16763,6 +17235,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -16821,6 +17294,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -16884,6 +17358,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "w",
           "maxLength": null,
@@ -16907,6 +17382,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "m",
           "maxLength": null,
@@ -16930,6 +17406,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "r",
           "maxLength": null,
@@ -16953,6 +17430,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "l",
           "maxLength": null,
@@ -16976,6 +17454,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "m2",
           "maxLength": null,
@@ -16999,6 +17478,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "r2",
           "maxLength": null,
@@ -17022,6 +17502,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -17045,6 +17526,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -17068,6 +17550,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -17147,6 +17630,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -17170,6 +17654,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -17193,6 +17678,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -17216,6 +17702,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "d",
           "maxLength": null,
@@ -17239,6 +17726,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "e",
           "maxLength": null,
@@ -17262,6 +17750,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "f",
           "maxLength": null,
@@ -17285,6 +17774,7 @@
           "default": "M",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "P",
@@ -17351,6 +17841,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "B",
@@ -17395,6 +17886,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "B",
@@ -17422,6 +17914,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -17445,6 +17938,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -17468,6 +17962,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "e",
           "maxLength": null,
@@ -17488,6 +17983,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "f",
           "maxLength": null,
@@ -17556,6 +18052,7 @@
           "default": "2",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "1",
             "2"
@@ -17619,6 +18116,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "N",
             "R",
@@ -17644,6 +18142,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -17667,6 +18166,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -17734,6 +18234,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "source",
           "maxLength": null,
@@ -17754,6 +18255,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "destination",
           "maxLength": null,
@@ -17811,6 +18313,7 @@
           "default": "D",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "D",
             "L",
@@ -17835,6 +18338,7 @@
           "default": "D",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "D",
             "L",
@@ -17889,6 +18393,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -17915,6 +18420,7 @@
           "default": "*",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -17935,6 +18441,7 @@
           "default": "*",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -17986,6 +18493,7 @@
           "default": "OFF",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "OFF",
             "40",
@@ -18010,6 +18518,7 @@
           "default": "1",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "1",
             "2",
@@ -18035,6 +18544,7 @@
           "default": "O",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "O",
             "S"
@@ -18058,6 +18568,7 @@
           "default": "H",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "H",
             "S"
@@ -18081,6 +18592,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "e",
           "maxLength": null,
@@ -18101,6 +18613,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "f",
           "maxLength": null,
@@ -18121,6 +18634,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "g",
           "maxLength": null,
@@ -18141,6 +18655,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -18204,6 +18719,7 @@
           "default": "OFF",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "OFF",
             "ON"
@@ -18227,6 +18743,7 @@
           "default": "user",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -18247,6 +18764,7 @@
           "default": "password",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "c",
           "maxLength": null,
@@ -18305,6 +18823,7 @@
           "default": "0000",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -18325,6 +18844,7 @@
           "default": "0000",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -18382,6 +18902,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -18405,6 +18926,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -18428,6 +18950,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -18451,6 +18974,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -18474,6 +18998,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "1",
             "5",
@@ -18541,6 +19066,7 @@
           "default": "125",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "e",
           "maxLength": null,
@@ -18561,6 +19087,7 @@
           "default": "I",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "I",
             "A"
@@ -18584,6 +19111,7 @@
           "default": "L",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "L",
             "S"
@@ -18607,6 +19135,7 @@
           "default": "1",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1"
@@ -18630,6 +19159,7 @@
           "default": 15,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "i",
           "maxLength": null,
@@ -18653,6 +19183,7 @@
           "default": "0x7FF",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "j",
           "maxLength": null,
@@ -18673,6 +19204,7 @@
           "default": "0",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "0",
             "1"
@@ -18731,6 +19263,7 @@
           "default": "01",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "01",
             "02",
@@ -18767,6 +19300,7 @@
           "default": "1",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "1",
             "2",
@@ -18792,6 +19326,7 @@
           "default": "O",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "O",
             "S"
@@ -18815,6 +19350,7 @@
           "default": "S",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "H",
             "S"
@@ -18838,6 +19374,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "e",
           "maxLength": null,
@@ -18858,6 +19395,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "f",
           "maxLength": null,
@@ -18878,6 +19416,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "g",
           "maxLength": null,
@@ -18898,6 +19437,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -18918,6 +19458,7 @@
           "default": "user",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "i",
           "maxLength": null,
@@ -18938,6 +19479,7 @@
           "default": "password",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "j",
           "maxLength": null,
@@ -18958,6 +19500,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "k",
           "maxLength": null,
@@ -18978,6 +19521,7 @@
           "default": "kerberos",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "l",
           "maxLength": null,
@@ -18998,6 +19542,7 @@
           "default": "krbtgt",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "m",
           "maxLength": null,
@@ -19018,6 +19563,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "n",
           "maxLength": null,
@@ -19140,6 +19686,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -19165,6 +19712,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -19185,6 +19733,7 @@
           "default": "ZPL",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -19236,6 +19785,7 @@
           "default": "R:UNKNOWN.GRF",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "path",
           "maxLength": null,
@@ -19256,6 +19806,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "mx",
           "maxLength": null,
@@ -19279,6 +19830,7 @@
           "default": 1,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "my",
           "maxLength": null,
@@ -19340,6 +19892,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -19363,6 +19916,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -19386,6 +19940,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -19471,6 +20026,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -19527,6 +20083,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -19552,6 +20109,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -19572,6 +20130,7 @@
           "default": "FNT",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -19592,6 +20151,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -19612,6 +20172,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "h",
           "maxLength": null,
@@ -19635,6 +20196,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "w",
           "maxLength": null,
@@ -19658,6 +20220,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -19681,6 +20244,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "s",
           "maxLength": null,
@@ -19704,6 +20268,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "n",
           "maxLength": null,
@@ -19764,6 +20329,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -19789,6 +20355,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -19809,6 +20376,7 @@
           "default": "DAT",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -19829,6 +20397,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "s",
           "maxLength": null,
@@ -19881,6 +20450,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -19906,6 +20476,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -19926,6 +20497,7 @@
           "default": "GRF",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -19946,6 +20518,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "t",
           "maxLength": null,
@@ -19966,6 +20539,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "w",
           "maxLength": null,
@@ -20040,6 +20614,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -20065,6 +20640,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -20085,6 +20661,7 @@
           "default": "FNT",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -20105,6 +20682,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "s",
           "maxLength": null,
@@ -20157,6 +20735,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -20182,6 +20761,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -20202,6 +20782,7 @@
           "default": "DAT",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -20222,6 +20803,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "s",
           "maxLength": null,
@@ -20274,6 +20856,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -20299,6 +20882,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "o",
           "maxLength": null,
@@ -20319,6 +20903,7 @@
           "default": "FNT",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "x",
           "maxLength": null,
@@ -20339,6 +20924,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "s",
           "maxLength": null,
@@ -20391,6 +20977,7 @@
           "default": "R",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "R",
             "E",
@@ -20416,6 +21003,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "f",
           "maxLength": null,
@@ -20436,6 +21024,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "A",
             "B",
@@ -20461,6 +21050,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "B",
             "E",
@@ -20493,6 +21083,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "t",
           "maxLength": null,
@@ -20513,6 +21104,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "w",
           "maxLength": null,
@@ -20533,6 +21125,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "data",
           "maxLength": null,
@@ -20716,6 +21309,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "ES",
             "HA",
@@ -20964,6 +21558,7 @@
           "default": "Y",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "Y",
             "N"
@@ -21205,6 +21800,7 @@
           "default": "N",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -21310,6 +21906,7 @@
           "default": "000",
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -21412,6 +22009,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -21475,6 +22073,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -21495,6 +22094,7 @@
           "default": 0,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "b",
           "maxLength": null,
@@ -21597,6 +22197,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "1",
             "2",
@@ -21660,6 +22261,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -21726,6 +22328,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": null,
           "key": "a",
           "maxLength": null,
@@ -21831,6 +22434,7 @@
           "default": null,
           "defaultByDpi": null,
           "defaultFrom": null,
+          "defaultFromStateKey": null,
           "enum": [
             "ES",
             "HA",

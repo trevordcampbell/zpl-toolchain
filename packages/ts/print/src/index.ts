@@ -34,8 +34,12 @@ const DEFAULT_RETRY_DELAY = 500;
 
 // ─── Error classification ────────────────────────────────────────────────────
 
-function classifyError(err: NodeJS.ErrnoException): PrintErrorCode {
-  switch (err.code) {
+function classifyError(err: unknown): PrintErrorCode {
+  const code =
+    err && typeof err === "object" && "code" in err
+      ? (err as NodeJS.ErrnoException).code
+      : undefined;
+  switch (code) {
     case "ECONNREFUSED":
       return "CONNECTION_REFUSED";
     case "ETIMEDOUT":
@@ -54,7 +58,7 @@ function classifyError(err: NodeJS.ErrnoException): PrintErrorCode {
 function wrapError(err: unknown): PrintError {
   if (err instanceof PrintError) return err;
   const nodeErr = err as NodeJS.ErrnoException;
-  const code = classifyError(nodeErr);
+  const code = classifyError(err);
   const msg = nodeErr.message ?? String(err);
   return new PrintError(msg, code, err);
 }
@@ -79,12 +83,37 @@ function resolveConfig(cfg: PrinterConfig) {
     timeout,
     maxRetries: cfg.maxRetries ?? DEFAULT_MAX_RETRIES,
     retryDelay: cfg.retryDelay ?? DEFAULT_RETRY_DELAY,
+    signal: cfg.signal,
   };
 }
 
-/** Sleep for `ms` milliseconds. */
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+/** Sleep for `ms` milliseconds, optionally cancellable via AbortSignal. */
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(abortError());
+      return;
+    }
+    const timer = setTimeout(() => {
+      if (signal && onAbort) {
+        signal.removeEventListener("abort", onAbort);
+      }
+      resolve();
+    }, ms);
+    let onAbort: (() => void) | undefined;
+    if (signal) {
+      onAbort = () => {
+        clearTimeout(timer);
+        signal.removeEventListener("abort", onAbort!);
+        reject(abortError());
+      };
+      signal.addEventListener("abort", onAbort, { once: true });
+    }
+  });
+}
+
+function abortError(): PrintError {
+  return new PrintError("Operation aborted", "UNKNOWN");
 }
 
 // ─── Low-level TCP helpers ───────────────────────────────────────────────────
@@ -96,34 +125,51 @@ function tcpSend(
   host: string,
   port: number,
   data: string,
-  timeout: number
+  timeout: number,
+  signal?: AbortSignal
 ): Promise<PrintResult> {
   return new Promise<PrintResult>((resolve, reject) => {
+    let socket: net.Socket | null = null;
     const start = performance.now();
     const buf = Buffer.from(data, "utf-8");
     let settled = false;
+    let onAbort: (() => void) | undefined;
+
+    const cleanupAbort = () => {
+      if (signal && onAbort) {
+        signal.removeEventListener("abort", onAbort);
+      }
+      onAbort = undefined;
+    };
 
     const fail = (err: PrintError) => {
       if (settled) return;
       settled = true;
-      socket.destroy();
+      cleanupAbort();
+      socket?.destroy();
       reject(err);
     };
 
     const succeed = (result: PrintResult) => {
       if (settled) return;
       settled = true;
+      cleanupAbort();
       resolve(result);
     };
 
-    const socket = net.createConnection({ host, port }, () => {
-      socket.setNoDelay(true);
-      socket.write(buf, (writeErr) => {
+    if (signal?.aborted) {
+      fail(abortError());
+      return;
+    }
+
+    const sock = net.createConnection({ host, port }, () => {
+      sock.setNoDelay(true);
+      sock.write(buf, (writeErr) => {
         if (writeErr) {
           fail(wrapError(writeErr));
           return;
         }
-        socket.end(() => {
+        sock.end(() => {
           succeed({
             success: true,
             bytesWritten: buf.length,
@@ -132,11 +178,12 @@ function tcpSend(
           // Force-close after graceful FIN — ZPL printers won't send FIN back,
           // which would leave the socket in FIN_WAIT_2 indefinitely.
           setTimeout(() => {
-            if (!socket.destroyed) socket.destroy();
+            if (!sock.destroyed) sock.destroy();
           }, 1000).unref();
         });
       });
     });
+    socket = sock;
 
     socket.setTimeout(timeout);
     socket.on("timeout", () => {
@@ -148,6 +195,11 @@ function tcpSend(
       );
     });
     socket.on("error", (err) => fail(wrapError(err)));
+
+    if (signal) {
+      onAbort = () => fail(abortError());
+      signal.addEventListener("abort", onAbort, { once: true });
+    }
   });
 }
 
@@ -161,49 +213,67 @@ export function tcpQuery(
   host: string,
   port: number,
   command: string,
-  timeout: number
+  timeout: number,
+  signal?: AbortSignal
 ): Promise<string> {
   return new Promise<string>((resolve, reject) => {
+    let socket: net.Socket | null = null;
     const chunks: Uint8Array[] = [];
     let idleTimer: ReturnType<typeof setTimeout> | undefined;
     let settled = false;
+    let onAbort: (() => void) | undefined;
+
+    const cleanupAbort = () => {
+      if (signal && onAbort) {
+        signal.removeEventListener("abort", onAbort);
+      }
+      onAbort = undefined;
+    };
 
     const finish = (value: string) => {
       if (settled) return;
       settled = true;
+      cleanupAbort();
       if (idleTimer) clearTimeout(idleTimer);
-      socket.destroy();
+      socket?.destroy();
       resolve(value);
     };
 
     const fail = (err: PrintError) => {
       if (settled) return;
       settled = true;
+      cleanupAbort();
       if (idleTimer) clearTimeout(idleTimer);
-      socket.destroy();
+      socket?.destroy();
       reject(err);
     };
 
-    const socket = net.createConnection({ host, port }, () => {
-      socket.write(command, "utf-8");
+    if (signal?.aborted) {
+      fail(abortError());
+      return;
+    }
+
+    const sock = net.createConnection({ host, port }, () => {
+      sock.write(command, "utf-8");
     });
+    socket = sock;
 
-    socket.setTimeout(timeout);
+    sock.setTimeout(timeout);
 
-    socket.on("data", (chunk: Buffer) => {
+    sock.on("data", (chunk: Buffer) => {
       chunks.push(chunk);
       // Reset idle timer — wait 250ms after last data before closing.
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
-        socket.end();
+        sock.end();
       }, 250);
     });
 
-    socket.on("end", () => {
+    sock.on("end", () => {
       finish(Buffer.concat(chunks).toString("utf-8"));
     });
 
-    socket.on("timeout", () => {
+    sock.on("timeout", () => {
       // If we have partial data, return it rather than failing.
       if (chunks.length > 0) {
         finish(Buffer.concat(chunks).toString("utf-8"));
@@ -217,7 +287,12 @@ export function tcpQuery(
       }
     });
 
-    socket.on("error", (err) => fail(wrapError(err)));
+    sock.on("error", (err) => fail(wrapError(err)));
+
+    if (signal) {
+      onAbort = () => fail(abortError());
+      signal.addEventListener("abort", onAbort, { once: true });
+    }
   });
 }
 
@@ -246,8 +321,11 @@ export async function print(
   let lastError: PrintError | undefined;
 
   for (let attempt = 0; attempt <= cfg.maxRetries; attempt++) {
+    if (cfg.signal?.aborted) {
+      throw abortError();
+    }
     try {
-      return await tcpSend(cfg.host, cfg.port, zpl, cfg.timeout);
+      return await tcpSend(cfg.host, cfg.port, zpl, cfg.timeout, cfg.signal);
     } catch (err) {
       lastError = wrapError(err);
 
@@ -260,7 +338,7 @@ export async function print(
       if (!retryable.includes(lastError.code)) throw lastError;
       if (attempt < cfg.maxRetries) {
         const delay = cfg.retryDelay * Math.pow(2, attempt);
-        await sleep(delay);
+        await sleep(delay, cfg.signal);
       }
     }
   }
@@ -298,7 +376,7 @@ export class TcpPrinter {
   // ── Internal helpers ───────────────────────────────────────────────────
 
   /** Ensure a live connection exists, creating one if needed. */
-  private async ensureConnected(): Promise<net.Socket> {
+  private async ensureConnected(signal?: AbortSignal): Promise<net.Socket> {
     if (this.closed) {
       throw new PrintError("Printer connection has been closed", "UNKNOWN");
     }
@@ -312,6 +390,13 @@ export class TcpPrinter {
     }
 
     this.connecting = new Promise<void>((resolve, reject) => {
+      let onAbort: (() => void) | undefined;
+      const cleanupAbort = () => {
+        if (signal && onAbort) {
+          signal.removeEventListener("abort", onAbort);
+        }
+        onAbort = undefined;
+      };
       const sock = net.createConnection(
         { host: this.config.host, port: this.config.port },
         () => {
@@ -326,14 +411,24 @@ export class TcpPrinter {
           sock.on("close", () => { this.socket = null; });
           this.socket = sock;
           this.connecting = null;
+          cleanupAbort();
           resolve();
         }
       );
+      if (signal?.aborted) {
+        cleanupAbort();
+        sock.destroy();
+        this.socket = null;
+        this.connecting = null;
+        reject(abortError());
+        return;
+      }
       sock.setTimeout(this.config.timeout);
       sock.on("timeout", () => {
         sock.destroy();
         this.socket = null;
         this.connecting = null;
+        cleanupAbort();
         reject(
           new PrintError(
             `Connection to ${this.config.host}:${this.config.port} timed out`,
@@ -344,8 +439,19 @@ export class TcpPrinter {
       sock.on("error", (err) => {
         this.socket = null;
         this.connecting = null;
+        cleanupAbort();
         reject(wrapError(err));
       });
+      if (signal) {
+        onAbort = () => {
+          sock.destroy();
+          this.socket = null;
+          this.connecting = null;
+          cleanupAbort();
+          reject(abortError());
+        };
+        signal.addEventListener("abort", onAbort, { once: true });
+      }
     });
 
     await this.connecting;
@@ -359,14 +465,37 @@ export class TcpPrinter {
    *
    * Falls back to a fresh connection if the existing one is broken.
    */
-  print(zpl: string): Promise<PrintResult> {
+  print(zpl: string, opts?: { signal?: AbortSignal }): Promise<PrintResult> {
     const job = this.writeQueue.then(async () => {
+      if (opts?.signal?.aborted) {
+        throw abortError();
+      }
       const start = performance.now();
       const buf = Buffer.from(zpl, "utf-8");
 
-      const sock = await this.ensureConnected();
+      const sock = await this.ensureConnected(opts?.signal);
       return new Promise<PrintResult>((resolve, reject) => {
+        let onAbort: (() => void) | undefined;
+        const cleanupAbort = () => {
+          if (opts?.signal && onAbort) {
+            opts.signal.removeEventListener("abort", onAbort);
+          }
+          onAbort = undefined;
+        };
+        if (opts?.signal?.aborted) {
+          cleanupAbort();
+          reject(abortError());
+          return;
+        }
+        if (opts?.signal) {
+          onAbort = () => {
+            cleanupAbort();
+            reject(abortError());
+          };
+          opts.signal.addEventListener("abort", onAbort, { once: true });
+        }
         sock.write(buf, (err) => {
+          cleanupAbort();
           if (err) {
             this.socket = null;
             reject(wrapError(err));
@@ -400,12 +529,13 @@ export class TcpPrinter {
    * needs an idle-timeout-based read strategy that would interfere with the
    * persistent socket's event handlers.
    */
-  async getStatus(): Promise<PrinterStatus> {
+  async getStatus(opts?: { signal?: AbortSignal }): Promise<PrinterStatus> {
     const raw = await tcpQuery(
       this.config.host,
       this.config.port,
       "~HS",
-      this.config.timeout
+      this.config.timeout,
+      opts?.signal
     );
     return parseHostStatus(raw);
   }
@@ -420,12 +550,13 @@ export class TcpPrinter {
    * requires an idle-timeout strategy that would interfere with the
    * persistent socket's event handlers.
    */
-  async query(command: string): Promise<string> {
+  async query(command: string, opts?: { signal?: AbortSignal }): Promise<string> {
     return tcpQuery(
       this.config.host,
       this.config.port,
       command,
-      this.config.timeout
+      this.config.timeout,
+      opts?.signal
     );
   }
 
@@ -470,7 +601,8 @@ export class TcpPrinter {
    * @param onProgress - Optional callback after each label.
    *   Return `false` (strictly) to abort the batch early.
    *   Any other return value (including `undefined`/`true`) continues normally.
-   * @returns The number of labels sent and the total.
+   * @returns The number of labels sent and the total. Includes `error` details
+   *   when the batch stops mid-stream.
    *
    * @example
    * ```ts
@@ -498,8 +630,32 @@ export class TcpPrinter {
     let sent = 0;
 
     for (const label of labels) {
-      await this.print(label);
-      sent++;
+      if (opts?.signal?.aborted) {
+        return {
+          sent,
+          total,
+          error: {
+            index: sent,
+            code: "UNKNOWN",
+            message: "Operation aborted",
+          },
+        };
+      }
+      try {
+        await this.print(label, { signal: opts?.signal });
+        sent++;
+      } catch (err) {
+        const wrapped = wrapError(err);
+        return {
+          sent,
+          total,
+          error: {
+            index: sent,
+            code: wrapped.code,
+            message: wrapped.message,
+          },
+        };
+      }
 
       let status: PrinterStatus | undefined;
       if (interval > 0 && sent % interval === 0) {
@@ -531,12 +687,16 @@ export class TcpPrinter {
    */
   async waitForCompletion(
     pollInterval = 500,
-    timeout = 30_000
+    timeout = 30_000,
+    signal?: AbortSignal
   ): Promise<void> {
     const start = performance.now();
     const deadline = start + timeout;
 
     while (true) {
+      if (signal?.aborted) {
+        throw abortError();
+      }
       if (performance.now() >= deadline) {
         throw new PrintError(
           `Printer did not finish within ${timeout}ms`,
@@ -545,7 +705,7 @@ export class TcpPrinter {
       }
 
       try {
-        const status = await this.getStatus();
+        const status = await this.getStatus({ signal });
         if (status.formatsInBuffer === 0 && status.labelsRemaining === 0) {
           return;
         }
@@ -560,9 +720,24 @@ export class TcpPrinter {
           "TIMEOUT"
         );
       }
-      await new Promise((resolve) =>
-        setTimeout(resolve, Math.min(pollInterval, remaining))
-      );
+      await new Promise((resolve, reject) => {
+        const waitMs = Math.min(pollInterval, remaining);
+        const timer = setTimeout(() => {
+          if (signal && onAbort) {
+            signal.removeEventListener("abort", onAbort);
+          }
+          resolve(undefined);
+        }, waitMs);
+        let onAbort: (() => void) | undefined;
+        if (signal) {
+          onAbort = () => {
+            clearTimeout(timer);
+            signal.removeEventListener("abort", onAbort!);
+            reject(abortError());
+          };
+          signal.addEventListener("abort", onAbort, { once: true });
+        }
+      });
     }
   }
 
@@ -595,10 +770,16 @@ export class TcpPrinter {
         resolve();
       }, 2000);
       forceTimer.unref();
-      sock.end(() => {
+      try {
+        sock.end(() => {
+          clearTimeout(forceTimer);
+          resolve();
+        });
+      } catch {
         clearTimeout(forceTimer);
+        sock.destroy();
         resolve();
-      });
+      }
     });
   }
 }
@@ -763,7 +944,8 @@ export async function printValidated(
  * @param opts - Optional batch options (e.g., status polling interval).
  * @param onProgress - Optional callback after each label.
  *   Return `false` (strictly) to abort the batch early.
- * @returns The number of labels sent and the total.
+ * @returns The number of labels sent and the total. Includes `error` details
+ *   when the batch stops mid-stream.
  *
  * @example
  * ```ts

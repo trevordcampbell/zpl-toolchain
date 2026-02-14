@@ -55,6 +55,11 @@ func main() {
     validation, _ := zpltoolchain.Validate("^XA^FDHello^FS^XZ", "")
     fmt.Printf("OK: %v\n", validation.OK)
 
+    // Validate with explicit parser tables
+    parserTablesJSON := `{"commands":{}}` // parser tables JSON payload
+    validation2, _ := zpltoolchain.ValidateWithTables("^XA^FDHello^FS^XZ", parserTablesJSON, "")
+    fmt.Printf("OK (tables): %v\n", validation2.OK)
+
     // Explain a diagnostic code
     explanation := zpltoolchain.Explain("ZPL1201")
     fmt.Println(explanation)
@@ -66,12 +71,19 @@ func main() {
     }
     fmt.Printf("Sent %d bytes\n", printResult.BytesSent)
 
-    // Query printer status
-    statusJSON, err := zpltoolchain.QueryStatus("192.168.1.100")
+    // Query printer status (typed)
+    status, err := zpltoolchain.QueryStatusTyped("192.168.1.100")
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Println(statusJSON)
+    fmt.Printf("Printer mode: %s\n", status.PrintMode)
+
+    // Query printer info (typed)
+    info, err := zpltoolchain.QueryInfoTyped("192.168.1.100")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Printf("Model: %s, Firmware: %s\n", info.Model, info.Firmware)
 }
 ```
 
@@ -82,14 +94,25 @@ func main() {
 | `Parse` | `(input string) (*ParseResult, error)` | Parse ZPL, return AST + diagnostics |
 | `ParseWithTables` | `(input, tablesJSON string) (*ParseResult, error)` | Parse with explicit tables |
 | `Validate` | `(input, profileJSON string) (*ValidationResult, error)` | Parse + validate |
+| `ValidateWithTables` | `(input, tablesJSON, profileJSON string) (*ValidationResult, error)` | Parse + validate with explicit tables |
 | `Format` | `(input, indent string) (string, error)` | Format ZPL |
 | `Explain` | `(id string) string` | Explain a diagnostic code |
 | `Print` | `(zpl, printerAddr, profileJSON string, validate bool) (*PrintResult, error)` | Send ZPL to a network printer |
-| `QueryStatus` | `(printerAddr string) (string, error)` | Query printer host status |
+| `PrintWithOptions` | `(zpl, printerAddr, profileJSON string, validate bool, opts *PrintOptions) (*PrintResult, error)` | Print with timeout/config overrides |
+| `QueryStatus` | `(printerAddr string) (string, error)` | Query printer host status (raw JSON) |
+| `QueryStatusWithOptions` | `(printerAddr string, timeoutMs uint64, configJSON string) (string, error)` | Query status with timeout/config overrides |
+| `QueryStatusTyped` | `(printerAddr string) (*HostStatus, error)` | Query printer host status (typed) |
+| `QueryStatusTypedWithOptions` | `(printerAddr string, timeoutMs uint64, configJSON string) (*HostStatus, error)` | Typed status query with timeout/config overrides |
+| `QueryInfo` | `(printerAddr string) (string, error)` | Query printer identification (raw JSON) |
+| `QueryInfoWithOptions` | `(printerAddr string, timeoutMs uint64, configJSON string) (string, error)` | Query info with timeout/config overrides |
+| `QueryInfoTyped` | `(printerAddr string) (*PrinterInfo, error)` | Query printer identification (typed) |
+| `QueryInfoTypedWithOptions` | `(printerAddr string, timeoutMs uint64, configJSON string) (*PrinterInfo, error)` | Typed info query with timeout/config overrides |
 
 ## Types
 
 The `Node` type uses a custom `UnmarshalJSON` to handle Rust's internally-tagged enum format (`{"kind": "Command", ...}`). Access the specific variant via `node.Command`, `node.Field`, `node.Raw`, or `node.Trivia` (check `node.Kind` first).
+
+`ValidationResult` also includes optional `resolved_labels` entries with renderer-ready per-label resolved state snapshots (`values`, `effective_width`, `effective_height`).
 
 See `types.go` for full type definitions.
 

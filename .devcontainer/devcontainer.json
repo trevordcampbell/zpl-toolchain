@@ -5,6 +5,7 @@
     "vscode": {
       "extensions": [
         "ExodiusStudios.comment-anchors",
+        "ms-dotnettools.csharp",
         "ms-azuretools.vscode-containers",
         "ms-azuretools.vscode-docker",
         "vadimcn.vscode-lldb",
@@ -26,7 +27,12 @@
       "version": "1.93.0"
     },
     "ghcr.io/lee-orr/rusty-dev-containers/cargo-binstall:0": {},
-    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "24.13.1"
+    },
+    "ghcr.io/devcontainers/features/dotnet:2": {
+      "version": "8.0"
+    },
     "ghcr.io/devcontainers/features/python:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {}
   },

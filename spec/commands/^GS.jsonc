@@ -10,11 +10,11 @@
       "arity": 3,
       "signature": { "params": ["o","h","w"], "joiner": ",", "allowEmptyTrailing": true },
       "args": [
-        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW", "defaultFromStateKey": "field.orientation",
           "doc": "N = normal, R = rotated 90 degrees clockwise, I = inverted 180 degrees, B = bottom-up 270 degrees." },
-        { "name": "height", "key": "h", "type": "int", "unit": "dots", "range": [0, 32000], "optional": true, "defaultFrom": "^CF",
+        { "name": "height", "key": "h", "type": "int", "unit": "dots", "range": [0, 32000], "optional": true, "defaultFrom": "^CF", "defaultFromStateKey": "font.height",
           "doc": "Character height proportional to width. Default: last ^CF value." },
-        { "name": "width", "key": "w", "type": "int", "unit": "dots", "range": [0, 32000], "optional": true, "defaultFrom": "^CF",
+        { "name": "width", "key": "w", "type": "int", "unit": "dots", "range": [0, 32000], "optional": true, "defaultFrom": "^CF", "defaultFromStateKey": "font.width",
           "doc": "Character width proportional to height. Default: last ^CF value." }
       ],
       "constraints": [

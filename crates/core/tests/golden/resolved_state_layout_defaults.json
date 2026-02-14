@@ -1,0 +1,38 @@
+{
+  "label_count": 1,
+  "resolved_labels": [
+    {
+      "effective_height": 600.0,
+      "effective_width": 800.0,
+      "values": {
+        "barcode": {
+          "height": null,
+          "module_width": null,
+          "ratio": null
+        },
+        "field": {
+          "justification": null,
+          "orientation": null
+        },
+        "font": {
+          "font": null,
+          "height": null,
+          "width": null
+        },
+        "label_home": {
+          "x": 20.0,
+          "y": 30.0
+        },
+        "layout": {
+          "label_length": 600.0,
+          "label_shift": 10.0,
+          "label_top": 5.0,
+          "mirror_image": "Y",
+          "print_orientation": "I",
+          "print_width": 800.0,
+          "reverse_print": "N"
+        }
+      }
+    }
+  ]
+}

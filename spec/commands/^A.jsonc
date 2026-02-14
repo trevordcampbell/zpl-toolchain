@@ -10,13 +10,13 @@
       "arity": 4,
       "signature": { "params": ["f","o","h","w"], "joiner": ",", "allowEmptyTrailing": true, "splitRule": { "paramIndex": 0, "charCounts": [1, 1] } },
       "args": [
-        { "name": "font", "key": "f", "type": "string", "optional": true, "defaultFrom": "^CF",
+        { "name": "font", "key": "f", "type": "string", "optional": true, "defaultFrom": "^CF", "defaultFromStateKey": "font.name",
           "doc": "Font name or letter (A-Z, 0-9) identifying the desired font." },
-        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW", "defaultFromStateKey": "field.orientation",
           "doc": "Field orientation. N=normal, R=rotated 90° CW, I=inverted 180°, B=bottom-up 270°." },
-        { "name": "height", "key": "h", "type": "int", "range": [10,32000], "unit": "dots", "optional": true, "defaultFrom": "^CF",
+        { "name": "height", "key": "h", "type": "int", "range": [10,32000], "unit": "dots", "optional": true, "defaultFrom": "^CF", "defaultFromStateKey": "font.height",
           "doc": "Character height in dots." },
-        { "name": "width", "key": "w", "type": "int", "range": [10,32000], "unit": "dots", "optional": true, "defaultFrom": "^CF",
+        { "name": "width", "key": "w", "type": "int", "range": [10,32000], "unit": "dots", "optional": true, "defaultFrom": "^CF", "defaultFromStateKey": "font.width",
           "doc": "Character width in dots." }
       ],
       "constraints": [

@@ -9,6 +9,8 @@
 pub mod grammar;
 /// Hex escape processing for `^FH` field data.
 pub mod hex_escape;
+/// Shared typed state tracking for validator/renderer.
+pub mod state;
 /// AST validation against spec tables and printer profiles.
 pub mod validate;
 
@@ -30,6 +32,9 @@ pub use grammar::diag::{Diagnostic, Severity, Span, codes};
 
 // Validator
 pub use validate::{ValidationResult, validate_with_profile};
+
+// Shared state contracts
+pub use state::{LabelValueState, ResolvedLabelState};
 
 // Tables
 pub use grammar::tables::ParserTables;

@@ -10,17 +10,17 @@
       "arity": 6,
       "signature": { "params": ["o","w1","r1","h1","w2","h2"], "joiner": ",", "allowEmptyTrailing": true },
       "args": [
-        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW", "defaultFromStateKey": "field.orientation",
           "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
-        { "name": "code39_width", "key": "w1", "type": "int", "range": [1, 10], "unit": "dots", "optional": true, "default": 2, "defaultFrom": "^BY",
+        { "name": "code39_width", "key": "w1", "type": "int", "range": [1, 10], "unit": "dots", "optional": true, "default": 2, "defaultFrom": "^BY", "defaultFromStateKey": "barcode.moduleWidth",
           "doc": "Module width for the Code 39 component in dots" },
-        { "name": "code39_ratio", "key": "r1", "type": "float", "range": [2.0, 3.0], "optional": true, "default": 2.0, "defaultFrom": "^BY",
+        { "name": "code39_ratio", "key": "r1", "type": "float", "range": [2.0, 3.0], "optional": true, "default": 2.0, "defaultFrom": "^BY", "defaultFromStateKey": "barcode.ratio",
           "doc": "Wide-to-narrow bar ratio for the Code 39 component (2.0-3.0)" },
-        { "name": "code39_height", "key": "h1", "type": "int", "range": [1, 9999], "unit": "dots", "optional": true, "default": 40, "defaultFrom": "^BY",
+        { "name": "code39_height", "key": "h1", "type": "int", "range": [1, 9999], "unit": "dots", "optional": true, "default": 40, "defaultFrom": "^BY", "defaultFromStateKey": "barcode.height",
           "doc": "Height of the Code 39 barcode component in dots" },
-        { "name": "micropdf417_width", "key": "w2", "type": "int", "range": [1, 10], "unit": "dots", "optional": true, "default": 2, "defaultFrom": "^BY",
+        { "name": "micropdf417_width", "key": "w2", "type": "int", "range": [1, 10], "unit": "dots", "optional": true, "default": 2, "defaultFrom": "^BY", "defaultFromStateKey": "barcode.moduleWidth",
           "doc": "Module width for the MicroPDF417 component in dots" },
-        { "name": "micropdf417_row_height", "key": "h2", "type": "int", "range": [1, 255], "unit": "dots", "optional": true, "default": 4, "defaultFrom": "^BY",
+        { "name": "micropdf417_row_height", "key": "h2", "type": "int", "range": [1, 255], "unit": "dots", "optional": true, "default": 4, "defaultFrom": "^BY", "defaultFromStateKey": "barcode.height",
           "doc": "Row height of the MicroPDF417 component in dots" }
       ],
       "constraints": [

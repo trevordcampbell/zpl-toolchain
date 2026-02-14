@@ -15,9 +15,33 @@ env:
   RUSTFLAGS: -D warnings
 
 jobs:
+  # ── Fast fail gate: cheap, high-signal checks first ────────────────────
+  fast-gate:
+    name: Fast Gate (lint + build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          components: rustfmt, clippy
+          cache-key: ci-fast-gate
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Build workspace
+        run: cargo build --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
+
+      - name: Clippy
+        env:
+          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
+        run: cargo clippy --workspace --locked -- -D warnings
+
   # ── Core: build, lint, test across OS matrix ──────────────────────────
   build:
     name: Build & Test (${{ matrix.os }})
+    needs: [fast-gate]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -25,10 +49,6 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install system dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libudev-dev
 
       - uses: ./.github/actions/setup-rust
         with:
@@ -42,7 +62,9 @@ jobs:
         run: cargo build --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
 
       - name: Clippy
-        run: cargo clippy --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python -- -D warnings
+        env:
+          PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
+        run: cargo clippy --workspace --locked -- -D warnings
 
       - name: Install nextest
         uses: taiki-e/install-action@nextest
@@ -53,12 +75,10 @@ jobs:
   # ── Spec-compiler: validate spec files ────────────────────────────────
   spec-check:
     name: Spec Validation & Coverage
+    needs: [fast-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y libudev-dev
 
       - uses: ./.github/actions/setup-rust
         with:
@@ -72,7 +92,7 @@ jobs:
         run: cargo run -p zpl_toolchain_spec_compiler --locked -- check --spec-dir spec
 
       - name: Build tables + coverage
-        run: cargo run -p zpl_toolchain_spec_compiler --locked -- build --spec-dir spec --out-dir generated
+        run: cargo run -p zpl_toolchain_spec_compiler --locked -- build --spec-dir spec --out-dir generated --strict
 
       - name: Verify committed tables are fresh
         run: |
@@ -88,19 +108,58 @@ jobs:
           fi
 
   # ── TypeScript print package: build + test ─────────────────────────────
+  ts-core:
+    name: TypeScript Core Tests
+    needs: [fast-gate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          targets: wasm32-unknown-unknown
+          cache-key: ci-ts-core-wasm
+
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@wasm-pack
+
+      - name: Build WASM package for @zpl-toolchain/core
+        run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.13.1"
+
+      - name: Install dependencies
+        working-directory: packages/ts/core
+        run: npm ci
+
+      - name: Type-check
+        working-directory: packages/ts/core
+        run: npx tsc --noEmit
+
+      - name: Build
+        working-directory: packages/ts/core
+        run: npm run build
+
+      - name: Test
+        working-directory: packages/ts/core
+        run: node --test dist/test/*.js
+
   ts-print:
     name: TypeScript Print Tests
+    needs: [fast-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24.13.1"
 
       - name: Install dependencies
         working-directory: packages/ts/print
-        run: npm install
+        run: npm ci
 
       - name: Type-check
         working-directory: packages/ts/print
@@ -110,13 +169,41 @@ jobs:
         working-directory: packages/ts/print
         run: npm run build
 
+      - name: Assert mock TCP test artifacts are built
+        working-directory: packages/ts/print
+        run: |
+          test -f dist/test/mock-tcp-server.js
+          test -f dist/test/network-availability.js
+          test -f dist/test/print.test.js
+
+      - name: Assert local TCP bind is available
+        working-directory: packages/ts/print
+        run: |
+          node --input-type=module -e "import { canBindLocalTcp } from './dist/test/network-availability.js'; const ok = await canBindLocalTcp(); if (!ok) { console.error('Local TCP bind unavailable; integration tests would be skipped.'); process.exit(1); } console.log('Local TCP bind available for integration tests.');"
+
       - name: Test
         working-directory: packages/ts/print
+        run: npm test
+
+  ts-cli:
+    name: TypeScript CLI Wrapper Tests
+    needs: [fast-gate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.13.1"
+
+      - name: Test wrapper package
+        working-directory: packages/ts/cli
         run: npm test
 
   # ── WASM build + size check ───────────────────────────────────────────
   wasm:
     name: WASM Build
+    needs: [fast-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -151,6 +238,7 @@ jobs:
   # ── Python wheel build ────────────────────────────────────────────────
   python:
     name: Python Wheel
+    needs: [fast-gate]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -164,7 +252,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install maturin
-        run: pip install maturin
+        run: pip install "maturin>=1,<2"
 
       - name: Build Python wheel
         run: maturin build -m crates/python/Cargo.toml
@@ -172,6 +260,7 @@ jobs:
   # ── C FFI shared library build ────────────────────────────────────────
   ffi:
     name: C FFI (${{ matrix.os }})
+    needs: [fast-gate]
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -185,7 +274,7 @@ jobs:
           cache-key: ci-ffi-${{ matrix.os }}
 
       - name: Build C FFI (release)
-        run: cargo build -p zpl_toolchain_ffi --release
+        run: cargo build -p zpl_toolchain_ffi --release --locked
 
       - name: Verify shared library (Unix)
         if: runner.os != 'Windows'
@@ -211,3 +300,91 @@ jobs:
             Write-Error "FFI shared library not found"
             exit 1
           }
+
+  # ── Python runtime tests (PyO3 linkable) ──────────────────────────────
+  python-runtime-tests:
+    name: Python Runtime Tests (py${{ matrix.python-version }})
+    needs: [fast-gate]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-dev
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: ci-python-runtime-tests
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install maturin
+        run: pip install "maturin>=1,<2"
+
+      - name: Build wheel
+        run: |
+          maturin build -m crates/python/Cargo.toml --out dist
+
+      - name: Install built wheel
+        run: pip install dist/*.whl
+
+      - name: Run Python wheel tests
+        run: |
+          python -m unittest discover -s crates/python/tests -v
+
+  # ── Go wrapper runtime tests ───────────────────────────────────────────
+  go-bindings:
+    name: Go Bindings Runtime Tests
+    needs: [fast-gate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: ci-go-bindings
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.21"
+
+      - name: Build C FFI (release)
+        run: cargo build -p zpl_toolchain_ffi --release --locked
+
+      - name: Run Go wrapper tests
+        working-directory: packages/go/zpltoolchain
+        env:
+          CGO_LDFLAGS: -L${{ github.workspace }}/target/release -lzpl_toolchain_ffi
+          LD_LIBRARY_PATH: ${{ github.workspace }}/target/release
+        run: go test -v ./...
+
+  # ── .NET wrapper runtime tests ─────────────────────────────────────────
+  dotnet-bindings:
+    name: .NET Bindings Runtime Tests
+    needs: [fast-gate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: ci-dotnet-bindings
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build C FFI (release)
+        run: cargo build -p zpl_toolchain_ffi --release --locked
+
+      - name: Run .NET wrapper tests
+        working-directory: packages/dotnet
+        env:
+          LD_LIBRARY_PATH: ${{ github.workspace }}/target/release
+        run: dotnet test ZplToolchain.Tests/ZplToolchain.Tests.csproj -v minimal

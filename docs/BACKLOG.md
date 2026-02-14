@@ -2,7 +2,7 @@
 
 > Single source of truth for tactical work items. For the strategic roadmap (phases, priorities, and architectural decisions), see [ROADMAP.md](ROADMAP.md). Original plans archived at `docs/research/archive/`.
 >
-> Last updated: 2026-02-10
+> Last updated: 2026-02-14
 
 ---
 
@@ -11,6 +11,17 @@
 ### Tier 1: Core Deepening (high value — improves correctness and completeness)
 
 All Tier 1 items completed. See "Completed Work" below.
+
+### Renderer Prerequisite: Research & Decision Gate
+
+Before implementation work starts in `crates/renderer/`, complete these research tasks:
+
+- [ ] **Create `docs/RENDERER_PLAN.md` from first-principles research** — architecture options, crate choices, API shape, AST/state contract boundaries, and phased rollout.
+- [ ] **Benchmark candidate rasterization backends on representative labels** — compare `tiny-skia`-first approach against alternatives for throughput, memory, determinism, and WASM output size.
+- [ ] **Define renderer acceptance oracle and correctness strategy** — golden PNG/SVG policy, tolerance strategy, corpus selection, and external parity checks (Labelary/BinaryKits/rxing decode checks).
+- [ ] **Specify text/font strategy for ZPL device fonts** — baseline metrics source, fallback behavior, `^A`/`^A@` handling, `^CI` implications, and known fidelity trade-offs.
+- [ ] **Specify barcode strategy per symbology tier** — which commands are delegated to `rxing`, which require custom rendering, and exact validation/render parity expectations.
+- [ ] **Finalize renderer public contract** — stable input/output types for bitmap + SVG entrypoints, profile/dpi knobs, and error model for bindings.
 
 ### Tier 2: Developer Experience & Tooling (unblocks first release)
 
@@ -42,8 +53,8 @@ All Tier 1 items completed. See "Completed Work" below.
 ### Tier 4: Ecosystem & Bindings
 
 - [x] **TypeScript** — `packages/ts/core/` wraps WASM with full TypeScript types; `@zpl-toolchain/core` npm package; 5 functions (parse, parseWithTables, validate, format, explain)
-- [x] **Python** — `crates/python/` with PyO3 + maturin; `zpl-toolchain` on PyPI; 5 functions returning JSON strings; `abi3` for broad compat (Python 3.9+)
-- [x] **C FFI** — `crates/ffi/` with cdylib+staticlib; `cbindgen.toml` for header generation; `zpl_parse`, `zpl_validate`, `zpl_format`, `zpl_explain`, `zpl_free`; foundation for Go + .NET
+- [x] **Python** — `crates/python/` with PyO3 + maturin; `zpl-toolchain` on PyPI; core parse/validate APIs plus print/status/info with `_with_options` variants; `abi3` for broad compat (Python 3.9+)
+- [x] **C FFI** — `crates/ffi/` with cdylib+staticlib; `cbindgen.toml` for header generation; parse/validate/format/explain plus print/status/info with `_with_options` variants and panic guards; foundation for Go + .NET
 - [x] **.NET** — `packages/dotnet/ZplToolchain/` with P/Invoke wrapper; C# record types mirroring AST/Diagnostic; .NET Standard 2.0 for broad compat
 - [x] **Go** — `packages/go/zpltoolchain/` with cgo wrapper; Go structs mirroring AST/Diagnostic types; JSON unmarshal from C FFI
 - [x] **CI: ecosystem builds** — WASM build (wasm-pack), Python wheel (maturin), C FFI build (cargo), WASM size check (warn >500KB gzipped) in `.github/workflows/ci.yml`
@@ -102,23 +113,24 @@ All Tier 1 items completed. See "Completed Work" below.
 
 - [ ] **Shell installer script** — `curl -fsSL https://… | sh` one-liner for Linux/macOS; detect architecture, download from GitHub Releases
 - [ ] **Homebrew formula/tap** — `brew install zpl-toolchain` via a custom tap
-- [ ] **`zpl doctor` diagnostic command** — check environment (Rust version, tables freshness, printer reachability, profile validity) and report issues with suggested fixes
-- [ ] **`zpl check` / `zpl validate` command aliases** — more intuitive names for `syntax-check` and `lint`; aliases or renames
-- [ ] **Python bindings: return native dicts** — currently return JSON strings; should return native Python dicts/lists for ergonomic usage
-- [ ] **`npx @zpl-toolchain/cli` wrapper** — npm package that downloads the correct pre-built binary so Node.js users can run the CLI without Rust
+- [ ] **CI optimization: Python runtime matrix split by trigger** — keep full 3.9-3.13 on `main`/release, optionally run a reduced representative subset on PRs to reduce cycle time
+- [x] **`zpl doctor` diagnostic command** — initial implementation ships table availability checks, profile validity checks, and optional TCP printer reachability diagnostics with pretty/JSON output
+- [x] **`zpl check` / `zpl validate` command aliases** — added as visible aliases for `syntax-check` and `lint` to improve CLI discoverability without breaking existing commands
+- [x] **Python bindings: return native dicts** — parse/validate/print/query APIs now return native dict/list objects directly
+- [x] **`npx @zpl-toolchain/cli` wrapper** — npm package that downloads the matching pre-built release binary, caches it locally, and runs `zpl` without requiring Rust
 
 #### Print Client — Follow-up Items
 
-- [x] **Integration tests with mock TCP server** — 10 tests: connect, send, multi-label, raw bytes, ~HS query/parse, ~HI query/parse, reconnect, connection error, empty send, large payload (100KB)
-- [x] **TypeScript unit tests** — 71 tests across 6 suites: browser (19), proxy (22), printValidated (13), batch (7), status (6), types (4)
+- [x] **Rust print-client integration tests with mock TCP server** — 10 tests: connect, send, multi-label, raw bytes, ~HS query/parse, ~HI query/parse, reconnect, connection error, empty send, large payload (100KB)
+- [x] **TypeScript unit tests** — 89 tests across 7 suites: browser (19), proxy (32), printValidated (13), batch (7), print (8), status (6), types (4)
 - [x] **CLI print tests** — 11 tests via `assert_cmd`: help output, required args, dry-run (pretty + JSON for TCP/USB/serial), serial-USB conflict, missing file, validation with/without tables
 - [x] **Proxy wildcard allowlist** — `isPrinterAllowed` now supports `*` glob patterns (e.g., `"192.168.1.*"`); exact match fast path, regex conversion for patterns
 - [x] **`RetryPrinter` reconnection** — added `Reconnectable` trait, `ReconnectRetryPrinter<P>` wrapper that calls `reconnect()` between retry attempts; `TcpPrinter` implements `Reconnectable`; 4 tests
 - [x] **WebSocket proxy endpoint** — `createPrintProxy` accepts WebSocket connections on the same port for persistent bidirectional communication; JSON message protocol with `print` and `status` message types
 - [x] **WebSocket security hardening** — `wsSend()` readyState guard prevents crashes from sends to closed connections; `maxPayload` enforcement matches HTTP limits; `verifyClient` origin validation; 30s ping/pong keepalive with `terminate()` for idle connections
 - [x] **`printValidated` unit tests** — `_processValidationResult()` extracted for testability; 13 validation-logic unit tests
-- [x] **Go print bindings** — `Print()` and `QueryStatus()` functions in `packages/go/zpltoolchain/` for sending ZPL over TCP and querying `~HS` printer status via the C FFI
-- [x] **.NET print bindings** — `Zpl.Print()` and `Zpl.QueryStatus()` in `packages/dotnet/ZplToolchain/` for sending ZPL over TCP and querying `~HS` printer status via P/Invoke
+- [x] **Go print bindings** — `Print[WithOptions]()` plus `QueryStatus[Typed|WithOptions]()` and `QueryInfo[Typed|WithOptions]()` in `packages/go/zpltoolchain/`
+- [x] **.NET print bindings** — `Zpl.Print[WithOptions]()` plus `Zpl.QueryStatus[Typed|WithOptions]()` and `Zpl.QueryInfo[Typed|WithOptions]()` in `packages/dotnet/ZplToolchain/`
 - [x] **TypeScript batch API** — `printBatch()` standalone function and `TcpPrinter.printBatch(labels, opts?, onProgress?)` / `TcpPrinter.waitForCompletion()` methods; `BatchOptions`, `BatchProgress`, `BatchResult` types; 7 unit tests
 - [x] **Preflight diagnostics** — ZPL2308 (graphics bounds — `^GF` exceeds printable area), ZPL2309 (graphics memory — total `^GF` memory exceeds printer RAM), ZPL2310 (missing explicit `^PW`/`^LL` label dimension commands); 10 new validator tests
 - [x] **TcpPrinter write queue** — `print()` serializes concurrent writes through an internal promise-chain mutex; `close()` drains the queue before teardown
@@ -146,25 +158,32 @@ All Tier 1 items completed. See "Completed Work" below.
 - [x] **Proxy error message sanitization** — HTTP and WebSocket error paths return generic messages, not internal TCP error details
 - [x] **Proxy body-read timeout** — 30s deadline on `readBody()` to mitigate slow-loris attacks
 - [x] **C# `NodeJsonConverter.Write` fix** — serializes via `NodeDto` to prevent `StackOverflowException` from infinite recursion
-- [ ] **FFI `catch_unwind` guard** — wrap all `extern "C"` FFI functions in `std::panic::catch_unwind` to prevent undefined behavior if Rust code panics across the FFI boundary
-- [ ] **FFI configurable timeouts** — add optional `timeout_ms` / `config_json` parameters to `print_zpl` / `query_printer_status` for Go/C#/.NET consumers who need to tune connection settings
-- [ ] **FFI `query_info` exposure** — expose `~HI` (printer identification) query in bindings-common, FFI, Go, and C# (currently only `~HS` is exposed)
-- [ ] **Go/C# typed `HostStatus`** — `QueryStatus()` currently returns raw JSON string; add typed struct matching the 24-field Rust `HostStatus`
-- [ ] **Proxy per-client WS rate limiting** — add per-connection concurrency cap to prevent a single WebSocket client from flooding the proxy with requests
-- [ ] **Proxy WS correlation IDs** — accept optional `id` field in WS messages and echo it back for request-response correlation on concurrent WS usage
-- [ ] **TS `AbortSignal` support** — accept `AbortSignal` on `print()`, `printBatch()`, `waitForCompletion()` for cooperative cancellation (Node.js 18+)
-- [ ] **TS `BatchResult` with partial error** — when `printBatch` fails mid-batch, include `{ sent, total, error }` so callers know which labels were sent
-- [ ] **CLI stdin support** — accept `-` as a file path to read ZPL from stdin (common CLI convention)
-- [ ] **CLI JSON error envelope consistency** — ensure all error paths (`anyhow::bail!`, file-read `?`, tables loading) produce JSON error envelopes when `--output json` is active
+- [x] **FFI `catch_unwind` guard** — all `extern "C"` FFI entrypoints are now wrapped with panic guards to prevent unwinding across FFI boundaries (`zpl_free` included)
+- [x] **FFI configurable timeouts** — added optional timeout/config override plumbing (`timeout_ms`, `config_json`) for print/status/info flows via bindings-common + FFI + Go/.NET wrappers
+- [x] **FFI `query_info` exposure** — exposed `~HI` printer identification query through bindings-common, FFI, Go, and C#
+- [x] **Go/C# typed `HostStatus`** — added typed host-status models and typed query helpers while retaining raw JSON query methods for compatibility
+- [x] **Bindings envelope-hardening + docs sync** — hardened Go/.NET wrapper handling of FFI error envelopes (including parse/format/explain edge cases), added TS WASM contextual error wrapping, and synchronized package/readme docs with current API surfaces
+- [x] **Go/.NET wrapper runtime tests in CI** — added CI jobs for Go and .NET wrapper runtime tests, including FFI build/link setup and wrapper-level parse/format/validate smoke coverage
+- [x] **Python wrapper runtime tests in CI (wheel-level, multi-version)** — CI now builds and installs the wheel, then runs `python -m unittest discover -s crates/python/tests -v` across Python 3.9-3.13
+- [x] **Proxy per-client WS rate limiting** — added configurable per-connection sliding-window request limits (`wsRateLimitPerClient`) for WebSocket proxy traffic
+- [x] **Proxy WS correlation IDs** — WebSocket proxy now accepts optional `id` in requests and echoes it in responses for request/response correlation
+- [x] **TS `AbortSignal` support** — added cooperative cancellation support for `print()`, `TcpPrinter.print()`, `printBatch()`, and `waitForCompletion()`
+- [x] **TS `BatchResult` with partial error** — `printBatch` now returns `{ sent, total, error }` on mid-batch failure without throwing
+- [x] **CLI stdin support** — `parse`, `syntax-check`, `lint`, and `format` now accept `-` to read ZPL from stdin (`format --write/--check` intentionally rejects stdin)
+- [x] **CLI JSON error envelope consistency** — bubbled command failures now emit a consistent JSON envelope (`success=false`, `error`, `message`) when `--output json` is active
 - [x] **CLI serial override flags** — added `--serial-flow-control {none,software,hardware}`, `--serial-parity {none,even,odd}`, `--serial-stop-bits {one,two}`, and `--serial-data-bits {seven,eight}` so users can match printer/adapter line settings explicitly
 - [x] **`zpl serial-probe` diagnostics command** — added `zpl serial-probe` to classify serial endpoint health via `~HS`/`~HI` probes plus optional test-label send, with JSON diagnostics output
 - [x] **Serial debug trace mode** — added `--trace-io` for serial/Bluetooth transports to emit byte-level TX/RX hex+ASCII traces during print/probe troubleshooting
-- [ ] **Preflight `^MU` + bounds tests** — add tests for `^MUI`/`^MUM` interaction with ZPL2302 position bounds and ZPL2308 graphic bounds checks
-- [ ] **Preflight `^FT` bounds test** — add test for `^FT` position bounds (currently only `^FO` is tested)
-- [ ] **Preflight boundary comparison** — evaluate changing ZPL2302 from `>` to `>=` at exact boundary (position == label dimension)
+- [x] **Preflight `^MU` + bounds tests** — added coverage for `^MUI`/`^MUM` interaction with ZPL2308 graphics bounds checks (with existing ZPL2302 `^MU` tests retained)
+- [x] **Preflight `^FT` bounds test** — added explicit in-bounds `^FT` position test (out-of-bounds coverage already existed)
+- [x] **Preflight boundary comparison** — evaluated and codified current strict-`>` behavior with an exact-boundary regression test (position == label dimension does not emit ZPL2302)
 - [ ] **Feature-gated `serde`** — make `serde` an optional feature on print-client for users who only need the transport layer
-- [ ] **Mock TCP server for TS tests** — create a mock TCP server to enable happy-path testing of `print()`, `TcpPrinter`, retry logic, and proxy forwarding
-- [ ] **Proxy security test coverage** — add tests for `allowedPorts`, `maxConnections`, CORS origin filtering, `maxPayloadSize`, and `/status` HTTP endpoint
+- [x] **Mock TCP server for TS print-package tests** — added Node-based mock TCP printer server and happy-path integration tests for print, batch/partial failures, retry behavior, and proxy forwarding
+- [x] **TS print CI integration coverage guards** — CI explicitly verifies `dist/test/mock-tcp-server.js`, `dist/test/network-availability.js`, and `dist/test/print.test.js` exist, then asserts local TCP bind support before running tests to prevent silent skipping of network integration coverage
+- [x] **TS core runtime guard tests + CI job** — added `@zpl-toolchain/core` init-guard runtime tests and a dedicated CI job (`ts-core`) to run type-check/build/test for the package
+- [x] **Proxy security test coverage** — added regression tests for `allowedPorts` (HTTP + WS rejection paths), `maxConnections` WebSocket cap behavior, CORS origin filtering headers, `maxPayloadSize` (`413`), and `/status` forwarding to mock TCP printer
+- [x] **CI reproducibility hardening** — switched TS jobs to `npm ci`, enforced `--locked` on FFI release build, enabled `spec-compiler build --strict`, and constrained Python wheel build tooling (`maturin>=1,<2`)
+- [x] **Bindings/print docs parity cleanup** — synchronized root/FFI/Go/.NET/print docs with current API and behavior (e.g., `validate_with_tables` parity and Python native dict/list returns)
 
 ### Tier 5: Tech Debt & Future Considerations
 
@@ -175,7 +194,7 @@ All Tier 1 items completed. See "Completed Work" below.
 - [x] Add `#[non_exhaustive]` on `Severity` — future-proofs against adding variants; wildcard arms added to CLI match sites
 - [x] Extract `valid_kinds` list from shared constant — `ConstraintKind::ALL` is now the single source of truth; a `constraint_kinds_match_schema` test in spec-compiler validates the JSONC schema stays in sync
 - [x] `LazyLock` for `load_tables()` in snapshot tests — already done (uses `std::sync::LazyLock` in `tests/common/mod.rs`)
-- [ ] Cross-target parity test — native vs WASM parse/validate outputs
+- [x] Cross-target parity test — added fixtures that assert parse/validate parity between native core and the bindings-common path used by WASM/FFI
 - [x] Document `^CI` variable-length remap limitation — documented in `^CI.jsonc` constraint note
 - [ ] Schema v2 refactor — normalized param schemas, command maps, structured effects, DSL-based constraints (see `docs/research/schema-v2-proposal.md`). *Deferred in ROADMAP.md — revisit when current schema becomes a bottleneck.*
 - [ ] Schema parity gaps — `argUnion` examples, richer constraints
@@ -315,6 +334,7 @@ All Tier 1 items completed. See "Completed Work" below.
 - [x] Create `docs/STATE_MAP.md` documenting all state-setting commands and their consumers
 - [x] Design schema/validator support for cross-command state (`effects.sets`, `defaultFrom`, state accumulator)
 - [x] Implement cross-command state validation incrementally: `^BY`->barcodes, `^CF`->`^A`, `^FW`->orientations
+- [x] Implement typed value-state module (`crates/core/src/state/`) shared by validator and renderer-prep, with explicit default resolution via `defaultFrom` + `defaultFromStateKey`
 - [x] Add `effects.sets` to `^CI` for encoding state
 - [x] Add `effects.sets` to `^CC`/`^CD`/`^CT` for parser prefix state
 - [x] Add `effects.sets` to `^MD`, `^MM`, `^MT`, `^PR`, `^PM`, `^MU`, `^CW`, `^CM`, `^FR` for device/session/field state

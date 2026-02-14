@@ -185,6 +185,13 @@ export async function createPrintProxy(
   const allowed = config.allowedPrinters;
   const allowedPorts = config.allowedPorts ?? [9100];
   const maxConnections = config.maxConnections ?? 50;
+  const wsRateLimit = (() => {
+    const rl = config.wsRateLimitPerClient;
+    if (!rl) return undefined;
+    if (!Number.isInteger(rl.maxRequests) || rl.maxRequests <= 0) return undefined;
+    if (!Number.isInteger(rl.windowMs) || rl.windowMs <= 0) return undefined;
+    return rl;
+  })();
 
   // Pre-compile glob patterns into regexes once at startup.
   const compiledAllowlist: { pattern: string; regex?: RegExp }[] = (allowed ?? []).map((pattern) => {
@@ -358,6 +365,7 @@ export async function createPrintProxy(
 
   wss.on("connection", (ws: WsType) => {
     let alive = true;
+    const requestTimestamps: number[] = [];
     ws.on("pong", () => { alive = true; });
 
     const heartbeat = setInterval(() => {
@@ -387,30 +395,64 @@ export async function createPrintProxy(
           return;
         }
 
+        const correlationId = parsed.id;
+        const withId = <T extends Record<string, unknown>>(obj: T): T & { id?: string | number } => {
+          if (typeof correlationId === "string" || typeof correlationId === "number") {
+            return { ...obj, id: correlationId };
+          }
+          return obj;
+        };
+        if (
+          correlationId !== undefined &&
+          typeof correlationId !== "string" &&
+          typeof correlationId !== "number"
+        ) {
+          wsSend(ws, withId({ ok: false, error: '"id" must be a string or number when provided' }));
+          return;
+        }
+
+        if (wsRateLimit) {
+          const now = Date.now();
+          while (requestTimestamps.length > 0 && now - requestTimestamps[0] >= wsRateLimit.windowMs) {
+            requestTimestamps.shift();
+          }
+          if (requestTimestamps.length >= wsRateLimit.maxRequests) {
+            wsSend(
+              ws,
+              withId({
+                ok: false,
+                error: `Rate limit exceeded: max ${wsRateLimit.maxRequests} requests per ${wsRateLimit.windowMs}ms`,
+              }),
+            );
+            return;
+          }
+          requestTimestamps.push(now);
+        }
+
         const msgType = parsed.type;
         if (typeof msgType !== "string" || !["print", "status"].includes(msgType)) {
-          wsSend(ws, { ok: false, error: 'Missing or invalid "type" field (expected "print" or "status")' });
+          wsSend(ws, withId({ ok: false, error: 'Missing or invalid "type" field (expected "print" or "status")' }));
           return;
         }
 
         const printer = parsed.printer;
         if (typeof printer !== "string" || !printer) {
-          wsSend(ws, { ok: false, error: 'Missing required field "printer"' });
+          wsSend(ws, withId({ ok: false, error: 'Missing required field "printer"' }));
           return;
         }
 
         if (!isPrinterAllowed(printer, compiledAllowlist)) {
-          wsSend(ws, { ok: false, error: `Printer "${printer}" is not in the allowed list` });
+          wsSend(ws, withId({ ok: false, error: `Printer "${printer}" is not in the allowed list` }));
           return;
         }
 
         const reqPort = typeof parsed.port === "number" ? parsed.port : 9100;
         if (!Number.isInteger(reqPort) || reqPort < 1 || reqPort > 65535) {
-          wsSend(ws, { ok: false, error: "Port must be an integer between 1 and 65535" });
+          wsSend(ws, withId({ ok: false, error: "Port must be an integer between 1 and 65535" }));
           return;
         }
         if (!isPortAllowed(reqPort, allowedPorts)) {
-          wsSend(ws, { ok: false, error: `Port ${reqPort} is not in the allowed list` });
+          wsSend(ws, withId({ ok: false, error: `Port ${reqPort} is not in the allowed list` }));
           return;
         }
 
@@ -422,20 +464,20 @@ export async function createPrintProxy(
           if (msgType === "print") {
             const zpl = parsed.zpl;
             if (typeof zpl !== "string" || !zpl) {
-              wsSend(ws, { ok: false, error: 'Missing required field "zpl"' });
+              wsSend(ws, withId({ ok: false, error: 'Missing required field "zpl"' }));
               return;
             }
             const result = await print(zpl, { host: printer, port: reqPort, timeout });
-            wsSend(ws, { ok: true, ...result });
+            wsSend(ws, withId({ ok: true, ...result }));
           } else {
             // status
             const rawResp = await tcpQuery(printer, reqPort, "~HS", timeout);
             const status = parseHostStatus(rawResp);
-            wsSend(ws, { ok: true, ...status });
+            wsSend(ws, withId({ ok: true, ...status }));
           }
         } catch (err: unknown) {
           // Sanitize: don't leak internal IPs/ports from TCP errors.
-          wsSend(ws, { ok: false, error: "Failed to communicate with printer" });
+          wsSend(ws, withId({ ok: false, error: "Failed to communicate with printer" }));
         }
       })().catch((err) => {
         // Shouldn't happen — inner handler has its own try/catch.

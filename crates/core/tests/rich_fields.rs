@@ -60,6 +60,7 @@ fn rounding_policy_to_multiple_warns() {
                     default: None,
                     default_by_dpi: None,
                     default_from: None,
+                    default_from_state_key: None,
                     profile_constraint: None,
                     range_when: None,
                     rounding_policy: Some(zpl_toolchain_spec_tables::RoundingPolicy {
@@ -144,6 +145,7 @@ fn conditional_range_enforced() {
                         default: None,
                         default_by_dpi: None,
                         default_from: None,
+                        default_from_state_key: None,
                         profile_constraint: None,
                         range_when: Some(vec![zpl_toolchain_spec_tables::ConditionalRange {
                             when: "arg:bIsValue:X".to_string(),
@@ -169,6 +171,7 @@ fn conditional_range_enforced() {
                         default: None,
                         default_by_dpi: None,
                         default_from: None,
+                        default_from_state_key: None,
                         profile_constraint: None,
                         range_when: None,
                         rounding_policy: None,

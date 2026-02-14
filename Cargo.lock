@@ -1108,6 +1108,7 @@ checksum = "cfe53a6657fd280eaa890a3bc59152892ffa3e30101319d168b781ed6529b049"
 name = "zpl_toolchain_bindings_common"
 version = "0.1.0"
 dependencies = [
+ "serde",
  "serde_json",
  "zpl_toolchain_core",
  "zpl_toolchain_diagnostics",

@@ -10,11 +10,11 @@
       "arity": 6,
       "signature": { "params": ["o","e","h","f","g","e2"], "joiner": ",", "allowEmptyTrailing": true },
       "args": [
-        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+        { "name": "orientation", "key": "o", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW", "defaultFromStateKey": "field.orientation",
           "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
         { "name": "check_digit_selection", "key": "e", "type": "enum", "enum": ["A","B","C","D"], "optional": true, "default": "B",
           "doc": "Check digit algorithm (A=no check digit, B=Mod 10, C=2 Mod 10, D=Mod 11 and Mod 10)" },
-        { "name": "height", "key": "h", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+        { "name": "height", "key": "h", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY", "defaultFromStateKey": "barcode.height",
           "doc": "Height of the barcode in dots" },
         { "name": "print_interpretation_line", "key": "f", "type": "enum", "enum": ["Y","N"], "optional": true, "default": "Y",
           "doc": "Whether to print the human-readable interpretation line below the barcode" },

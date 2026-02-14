@@ -3,6 +3,7 @@
 mod render;
 
 use std::fs;
+use std::io::Read;
 use std::process;
 
 use anyhow::{Context, Result};
@@ -69,6 +70,7 @@ enum Cmd {
     },
 
     /// Syntax-check a ZPL file (parse only, no validation).
+    #[command(name = "syntax-check", visible_alias = "check")]
     SyntaxCheck {
         /// ZPL source file to check.
         #[arg(value_name = "FILE")]
@@ -80,6 +82,7 @@ enum Cmd {
 
     /// Lint: parse and validate a ZPL file against the spec and an optional
     /// printer profile.
+    #[command(name = "lint", visible_alias = "validate")]
     Lint {
         /// ZPL source file to lint.
         #[arg(value_name = "FILE")]
@@ -281,6 +284,23 @@ enum Cmd {
 
     /// Explain a diagnostic ID (e.g. ZPL1201).
     Explain { id: String },
+
+    /// Run environment and configuration diagnostics.
+    Doctor {
+        /// Optional printer target to check reachability (TCP only in v1).
+        /// Accepts the same host/IP/host:port syntax as `print`.
+        #[arg(long, short)]
+        printer: Option<String>,
+        /// Optional printer profile JSON to validate.
+        #[arg(long, value_name = "PATH")]
+        profile: Option<String>,
+        /// Override the embedded parser tables with a custom JSON file.
+        #[arg(long, value_name = "PATH", hide = true)]
+        tables: Option<String>,
+        /// TCP connect timeout in seconds for printer reachability checks.
+        #[arg(long, default_value_t = 5, value_parser = clap::value_parser!(u64).range(1..))]
+        timeout: u64,
+    },
 }
 
 /// Indentation style for the `format` command.
@@ -355,21 +375,21 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
     let format = Format::resolve_or_detect(cli.output.as_deref());
 
-    match cli.cmd {
-        Cmd::Parse { file, tables } => cmd_parse(&file, tables.as_deref(), format)?,
-        Cmd::SyntaxCheck { file, tables } => cmd_syntax_check(&file, tables.as_deref(), format)?,
+    let run_result = match cli.cmd {
+        Cmd::Parse { file, tables } => cmd_parse(&file, tables.as_deref(), format),
+        Cmd::SyntaxCheck { file, tables } => cmd_syntax_check(&file, tables.as_deref(), format),
         Cmd::Lint {
             file,
             tables,
             profile,
-        } => cmd_lint(&file, tables.as_deref(), profile.as_deref(), format)?,
+        } => cmd_lint(&file, tables.as_deref(), profile.as_deref(), format),
         Cmd::Format {
             file,
             tables,
             write,
             check,
             indent,
-        } => cmd_format(&file, tables.as_deref(), write, check, indent, format)?,
+        } => cmd_format(&file, tables.as_deref(), write, check, indent, format),
         Cmd::Print {
             files,
             printer,
@@ -427,7 +447,7 @@ fn main() -> Result<()> {
             #[cfg(feature = "serial")]
             trace_io,
             format,
-        })?,
+        }),
         #[cfg(feature = "serial")]
         Cmd::SerialProbe {
             port,
@@ -468,29 +488,45 @@ fn main() -> Result<()> {
             compare_tty_cu,
             trace_io,
             format,
-        })?,
+        }),
         #[cfg(feature = "tcp")]
         Cmd::BtStatus {
             printer,
             timeout,
             retries,
             retry_delay_ms,
-        } => cmd_bt_status(&printer, timeout, retries, retry_delay_ms, format)?,
+        } => cmd_bt_status(&printer, timeout, retries, retry_delay_ms, format),
         Cmd::Coverage {
             coverage,
             show_issues,
             json,
-        } => cmd_coverage(&coverage, show_issues, json)?,
-        Cmd::Explain { id } => cmd_explain(&id, format)?,
-    }
+        } => cmd_coverage(&coverage, show_issues, json),
+        Cmd::Explain { id } => cmd_explain(&id, format),
+        Cmd::Doctor {
+            printer,
+            profile,
+            tables,
+            timeout,
+        } => cmd_doctor(DoctorOpts {
+            printer_addr: printer.as_deref(),
+            profile_path: profile.as_deref(),
+            tables_path: tables.as_deref(),
+            timeout_secs: timeout,
+            format,
+        }),
+    };
 
+    if let Err(err) = run_result {
+        emit_cli_error(format, &err);
+        process::exit(1);
+    }
     Ok(())
 }
 
 // ── Commands ────────────────────────────────────────────────────────────
 
 fn cmd_parse(file: &str, tables_path: Option<&str>, format: Format) -> Result<()> {
-    let input = fs::read_to_string(file)?;
+    let input = read_input(file)?;
     let res = parse_with_resolved_tables(tables_path, &input)?;
 
     match format {
@@ -517,7 +553,7 @@ fn cmd_parse(file: &str, tables_path: Option<&str>, format: Format) -> Result<()
 }
 
 fn cmd_syntax_check(file: &str, tables_path: Option<&str>, format: Format) -> Result<()> {
-    let input = fs::read_to_string(file)?;
+    let input = read_input(file)?;
     let res = parse_with_resolved_tables(tables_path, &input)?;
     let ok = !res
         .diagnostics
@@ -551,8 +587,8 @@ fn cmd_lint(
     profile_path: Option<&str>,
     format: Format,
 ) -> Result<()> {
-    let input = fs::read_to_string(file)?;
-    let tables = resolve_tables(tables_path).context(
+    let input = read_input(file)?;
+    let tables = resolve_tables(tables_path)?.context(
         "no parser tables available — this binary was built without embedded tables. \
          Download a release build from https://github.com/trevordcampbell/zpl-toolchain/releases, \
          reinstall via `cargo install zpl_toolchain_cli`, or pass --tables <PATH> to a tables JSON file",
@@ -582,6 +618,7 @@ fn cmd_lint(
                 // Keep both keys for compatibility; prefer diagnostics.
                 "diagnostics": vr.issues,
                 "issues": vr.issues,
+                "resolved_labels": vr.resolved_labels,
             });
             println!("{}", serde_json::to_string_pretty(&out)?);
         }
@@ -606,8 +643,11 @@ fn cmd_format(
     indent: IndentStyle,
     format: Format,
 ) -> Result<()> {
-    let input = fs::read_to_string(file)?;
-    let tables = resolve_tables(tables_path);
+    let input = read_input(file)?;
+    if file == "-" && (write || check) {
+        anyhow::bail!("--write/--check cannot be used when reading from stdin ('-')");
+    }
+    let tables = resolve_tables(tables_path)?;
     let res = match tables.as_ref() {
         Some(t) => parse_with_tables(&input, Some(t)),
         None => parse_str(&input),
@@ -705,6 +745,37 @@ fn status_message(format: Format, condition: bool, if_true: &str, if_false: &str
     }
 }
 
+fn emit_cli_error(format: Format, err: &anyhow::Error) {
+    let message = format!("{err:#}");
+    match format {
+        Format::Json => {
+            let out = serde_json::json!({
+                "success": false,
+                "error": "command_failed",
+                "message": message,
+            });
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&out)
+                    .expect("error envelope JSON serialization cannot fail")
+            );
+        }
+        Format::Pretty => {
+            eprintln!("error: {message}");
+        }
+    }
+}
+
+fn read_input(file: &str) -> Result<String> {
+    if file == "-" {
+        let mut input = String::new();
+        std::io::stdin().read_to_string(&mut input)?;
+        Ok(input)
+    } else {
+        Ok(fs::read_to_string(file)?)
+    }
+}
+
 /// Bundled options for the `print` subcommand.
 struct PrintOpts<'a> {
     files: &'a [String],
@@ -734,6 +805,14 @@ struct PrintOpts<'a> {
     serial_data_bits: CliSerialDataBits,
     #[cfg(feature = "serial")]
     trace_io: bool,
+    format: Format,
+}
+
+struct DoctorOpts<'a> {
+    printer_addr: Option<&'a str>,
+    profile_path: Option<&'a str>,
+    tables_path: Option<&'a str>,
+    timeout_secs: u64,
     format: Format,
 }
 
@@ -783,7 +862,7 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
     let mut all_diagnostics: Vec<Diagnostic> = Vec::new();
 
     if !no_lint {
-        let tables = resolve_tables(tables_path).context(
+        let tables = resolve_tables(tables_path)?.context(
             "no parser tables available for pre-print validation — pass --no-lint to skip, \
              or reinstall via `cargo install zpl_toolchain_cli` which includes embedded tables",
         )?;
@@ -2531,6 +2610,203 @@ fn cmd_explain(id: &str, format: Format) -> Result<()> {
     Ok(())
 }
 
+fn cmd_doctor(opts: DoctorOpts<'_>) -> Result<()> {
+    #[cfg(feature = "tcp")]
+    use std::net::TcpStream;
+    use std::time::Duration;
+
+    let DoctorOpts {
+        printer_addr,
+        profile_path,
+        tables_path,
+        timeout_secs,
+        format,
+    } = opts;
+
+    let mut success = true;
+    let mut tables_json = serde_json::json!({
+        "ok": false,
+        "source": "none"
+    });
+    let mut profile_json = serde_json::Value::Null;
+    let mut printer_json = serde_json::Value::Null;
+
+    match resolve_tables(tables_path) {
+        Ok(Some(_)) => {
+            let source = if tables_path.is_some() {
+                "path"
+            } else {
+                "embedded"
+            };
+            tables_json = serde_json::json!({
+                "ok": true,
+                "source": source
+            });
+        }
+        Ok(None) => {
+            success = false;
+            tables_json = serde_json::json!({
+                "ok": false,
+                "source": "none",
+                "message": "no parser tables available"
+            });
+        }
+        Err(err) => {
+            success = false;
+            tables_json = serde_json::json!({
+                "ok": false,
+                "source": if tables_path.is_some() { "path" } else { "none" },
+                "message": format!("{err:#}")
+            });
+        }
+    }
+
+    if let Some(path) = profile_path {
+        let profile_result = fs::read_to_string(path)
+            .with_context(|| format!("failed to read profile '{}'", path))
+            .and_then(|s| {
+                zpl_toolchain_profile::load_profile_from_str(&s)
+                    .with_context(|| format!("failed to parse/validate profile '{}'", path))
+            });
+        match profile_result {
+            Ok(_) => {
+                profile_json = serde_json::json!({
+                    "ok": true,
+                    "path": path
+                });
+            }
+            Err(err) => {
+                success = false;
+                profile_json = serde_json::json!({
+                    "ok": false,
+                    "path": path,
+                    "message": format!("{err:#}")
+                });
+            }
+        }
+    }
+
+    if let Some(addr_raw) = printer_addr {
+        #[cfg(feature = "tcp")]
+        {
+            let timeout = Duration::from_secs(timeout_secs);
+            match resolve_printer_addr(addr_raw) {
+                Ok(addr) => match TcpStream::connect_timeout(&addr, timeout) {
+                    Ok(_) => {
+                        printer_json = serde_json::json!({
+                            "ok": true,
+                            "addr": addr.to_string(),
+                            "timeout_secs": timeout_secs
+                        });
+                    }
+                    Err(err) => {
+                        success = false;
+                        printer_json = serde_json::json!({
+                            "ok": false,
+                            "addr": addr.to_string(),
+                            "timeout_secs": timeout_secs,
+                            "message": format!("connect failed: {err}")
+                        });
+                    }
+                },
+                Err(err) => {
+                    success = false;
+                    printer_json = serde_json::json!({
+                        "ok": false,
+                        "addr": addr_raw,
+                        "timeout_secs": timeout_secs,
+                        "message": format!("failed to resolve printer address: {err}")
+                    });
+                }
+            }
+        }
+
+        #[cfg(not(feature = "tcp"))]
+        {
+            success = false;
+            printer_json = serde_json::json!({
+                "ok": false,
+                "addr": addr_raw,
+                "timeout_secs": timeout_secs,
+                "message": "printer reachability check requires CLI built with tcp feature"
+            });
+        }
+    }
+
+    match format {
+        Format::Json => {
+            let out = serde_json::json!({
+                "success": success,
+                "tables": tables_json,
+                "profile": profile_json,
+                "printer": printer_json
+            });
+            println!("{}", serde_json::to_string_pretty(&out)?);
+        }
+        Format::Pretty => {
+            eprintln!("zpl doctor - environment diagnostics");
+            let tables_ok = tables_json
+                .get("ok")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+            if tables_ok {
+                let source = tables_json
+                    .get("source")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("unknown");
+                eprintln!("  tables: ok ({source})");
+            } else {
+                eprintln!("  tables: missing");
+                if let Some(message) = tables_json.get("message").and_then(|v| v.as_str()) {
+                    eprintln!("    {message}");
+                }
+            }
+            if let Some(path) = profile_path {
+                let profile_ok = profile_json
+                    .get("ok")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+                if profile_ok {
+                    eprintln!("  profile: ok ({path})");
+                } else {
+                    let message = profile_json
+                        .get("message")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("unknown profile error");
+                    eprintln!("  profile: fail ({path})");
+                    eprintln!("    {message}");
+                }
+            }
+            if printer_addr.is_some() {
+                let printer_ok = printer_json
+                    .get("ok")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+                let addr = printer_json
+                    .get("addr")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("(unknown)");
+                if printer_ok {
+                    eprintln!("  printer: reachable ({addr})");
+                } else {
+                    let message = printer_json
+                        .get("message")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("unknown printer error");
+                    eprintln!("  printer: unreachable ({addr})");
+                    eprintln!("    {message}");
+                }
+            }
+        }
+    }
+
+    if !success {
+        process::exit(1);
+    }
+
+    Ok(())
+}
+
 // ── Helpers ─────────────────────────────────────────────────────────────
 
 /// Exit with code 1 if any diagnostic is an error.
@@ -2549,22 +2825,18 @@ fn exit_on_errors(diagnostics: &[Diagnostic]) {
 ///   2. Embedded tables compiled into the binary
 ///
 /// Returns `None` only if neither source is available.
-fn resolve_tables(explicit_path: Option<&str>) -> Option<ParserTables> {
+fn resolve_tables(explicit_path: Option<&str>) -> Result<Option<ParserTables>> {
     // 1. Explicit file path takes priority.
     if let Some(path) = explicit_path {
-        let json = fs::read_to_string(path).unwrap_or_else(|e| {
-            eprintln!("error: failed to read tables file '{}': {}", path, e);
-            std::process::exit(1);
-        });
-        let tables = serde_json::from_str(&json).unwrap_or_else(|e| {
-            eprintln!("error: failed to parse tables file '{}': {}", path, e);
-            std::process::exit(1);
-        });
-        return Some(tables);
+        let json = fs::read_to_string(path)
+            .with_context(|| format!("failed to read tables file '{}'", path))?;
+        let tables = serde_json::from_str(&json)
+            .with_context(|| format!("failed to parse tables file '{}'", path))?;
+        return Ok(Some(tables));
     }
 
     // 2. Embedded tables (compiled in via build.rs).
-    embedded_tables()
+    Ok(embedded_tables())
 }
 
 /// Return embedded tables when compiled in, `None` otherwise.
@@ -2584,7 +2856,7 @@ fn parse_with_resolved_tables(
     tables_path: Option<&str>,
     input: &str,
 ) -> Result<zpl_toolchain_core::grammar::parser::ParseResult> {
-    let tables = resolve_tables(tables_path);
+    let tables = resolve_tables(tables_path)?;
     Ok(match tables.as_ref() {
         Some(t) => parse_with_tables(input, Some(t)),
         None => parse_str(input),

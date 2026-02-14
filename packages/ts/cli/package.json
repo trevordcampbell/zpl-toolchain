@@ -1,0 +1,42 @@
+{
+  "name": "@zpl-toolchain/cli",
+  "version": "0.1.11",
+  "description": "npx wrapper for the zpl CLI binary",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "zpl": "./bin/zpl.mjs"
+  },
+  "scripts": {
+    "test": "node --test ./test/*.test.mjs",
+    "prepublishOnly": "npm test"
+  },
+  "keywords": [
+    "zpl",
+    "zebra",
+    "label",
+    "printer",
+    "cli"
+  ],
+  "license": "MIT OR Apache-2.0",
+  "author": "zpl-toolchain contributors",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trevordcampbell/zpl-toolchain.git",
+    "directory": "packages/ts/cli"
+  },
+  "homepage": "https://github.com/trevordcampbell/zpl-toolchain",
+  "bugs": {
+    "url": "https://github.com/trevordcampbell/zpl-toolchain/issues"
+  },
+  "files": [
+    "bin",
+    "lib",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

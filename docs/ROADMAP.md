@@ -1,6 +1,6 @@
 # ZPL Toolchain — Roadmap
 
-> **Status (2026-02-09):** Foundation complete. v0.1.3 published to crates.io, npm, and PyPI. This document captures the long-term vision, organized by phase, with honest assessments of complexity and approach.
+> **Status (2026-02-14):** Foundation complete. v0.1.11 published to crates.io, npm, and PyPI. This document captures the long-term vision, organized by phase, with honest assessments of complexity and approach.
 >
 > For tactical work items, see [BACKLOG.md](BACKLOG.md). For the original (pre-implementation) vision document, see [docs/research/archive/original-implementation-plan.md](research/archive/original-implementation-plan.md).
 
@@ -12,13 +12,14 @@ Everything below is **done and shipped**:
 
 - **Spec-first pipeline** — 216 JSONC spec files, 223/223 ZPL II commands (100%), spec-compiler generates parser tables, docs bundle, constraints bundle, coverage report
 - **Parser** — hand-written tokenizer + recursive-descent parser, opcode trie (O(k) longest-match), field data mode (`^FD`/`^FV`), raw data mode (`^GF`/`~DG`), prefix/delimiter mutation tracking (`^CC`/`^CD`), lossless round-trip via trivia preservation
-- **Validator** — table-driven: type/range/enum/length checking, cross-command state tracking, constraint DSL (`requires`/`incompatible`/`order`/`emptyData`/`note`), profile-aware bounds, printer gates, media validation, barcode field data validation (29 symbologies), 46 diagnostic codes with structured context
+- **Validator** — table-driven: type/range/enum/length checking, typed cross-command value state tracking (`defaultFrom` + `defaultFromStateKey`), constraint DSL (`requires`/`incompatible`/`order`/`emptyData`/`note`), profile-aware bounds, printer gates, media validation, barcode field data validation (29 symbologies), 46 diagnostic codes with structured context
 - **Formatter** — spec-driven, configurable indentation, trailing-arg trimming, round-trip fidelity
 - **Profiles** — 11 printer profiles, hardware feature gates, DPI-dependent defaults, media capabilities
-- **CLI** — `parse`, `lint`, `format`, `coverage`, `explain` with `--output pretty|json`
-- **Bindings** — unified 5-function API across WASM (TypeScript), Python (PyO3), C FFI, Go (cgo), .NET (P/Invoke). Native (non-WASM) targets additionally expose `print_zpl()` and `query_printer_status()` for hardware printing
+- **CLI** — `parse`, `syntax-check` (`check` alias), `lint` (`validate` alias), `format`, `print`, `explain`, `doctor` with `--output pretty|json`
+- **Bindings** — unified 5-function core API across WASM (TypeScript), Python (PyO3), C FFI, Go (cgo), .NET (P/Invoke). Native (non-WASM) targets additionally expose print/status/info APIs with typed and `_with_options` variants for hardware printing
 - **CI/CD** — release-plz automation, publishing to crates.io, npm, PyPI, Go module tagging, cross-platform builds
-- **465+ passing tests** — parser, validator, emitter round-trips, golden snapshots, fuzz smoke tests, print client integration tests, preflight diagnostics, TypeScript batch API, browser SDK tests
+- **DX distribution** — `@zpl-toolchain/cli` npm wrapper enables `npx @zpl-toolchain/cli` without requiring Rust toolchains
+- **Hundreds of passing tests** — parser, validator, emitter round-trips, golden snapshots, fuzz smoke tests, print client integration tests, preflight diagnostics, and TypeScript package/runtime coverage
 
 ---
 
@@ -34,7 +35,7 @@ These items can all start now, in parallel, with no dependencies on each other:
 | 4 | ~~TCP print client~~ | 5a | Done (v0.1.0) | End-to-end: lint → print |
 | 5 | Performance benchmarks | 1b | 1 week | Baseline before renderer (needs corpus) |
 
-After these, the next major effort is the **state tracking refactor** (2–3 weeks) followed by the **native renderer** (3–6 months, incremental).
+After these, the next major effort is the **native renderer** (3–6 months, incremental).
 
 ---
 
@@ -59,6 +60,17 @@ Expand from 5 samples (141 lines) to 30–50 curated labels. See [CORPUS_EXPANSI
 - Profile before optimizing (the backlog lists several deferred optimizations)
 
 **Effort:** 1 week | **Risk:** Low | **Depends on:** Corpus (1a)
+
+### 1c. Cross-Binding Runtime Test Execution in CI (Completed)
+
+- Added CI jobs that execute wrapper/runtime regression tests for Go and .NET bindings
+- Added Python binding runtime-test coverage across Python 3.9-3.13 by building/installing the wheel and running `crates/python/tests` against the installed module (runtime API confidence, not only compile/link checks)
+- Added a dedicated TypeScript core CI job (`ts-core`) that runs type-check/build/test and verifies the package-level init guard behavior
+- Added TS print CI integration guards: artifact assertions (`dist/test/mock-tcp-server.js`, `dist/test/network-availability.js`, `dist/test/print.test.js`) plus a local TCP bind precheck so integration suites cannot be silently skipped
+- Tightened CI reproducibility and policy gates (`npm ci`, locked FFI release builds, strict spec-table generation, constrained `maturin` install range)
+- Keeps confidence coverage focused on preventing wrapper/core behavior drift
+
+**Effort:** 0.5–1 week | **Risk:** Low | **Depends on:** Nothing
 
 ---
 
@@ -135,21 +147,19 @@ All WASM-compatible, actively maintained, permissively licensed:
 | **fontdb** + **rustybuzz** | Font loading/shaping | MIT | Part of the resvg ecosystem. For `^A@` downloadable fonts (later) |
 | **image** (0.25) | Image I/O (PNG, JPEG) | MIT/Apache-2.0 | Reading/writing rendered output |
 
-### Prerequisite: State Tracking Refactor
+### State Tracking Refactor (Completed)
 
-The current validator tracks *presence* of state-setting commands (e.g., "was `^BY` used?") but not their *values* (e.g., "`^BY` set module width to 3, ratio to 2.5, height to 100"). The renderer needs actual values to draw correctly.
+Typed state tracking is now implemented in `crates/core/src/state/` and shared by validator and future renderer work.
 
-Before building the renderer, extend `LabelState` to store parsed values alongside presence flags:
+Implemented producer value tracking:
 
 - `^BY` → `BarcodeDefaults { module_width, ratio, height }`
 - `^CF` → `FontDefaults { font, height, width }`
-- `^FW` → `FieldOrientation { rotation, justification }`
+- `^FW` → `FieldOrientationDefaults { orientation, justification }`
 - `^LH` → `LabelHome { x, y }`
-- `^PW`/`^LL` → already stored (✅)
+- `^PW`/`^LL`/`^PO`/`^PM`/`^LR`/`^LT`/`^LS` → `LayoutDefaults`
 
-Extract the state-update logic into a shared `crates/core/src/state/` module that both the validator and renderer import. The AST walk pattern stays identical — we just capture more data during the walk.
-
-**Effort:** 2–3 weeks | **Risk:** Low | **Depends on:** Nothing
+Consumer defaults resolve explicitly through spec metadata (`defaultFrom` + `defaultFromStateKey`) and are validated with the same type/range/profile rules as explicit args.
 
 ### 3a. Native Renderer (Incremental)
 
@@ -187,7 +197,7 @@ crates/
 
 The `layout.rs` module shares state-tracking patterns with the validator. When mature, factor the shared code into a common module both consume.
 
-A dedicated renderer planning doc (`docs/RENDERER_PLAN.md`) will be created when we begin Phase 3 development.
+A dedicated renderer planning doc (`docs/RENDERER_PLAN.md`) will be created before implementation begins, and its prerequisite research checklist is tracked in `docs/BACKLOG.md` under "Renderer Prerequisite: Research & Decision Gate".
 
 **Effort:** 3–6 months (incremental) | **Risk:** Medium | **Depends on:** Nothing (can start anytime)
 
@@ -236,7 +246,6 @@ flowchart TD
   end
 
   subgraph rendering [Phase 3 - Rendering]
-    StateRefactor["State Tracking Refactor\nvalues, not just presence"]
     NativeRender["Native Renderer\ntiny-skia + rxing\nbitmap + SVG"]
     Goldens["Golden PNG Tests"]
   end
@@ -270,9 +279,6 @@ flowchart TD
   NativeRender --> Designer
   Builder --> Designer
   Validator --> Preflight
-  StateRefactor --> NativeRender
-
-  foundation --> StateRefactor
   foundation --> Playground
   foundation --> PrintClient
   foundation --> NativeRender
@@ -376,7 +382,7 @@ The `crates/print-client/` crate provides:
 - **STX/ETX frame parser**: byte-level state machine, transport-agnostic (`impl Read`)
 - **Retry with exponential backoff**: `RetryPrinter<P>` wrapper, jitter, `is_retryable()` classification; `ReconnectRetryPrinter<P>` with automatic reconnection via `Reconnectable` trait
 - **CLI integration**: `zpl print <file.zpl> --printer <addr>` with `--no-lint`, `--strict`, `--dry-run`, `--status`, `--wait`
-- **Bindings**: `print_zpl()` and `query_printer_status()` in bindings-common (cfg-gated, not WASM); Go `Print()` / `QueryStatus()` via cgo; .NET `Zpl.Print()` / `Zpl.QueryStatus()` via P/Invoke
+- **Bindings**: `print_zpl[_with_options]()` plus `query_printer_status[_with_options]()` and `query_printer_info[_with_options]()` in bindings-common (cfg-gated, not WASM); Go/.NET wrappers expose raw + typed query helpers
 - **TypeScript**: separate `@zpl-toolchain/print` package (pure TS, `node:net`, browser proxy with WebSocket support); batch API (`printBatch(labels, opts?, onProgress?)`, `waitForCompletion()`) with `BatchOptions`/`BatchProgress`/`BatchResult` types
 
 **Effort:** Done | **Risk:** — | **Depends on:** Nothing
@@ -470,7 +476,7 @@ Immediate (can all start now):
   Phase 2: Playground (diagnostics) ──── VS Code MVP ──── Enhanced
 
 Medium-term:
-  Phase 3: State Refactor ──── Native Renderer ──── Golden PNGs
+  Phase 3: Native Renderer ──── Golden PNGs
                                       │
                                       └──── Playground Preview Upgrade (3c)
   Phase 4: Label Builder ──── Template System ──── Image Encoding
@@ -480,7 +486,7 @@ Later:
   Phase 6: VS Code Designer ──── Web Designer (needs renderer + builder)
 ```
 
-Phase 5a is complete. Phases 1, 2, and 4 are fully independent and can proceed in parallel. Phase 3 requires the state tracking refactor first. Phase 3c upgrades the Phase 2a playground (same app, not separate). Phase 5c and Phase 6 depend on the renderer.
+Phase 5a is complete. Phases 1, 2, and 4 are fully independent and can proceed in parallel. Phase 3c upgrades the Phase 2a playground (same app, not separate). Phase 5c and Phase 6 depend on the renderer.
 
 ---
 

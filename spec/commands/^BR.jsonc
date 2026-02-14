@@ -10,7 +10,7 @@
       "arity": 6,
       "signature": { "params": ["a","b","c","d","e","f"], "joiner": ",", "allowEmptyTrailing": true },
       "args": [
-        { "name": "orientation", "key": "a", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW",
+        { "name": "orientation", "key": "a", "type": "enum", "enum": ["N","R","I","B"], "optional": true, "defaultFrom": "^FW", "defaultFromStateKey": "field.orientation",
           "doc": "Rotation of the barcode (N=normal, R=90 CW, I=180, B=270 CW)" },
         { "name": "symbology_type", "key": "b", "type": "int", "range": [1, 12], "optional": true, "default": 1,
           "doc": "GS1 DataBar variant (1=omnidirectional, 2=truncated, 3=stacked, 4=stacked omnidirectional, 5=limited, 6=expanded, 7-12=composite variants)" },
@@ -18,7 +18,7 @@
           "doc": "Size multiplier for the symbol modules (1-10)" },
         { "name": "separator_height", "key": "d", "type": "int", "range": [1, 2], "optional": true, "default": 1,
           "doc": "Separator height between rows (1 or 2 dots)" },
-        { "name": "barcode_height", "key": "e", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY",
+        { "name": "barcode_height", "key": "e", "type": "int", "range": [1, 32000], "unit": "dots", "optional": true, "defaultFrom": "^BY", "defaultFromStateKey": "barcode.height",
           "doc": "Height of the barcode in dots" },
         { "name": "segment_width", "key": "f", "type": "int", "range": [2, 22], "optional": true, "default": 22,
           "doc": "Segment width for expanded variants (even values 2-22)" }

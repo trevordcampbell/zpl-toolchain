@@ -81,6 +81,17 @@ the automated upload failed), trigger the manual workflow from the GitHub Action
 > race conditions, and API rate limiting. Using `workflow_dispatch` keeps the
 > manual workflow as an explicit, intentional action only.
 
+## Process guardrails (recent learnings)
+
+To avoid repeat regressions and CI surprises, keep these guardrails in mind:
+
+- **Clippy policy:** run full-workspace clippy (`cargo clippy --workspace -- -D warnings`) before shipping. For PyO3 compatibility in CI/devcontainer environments, use `PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1`.
+- **Hook enforcement:** pre-commit runs clippy when Rust files are staged; pre-push runs full-workspace clippy plus the Rust test suite (excluding wasm/python runtime crates for nextest).
+- **TypeScript core CI dependency:** `packages/ts/core` type-check/build depends on generated `wasm/pkg` artifacts, so CI must build WASM before TS core checks.
+- **Python runtime confidence:** runtime checks should validate the installed wheel behavior (build wheel, install wheel, run tests), not only `cargo test` for the PyO3 crate.
+- **release-plz scope:** release-plz PR package lists only crates with `publish = true` (Cargo ecosystem). npm/PyPI versions are synchronized in workflow steps and published by downstream jobs.
+- **Local binding verification:** use `scripts/test-python-wheel-local.sh` and `scripts/test-dotnet-local.sh` for reproducible local confidence before push/release.
+
 ## Pre-release verification
 
 Before creating a release (or when debugging CI failures), run the full test suite locally.

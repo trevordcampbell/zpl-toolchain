@@ -5,6 +5,9 @@ namespace ZplToolchain.Tests;
 
 public class ZplTests
 {
+    private static bool ContainsIgnoreCase(string text, string value) =>
+        text.Contains(value, StringComparison.OrdinalIgnoreCase);
+
     [Fact]
     public void Parse_ValidZpl_ReturnsResult()
     {
@@ -50,5 +53,49 @@ public class ZplTests
         var ex = Assert.Throws<InvalidOperationException>(
             () => Zpl.ValidateWithTables("^XA^FDHello^FS^XZ", "{invalid"));
         Assert.Contains("invalid", ex.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void PrintWithOptions_InvalidConfigJson_ThrowsBeforeNetworkIo()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            Zpl.PrintWithOptions("^XA^XZ", "127.0.0.1:9100", profileJson: null, validate: false, configJson: "{invalid"));
+        Assert.True(
+            ContainsIgnoreCase(ex.Message, "config")
+                || ContainsIgnoreCase(ex.Message, "json")
+                || ContainsIgnoreCase(ex.Message, "invalid"),
+            $"unexpected message: {ex.Message}");
+    }
+
+    [Fact]
+    public void QueryStatusWithOptions_InvalidConfigJson_ThrowsBeforeNetworkIo()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            Zpl.QueryStatusWithOptions("127.0.0.1:9100", configJson: "{invalid"));
+        Assert.True(
+            ContainsIgnoreCase(ex.Message, "config")
+                || ContainsIgnoreCase(ex.Message, "json")
+                || ContainsIgnoreCase(ex.Message, "invalid"),
+            $"unexpected message: {ex.Message}");
+    }
+
+    [Fact]
+    public void QueryInfoWithOptions_InvalidConfigJson_ThrowsBeforeNetworkIo()
+    {
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            Zpl.QueryInfoWithOptions("127.0.0.1:9100", configJson: "{invalid"));
+        Assert.True(
+            ContainsIgnoreCase(ex.Message, "config")
+                || ContainsIgnoreCase(ex.Message, "json")
+                || ContainsIgnoreCase(ex.Message, "invalid"),
+            $"unexpected message: {ex.Message}");
+    }
+
+    [Fact]
+    public void Parse_Utf8Payload_RoundTripsContent()
+    {
+        var result = Zpl.Parse("^XA^FO50,50^FDHéllo 世界^FS^XZ");
+        Assert.NotNull(result);
+        Assert.NotEmpty(result.Ast.Labels);
     }
 }

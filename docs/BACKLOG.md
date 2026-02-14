@@ -163,7 +163,7 @@ Before implementation work starts in `crates/renderer/`, complete these research
 - [x] **Go/C# typed `HostStatus`** — added typed host-status models and typed query helpers while retaining raw JSON query methods for compatibility
 - [x] **Bindings envelope-hardening + docs sync** — hardened Go/.NET wrapper handling of FFI error envelopes (including parse/format/explain edge cases), added TS WASM contextual error wrapping, and synchronized package/readme docs with current API surfaces
 - [x] **Go/.NET wrapper runtime tests in CI** — added CI jobs for Go and .NET wrapper runtime tests, including FFI build/link setup and wrapper-level parse/format/validate smoke coverage
-- [x] **Python wrapper runtime tests in CI (PyO3 linkable environment)** — added dedicated CI job running `cargo test -p zpl_toolchain_python` with Python dev/linker symbols available
+- [x] **Python wrapper runtime tests in CI (wheel-level, multi-version)** — CI now builds and installs the wheel, then runs `python -m unittest discover -s crates/python/tests -v` across Python 3.9-3.13
 - [x] **Proxy per-client WS rate limiting** — added configurable per-connection sliding-window request limits (`wsRateLimitPerClient`) for WebSocket proxy traffic
 - [x] **Proxy WS correlation IDs** — WebSocket proxy now accepts optional `id` in requests and echoes it in responses for request/response correlation
 - [x] **TS `AbortSignal` support** — added cooperative cancellation support for `print()`, `TcpPrinter.print()`, `printBatch()`, and `waitForCompletion()`
@@ -181,7 +181,7 @@ Before implementation work starts in `crates/renderer/`, complete these research
 - [x] **TS print CI integration coverage guards** — CI explicitly verifies `dist/test/mock-tcp-server.js`, `dist/test/network-availability.js`, and `dist/test/print.test.js` exist, then asserts local TCP bind support before running tests to prevent silent skipping of network integration coverage
 - [x] **TS core runtime guard tests + CI job** — added `@zpl-toolchain/core` init-guard runtime tests and a dedicated CI job (`ts-core`) to run type-check/build/test for the package
 - [x] **Proxy security test coverage** — added regression tests for `allowedPorts` (HTTP + WS rejection paths), `maxConnections` WebSocket cap behavior, CORS origin filtering headers, `maxPayloadSize` (`413`), and `/status` forwarding to mock TCP printer
-- [x] **CI reproducibility hardening** — switched TS jobs to `npm ci`, enforced `--locked` on FFI release build, enabled `spec-compiler build --strict`, and constrained Python wheel build tooling (`maturin>=2,<3`)
+- [x] **CI reproducibility hardening** — switched TS jobs to `npm ci`, enforced `--locked` on FFI release build, enabled `spec-compiler build --strict`, and constrained Python wheel build tooling (`maturin>=1,<2`)
 - [x] **Bindings/print docs parity cleanup** — synchronized root/FFI/Go/.NET/print docs with current API and behavior (e.g., `validate_with_tables` parity and Python native dict/list returns)
 
 ### Tier 5: Tech Debt & Future Considerations

@@ -64,7 +64,7 @@ Expand from 5 samples (141 lines) to 30–50 curated labels. See [CORPUS_EXPANSI
 ### 1c. Cross-Binding Runtime Test Execution in CI (Completed)
 
 - Added CI jobs that execute wrapper/runtime regression tests for Go and .NET bindings
-- Added a Python binding runtime-test job in a PyO3-linkable environment so `cargo test -p zpl_toolchain_python` is enforced (not only `cargo check`)
+- Added Python binding runtime-test coverage across Python 3.9-3.13 by building/installing the wheel and running `crates/python/tests` against the installed module (runtime API confidence, not only compile/link checks)
 - Added a dedicated TypeScript core CI job (`ts-core`) that runs type-check/build/test and verifies the package-level init guard behavior
 - Added TS print CI integration guards: artifact assertions (`dist/test/mock-tcp-server.js`, `dist/test/network-availability.js`, `dist/test/print.test.js`) plus a local TCP bind precheck so integration suites cannot be silently skipped
 - Tightened CI reproducibility and policy gates (`npm ci`, locked FFI release builds, strict spec-table generation, constrained `maturin` install range)

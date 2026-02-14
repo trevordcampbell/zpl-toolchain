@@ -31,9 +31,12 @@ fn parse_missing_file_emits_json_error_envelope() {
     assert_eq!(json["success"], false);
     assert_eq!(json["error"], "command_failed");
     assert!(
-        json["message"]
-            .as_str()
-            .is_some_and(|m| m.contains("No such file") || m.contains("failed to")),
+        json["message"].as_str().is_some_and(|m| {
+            m.contains("No such file")
+                || m.contains("cannot find the file")
+                || m.contains("os error 2")
+                || m.contains("failed to")
+        }),
         "unexpected message: {}",
         json["message"]
     );
@@ -113,9 +116,12 @@ fn format_missing_file_emits_json_error_envelope() {
     assert_eq!(json["success"], false);
     assert_eq!(json["error"], "command_failed");
     assert!(
-        json["message"]
-            .as_str()
-            .is_some_and(|m| m.contains("No such file") || m.contains("failed to")),
+        json["message"].as_str().is_some_and(|m| {
+            m.contains("No such file")
+                || m.contains("cannot find the file")
+                || m.contains("os error 2")
+                || m.contains("failed to")
+        }),
         "unexpected message: {}",
         json["message"]
     );

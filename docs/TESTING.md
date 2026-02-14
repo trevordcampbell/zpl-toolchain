@@ -25,6 +25,16 @@ The `--exclude` flags are required because:
 - `zpl_toolchain_wasm` needs `wasm-pack` and the `wasm32-unknown-unknown` target
 - `zpl_toolchain_python` needs `maturin` and a Python environment
 
+For local Python/.NET binding confidence, use the helper scripts:
+
+```bash
+bash scripts/test-python-wheel-local.sh
+bash scripts/test-dotnet-local.sh
+```
+
+`test-python-wheel-local.sh` builds the wheel and runs tests in a local venv
+(`.venv-python-wheel-tests`) so it does not depend on system-site package writes.
+
 ### Individual crates
 
 ```bash
@@ -189,7 +199,7 @@ Tests run automatically on every push and PR via GitHub Actions:
 | `Spec Validation & Coverage` | `zpl-spec-compiler check` + `build` + coverage report |
 | `WASM Build` | `wasm-pack build` + size check |
 | `Python Wheel` | `maturin build` |
-| `Python Runtime Tests (PyO3)` | `cargo test -p zpl_toolchain_python` in a Python-linkable environment |
+| `Python Runtime Tests (py3.9-3.13)` | Build wheel + install wheel + `python -m unittest discover -s crates/python/tests -v` |
 | `Go Bindings Runtime Tests` | Build FFI release library + `go test -v ./...` for Go wrapper runtime behavior |
 | `.NET Bindings Runtime Tests` | Build FFI release library + `dotnet test` for .NET wrapper runtime behavior |
 | `C FFI (ubuntu/macos/windows)` | Build + verify shared library exists |
@@ -224,3 +234,9 @@ older build, update to the latest version.
 If the proxy wildcard test takes >15 seconds, check that it's connecting to
 `127.0.0.1` (instant `ECONNREFUSED`) rather than a remote IP (timeout-based failure).
 The test at `packages/ts/print/src/test/proxy.test.ts` should use `127.0.0.1:9100`.
+
+### `dotnet` not found when running local .NET tests
+
+If `bash scripts/test-dotnet-local.sh` reports `dotnet is required but not found on PATH`,
+rebuild the devcontainer after enabling the .NET feature in
+`.devcontainer/devcontainer.json`.

@@ -95,6 +95,8 @@ cargo clippy --workspace -- -D warnings
 cargo nextest run --workspace --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
 (cd packages/ts/print && npm ci && npm run build && npm test)
 (cd packages/ts/cli && npm test)
+bash scripts/test-python-wheel-local.sh
+bash scripts/test-dotnet-local.sh
 ```
 
 ## Version scheme

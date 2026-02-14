@@ -24,10 +24,10 @@ __pycache__/
 *.whl
 dist/
 *.egg-info/
+.venv-python-wheel-tests/
 
 # Node / TypeScript
 node_modules/
-package-lock.json
 packages/ts/core/dist/
 packages/ts/core/wasm/
 
@@ -35,6 +35,11 @@ packages/ts/core/wasm/
 *.so
 *.dylib
 *.dll
+
+# .NET build output
+packages/dotnet/**/bin/
+packages/dotnet/**/obj/
+packages/dotnet/**/TestResults/
 
 # Reference materials (copyrighted, not for distribution)
 *.pdf

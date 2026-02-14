@@ -1,4 +1,6 @@
+using System;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
 
 namespace ZplToolchain;
@@ -12,58 +14,61 @@ namespace ZplToolchain;
 public static class Zpl
 {
     private const string LibName = "zpl_toolchain_ffi";
+    // netstandard2.0 can compile against frameworks where the enum member isn't available,
+    // but the runtime value for UTF-8 strings is stable.
+    private const UnmanagedType Utf8String = (UnmanagedType)48;
 
     // ── P/Invoke declarations ───────────────────────────────────────────
 
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
     private static extern IntPtr zpl_parse(
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string input);
+        [MarshalAs(Utf8String)] string input);
 
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
     private static extern IntPtr zpl_parse_with_tables(
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string input,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string tablesJson);
+        [MarshalAs(Utf8String)] string input,
+        [MarshalAs(Utf8String)] string tablesJson);
 
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
     private static extern IntPtr zpl_validate(
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string input,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string? profileJson);
+        [MarshalAs(Utf8String)] string input,
+        [MarshalAs(Utf8String)] string? profileJson);
 
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
     private static extern IntPtr zpl_validate_with_tables(
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string input,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string tablesJson,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string? profileJson);
+        [MarshalAs(Utf8String)] string input,
+        [MarshalAs(Utf8String)] string tablesJson,
+        [MarshalAs(Utf8String)] string? profileJson);
 
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
     private static extern IntPtr zpl_format(
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string input,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string? indent);
+        [MarshalAs(Utf8String)] string input,
+        [MarshalAs(Utf8String)] string? indent);
 
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
     private static extern IntPtr zpl_explain(
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string id);
+        [MarshalAs(Utf8String)] string id);
 
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
     private static extern IntPtr zpl_print_with_options(
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string zpl,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string printerAddr,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string? profileJson,
+        [MarshalAs(Utf8String)] string zpl,
+        [MarshalAs(Utf8String)] string printerAddr,
+        [MarshalAs(Utf8String)] string? profileJson,
         [MarshalAs(UnmanagedType.I1)] bool validate,
         ulong timeoutMs,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string? configJson);
+        [MarshalAs(Utf8String)] string? configJson);
 
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
     private static extern IntPtr zpl_query_status_with_options(
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string printerAddr,
+        [MarshalAs(Utf8String)] string printerAddr,
         ulong timeoutMs,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string? configJson);
+        [MarshalAs(Utf8String)] string? configJson);
 
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
     private static extern IntPtr zpl_query_info_with_options(
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string printerAddr,
+        [MarshalAs(Utf8String)] string printerAddr,
         ulong timeoutMs,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string? configJson);
+        [MarshalAs(Utf8String)] string? configJson);
 
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
     private static extern void zpl_free(IntPtr ptr);
@@ -75,7 +80,14 @@ public static class Zpl
         if (ptr == IntPtr.Zero) return null;
         try
         {
-            return Marshal.PtrToStringUTF8(ptr);
+            var len = 0;
+            while (Marshal.ReadByte(ptr, len) != 0)
+            {
+                len++;
+            }
+            var bytes = new byte[len];
+            Marshal.Copy(ptr, bytes, 0, len);
+            return Encoding.UTF8.GetString(bytes);
         }
         finally
         {

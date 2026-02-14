@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.12](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.11...v0.1.12) - 2026-02-14
+
+### Added
+
+- *(cli)* add doctor diagnostics and npm-distributed CLI wrapper
+- *(core)* add typed state tracking and spec-driven validation hardening
+
+### Fixed
+
+- *(ci)* harden Python/.NET runtime confidence and tooling
+
 ## [0.1.11](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.10...v0.1.11) - 2026-02-13
 
 ### Other

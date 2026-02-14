@@ -5,10 +5,8 @@
 
 set -e
 
-EXCLUDE="--exclude zpl_toolchain_wasm --exclude zpl_toolchain_python"
-
 echo "pre-push: running clippy..."
-if ! cargo clippy --workspace --locked $EXCLUDE -- -D warnings; then
+if ! PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 cargo clippy --workspace --locked -- -D warnings; then
     echo ""
     echo "  Clippy found warnings. Fix them before pushing."
     echo ""
@@ -17,7 +15,7 @@ fi
 
 echo "pre-push: running tests..."
 if command -v cargo-nextest &>/dev/null; then
-    cargo nextest run --workspace --locked $EXCLUDE
+    cargo nextest run --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
 else
-    cargo test --workspace --locked $EXCLUDE
+    cargo test --workspace --locked --exclude zpl_toolchain_wasm --exclude zpl_toolchain_python
 fi

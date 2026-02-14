@@ -13,6 +13,7 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   RUSTFLAGS: -D warnings
+  PYO3_USE_ABI3_FORWARD_COMPATIBILITY: "1"
 
 jobs:
   # ── Fast fail gate: cheap, high-signal checks first ────────────────────

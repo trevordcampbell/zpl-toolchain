@@ -33,6 +33,7 @@ For local Python/.NET binding confidence, use the helper scripts:
 ```bash
 bash scripts/test-python-wheel-local.sh
 bash scripts/test-dotnet-local.sh
+bash scripts/test-go-local.sh
 ```
 
 `test-python-wheel-local.sh` builds the wheel and runs tests in a local venv
@@ -41,7 +42,7 @@ bash scripts/test-dotnet-local.sh
 ### Individual crates
 
 ```bash
-cargo nextest run -p zpl_toolchain_core           # parser, validator, emitter (255 tests)
+cargo nextest run -p zpl_toolchain_core           # parser, validator, emitter (300+ tests)
 cargo nextest run -p zpl_toolchain_print_client    # print client tests
 cargo nextest run -p zpl_toolchain_profile         # printer profiles
 cargo nextest run -p zpl_toolchain_diagnostics     # diagnostic types
@@ -153,6 +154,10 @@ npm run build
 npm test
 ```
 
+If you changed Rust sources in `crates/core`, `crates/wasm`, or
+`crates/bindings-common` (or regenerated `generated/parser_tables.json`), rebuild
+WASM before TypeScript core or extension validation.
+
 ### @zpl-toolchain/cli
 
 The CLI wrapper package has lightweight runtime mapping tests:
@@ -161,6 +166,62 @@ The CLI wrapper package has lightweight runtime mapping tests:
 cd packages/ts/cli
 npm test
 ```
+
+### VS Code extension
+
+The VS Code extension package validates type safety, build integrity, and VSIX
+packaging with:
+
+```bash
+cd packages/vscode-extension
+npm ci
+npm test
+npm run test:integration
+npm run package:vsix
+```
+
+`npm run build` (and therefore `test` / `test:ci` / `package:vsix`) now includes a
+freshness guard (`check:core-runtime-freshness`) that fails fast when
+`packages/ts/core/wasm/pkg` is stale relative to Rust/WASM sources or parser tables.
+
+`npm run package:vsix` verifies that the extension can be packaged into a
+distributable VSIX with bundled runtime assets.
+
+`npm run test:integration` runs Extension Host tests via `@vscode/test-electron`
+through `packages/vscode-extension/scripts/run-integration-tests.mjs`.
+On Linux, this wrapper uses `xvfb-run` for headless execution.
+On `linux/arm64` local environments, tests are skipped by default due upstream
+launcher limitations unless you provide an explicit executable path override or
+set `FORCE_VSCODE_INTEGRATION=1`.
+
+More elegant local workaround on `linux/arm64`: provide a known-good local VS Code
+or Cursor binary path and run with:
+
+```bash
+VSCODE_EXECUTABLE_PATH=/path/to/code npm run test:integration
+```
+
+Performance regression fixture:
+
+- Integration suite includes a large-document diagnostics latency guard.
+- Default budget is `8000ms`, override with:
+
+```bash
+ZPL_VSCODE_PERF_BUDGET_MS=6000 npm run test:integration
+```
+
+Manual runtime validation (Extension Development Host):
+
+1. Open `packages/vscode-extension` in VS Code.
+2. Press `F5` to launch an Extension Development Host.
+3. Open a `.zpl` file and verify:
+   - diagnostics update on edit
+   - formatting works (`Format Document` or format-on-save)
+   - hover docs resolve command metadata
+   - diagnostic explain command opens useful details
+
+Automated Extension Host integration tests are now part of the extension test
+suite. Additional UI-heavy end-to-end scenarios can be layered in future phases.
 
 ## Linting and formatting
 
@@ -197,7 +258,8 @@ Tests run automatically on every push and PR via GitHub Actions:
 | `TypeScript Core Tests` | `wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg` → `npm ci` → `tsc --noEmit` → `npm run build` → `node --test dist/test/*.js` |
 | `TypeScript Print Tests` | `npm ci` → `tsc --noEmit` → `npm run build` → artifact assertions + local TCP bind precheck → `npm test` |
 | `TypeScript CLI Wrapper Tests` | `npm test` in `packages/ts/cli` (platform mapping + unsupported-runtime guard coverage) |
-| `Spec Validation & Coverage` | `zpl-spec-compiler check` + `build` + coverage report |
+| `VS Code Extension Build & Test` | `npm ci` → `npm run test:ci` (typecheck/build + extension-host integration where supported) → `npx @vscode/vsce package` + VSIX integrity check |
+| `Spec Validation & Coverage` | `zpl-spec-compiler check` + `build` + enforced `note-audit` + coverage report |
 | `WASM Build` | `wasm-pack build` + size check |
 | `Python Wheel` | `maturin build` |
 | `Python Runtime Tests (py3.9–3.13)` | Build wheel + install wheel + `python -m unittest discover -s crates/python/tests -v`. **PRs:** reduced subset (3.9, 3.12, 3.13). **Push to main:** full matrix (3.9–3.13). |
@@ -206,6 +268,17 @@ Tests run automatically on every push and PR via GitHub Actions:
 | `C FFI (ubuntu/macos/windows)` | Build + verify shared library exists |
 
 See `.github/workflows/ci.yml` for the full configuration.
+
+## Note audience validation
+
+Contextual note routing is spec-driven and test-covered:
+
+- `zpl-spec-compiler note-audit --spec-dir spec --format json`
+  reports note constraints that likely need conditional expressions or
+  `audience` refinement, and findings fail CI.
+- CLI diagnostics support `--note-audience` on `lint` and `print`:
+  - `--note-audience all` (default): includes contextual notes.
+  - `--note-audience problem`: excludes contextual notes from diagnostic output.
 
 ## Troubleshooting
 
@@ -240,6 +313,12 @@ The test at `packages/ts/print/src/test/proxy.test.ts` should use `127.0.0.1:910
 
 If `bash scripts/test-dotnet-local.sh` reports `dotnet is required but not found on PATH`,
 rebuild the devcontainer after enabling the .NET feature in
+`.devcontainer/devcontainer.json`.
+
+### `go` not found when running local Go tests
+
+If `bash scripts/test-go-local.sh` reports `go is required but not found on PATH`,
+rebuild the devcontainer after enabling the Go feature in
 `.devcontainer/devcontainer.json`.
 
 ### PyO3 / Python toolchain mismatches

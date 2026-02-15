@@ -43,7 +43,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
 
-      # Sync non-Cargo package versions (npm, PyPI) into the release PR
+      # Sync non-Cargo package versions (npm, PyPI, VS Code extension) into the release PR
       # so the repo always reflects the true version at every commit.
       - name: Sync npm + PyPI versions in release PR
         if: steps.release-pr.outputs.pr != ''
@@ -51,9 +51,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
           PR_JSON: ${{ steps.release-pr.outputs.pr }}
         run: |
-          set -e
+          set -euo pipefail
 
           PR_NUMBER=$(echo "$PR_JSON" | jq -r '.number')
+          if [[ -z "$PR_NUMBER" || "$PR_NUMBER" == "null" ]]; then
+            echo "::error::Failed to extract PR number from release-plz output"
+            exit 1
+          fi
+
           VERSION=$(echo "$PR_JSON" | jq -r \
             '(.releases // [])[] | select(.package_name == "zpl_toolchain_cli") | .version')
 
@@ -73,6 +78,7 @@ jobs:
           (cd packages/ts/core && npm version "$VERSION" --no-git-tag-version)
           (cd packages/ts/print && npm version "$VERSION" --no-git-tag-version)
           (cd packages/ts/cli && npm version "$VERSION" --no-git-tag-version)
+          (cd packages/vscode-extension && npm version "$VERSION" --no-git-tag-version)
 
           # PyPI: pyproject.toml
           sed -i "s/^version = \".*\"/version = \"$VERSION\"/" crates/python/pyproject.toml
@@ -80,7 +86,7 @@ jobs:
           if git diff --quiet; then
             echo "Versions already in sync"
           else
-            git add packages/ts/core/package.json packages/ts/print/package.json packages/ts/cli/package.json crates/python/pyproject.toml
+            git add packages/ts/core/package.json packages/ts/print/package.json packages/ts/cli/package.json packages/vscode-extension/package.json crates/python/pyproject.toml
             git commit -m "chore: sync npm/PyPI versions to $VERSION"
             git push
             echo "Committed version sync to PR #$PR_NUMBER"
@@ -120,10 +126,18 @@ jobs:
         env:
           RELEASES_JSON: ${{ steps.release.outputs.releases }}
         run: |
+          if ! command -v jq >/dev/null 2>&1; then
+            echo "::error::jq is required to parse release-plz output"
+            exit 1
+          fi
           # release-plz outputs a JSON array of releases.
           # In single-tag mode, only zpl_toolchain_cli has a tag.
           TAG=$(echo "$RELEASES_JSON" \
             | jq -r '.[] | select(.package_name == "zpl_toolchain_cli") | .tag')
+          if [[ -z "$TAG" || "$TAG" == "null" ]]; then
+            echo "::error::Failed to extract release tag from release-plz output"
+            exit 1
+          fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Release tag: $TAG"
 
@@ -180,7 +194,7 @@ jobs:
   publish-npm-cli:
     name: Publish npm (@zpl-toolchain/cli)
     needs: [release, upload-artifacts]
-    if: needs.release.outputs.releases_created == 'true'
+    if: needs.release.outputs.releases_created == 'true' && needs.upload-artifacts.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -201,6 +215,130 @@ jobs:
         run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  # ── Build VS Code extension VSIX artifact ────────────────────────────────
+  build-vscode-extension:
+    name: Build VS Code Extension VSIX
+    needs: [release]
+    if: needs.release.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.13.1"
+
+      - name: Verify extension version matches release tag
+        working-directory: packages/vscode-extension
+        env:
+          RELEASE_TAG: ${{ needs.release.outputs.tag }}
+        run: |
+          TAG_VERSION="${RELEASE_TAG#v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [[ "$TAG_VERSION" != "$PKG_VERSION" ]]; then
+            echo "::error::Version mismatch: tag=$TAG_VERSION package=$PKG_VERSION"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        working-directory: packages/vscode-extension
+        run: npm ci
+
+      - name: Install Extension Host test runtime
+        run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+
+      - name: Type-check, build, and extension-host integration tests
+        working-directory: packages/vscode-extension
+        env:
+          FORCE_VSCODE_INTEGRATION: "1"
+        run: |
+          set -euo pipefail
+          npm run test:ci | tee /tmp/vscode-extension-test.log
+          if grep -q "Skipping Extension Host integration tests" /tmp/vscode-extension-test.log; then
+            echo "::error::Extension integration tests were skipped unexpectedly."
+            exit 1
+          fi
+
+      - name: Clean old VSIX artifacts
+        working-directory: packages/vscode-extension
+        run: rm -f *.vsix
+
+      - name: Package VSIX
+        working-directory: packages/vscode-extension
+        run: npx @vscode/vsce@3.7.1 package
+
+      - name: Validate VSIX artifact
+        working-directory: packages/vscode-extension
+        run: |
+          VSIX_FILE=$(ls -1 *.vsix 2>/dev/null | head -1)
+          if [[ -z "$VSIX_FILE" ]]; then
+            echo "::error::VSIX file not created"
+            exit 1
+          fi
+          echo "VSIX created: $VSIX_FILE ($(du -h "$VSIX_FILE" | cut -f1))"
+          unzip -t "$VSIX_FILE" >/dev/null
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vscode-extension-vsix
+          path: packages/vscode-extension/*.vsix
+          if-no-files-found: error
+
+  # ── Publish VS Code extension (marketplaces) ─────────────────────────────
+  publish-vscode-extension:
+    name: Publish VS Code Extension
+    needs: [release, build-vscode-extension]
+    if: needs.release.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    env:
+      VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+      OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
+    steps:
+      - name: Validate VS Code extension publish secrets
+        run: |
+          if [[ -z "${VSCE_TOKEN}" ]]; then
+            echo "Missing required repository secret: VSCE_TOKEN" >&2
+            exit 1
+          fi
+          if [[ -z "${OVSX_TOKEN}" ]]; then
+            echo "Missing required repository secret: OVSX_TOKEN" >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.13.1"
+
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: vscode-extension-vsix
+          path: packages/vscode-extension
+
+      - name: Validate downloaded VSIX before publish
+        working-directory: packages/vscode-extension
+        run: |
+          VSIX_FILE=$(ls -1 *.vsix 2>/dev/null | head -1)
+          if [[ -z "$VSIX_FILE" ]]; then
+            echo "::error::VSIX file not found after download"
+            exit 1
+          fi
+          unzip -t "$VSIX_FILE" >/dev/null
+          echo "VSIX validated: $VSIX_FILE"
+
+      - name: Publish to Visual Studio Marketplace
+        run: npx @vscode/vsce@3.7.1 publish --packagePath packages/vscode-extension/*.vsix -p "${VSCE_TOKEN}"
+
+      - name: Publish to Open VSX
+        run: npx ovsx publish packages/vscode-extension/*.vsix -p "${OVSX_TOKEN}"
 
   # ── Publish Python wheel to PyPI ──────────────────────────────────────
   publish-pypi:
@@ -353,6 +491,25 @@ jobs:
           files: |
             artifacts/**/*
 
+  upload-vscode-release-asset:
+    name: Upload VS Code VSIX to Release
+    needs: [release, build-vscode-extension]
+    if: needs.release.outputs.releases_created == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: vscode-extension-vsix
+          path: artifacts/vscode-extension-vsix
+
+      - name: Upload VSIX to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.release.outputs.tag }}
+          files: artifacts/vscode-extension-vsix/*.vsix
+
   # ── Tag the Go module so `go get` can resolve versions ────────────────
   tag-go:
     name: Tag Go module
@@ -372,6 +529,10 @@ jobs:
           # Go modules in subdirectories need a prefixed tag:
           #   packages/go/zpltoolchain/v0.1.1
           VERSION="${TAG#v}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Invalid release tag format: $TAG"
+            exit 1
+          fi
           GO_TAG="packages/go/zpltoolchain/v${VERSION}"
 
           # Idempotent: skip if the tag already exists (e.g., workflow re-run)

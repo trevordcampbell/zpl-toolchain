@@ -23,6 +23,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Validate CI/devcontainer toolchain alignment
+        run: node scripts/check-devcontainer-ci-toolchains.mjs
+
       - uses: ./.github/actions/setup-rust
         with:
           components: rustfmt, clippy
@@ -106,6 +109,9 @@ jobs:
 
       - name: Build tables + coverage
         run: cargo run -p zpl_toolchain_spec_compiler --locked -- build --spec-dir spec --out-dir generated --strict
+
+      - name: Note audit
+        run: cargo run -p zpl_toolchain_spec_compiler --locked -- note-audit --spec-dir spec --format json
 
       - name: Verify committed tables are fresh
         run: |
@@ -213,6 +219,51 @@ jobs:
         working-directory: packages/ts/cli
         run: npm test
 
+  vscode-extension:
+    name: VS Code Extension Build & Test
+    needs: [fast-gate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.13.1"
+
+      - name: Install Extension Host test runtime
+        run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+
+      - name: Install dependencies
+        working-directory: packages/vscode-extension
+        run: npm ci
+
+      - name: Type-check, build, and extension-host integration tests
+        working-directory: packages/vscode-extension
+        env:
+          FORCE_VSCODE_INTEGRATION: "1"
+        run: |
+          set -euo pipefail
+          npm run test:ci | tee /tmp/vscode-extension-test.log
+          if grep -q "Skipping Extension Host integration tests" /tmp/vscode-extension-test.log; then
+            echo "::error::Extension integration tests were skipped unexpectedly."
+            exit 1
+          fi
+
+      - name: Package VSIX
+        working-directory: packages/vscode-extension
+        run: npx @vscode/vsce@3.7.1 package
+
+      - name: Validate VSIX artifact
+        working-directory: packages/vscode-extension
+        run: |
+          VSIX_FILE=$(ls -1 *.vsix 2>/dev/null | head -1)
+          if [[ -z "$VSIX_FILE" ]]; then
+            echo "::error::VSIX file not created"
+            exit 1
+          fi
+          echo "VSIX created: $VSIX_FILE ($(du -h "$VSIX_FILE" | cut -f1))"
+          unzip -t "$VSIX_FILE" >/dev/null
+
   # ── WASM build + size check ───────────────────────────────────────────
   wasm:
     name: WASM Build
@@ -235,17 +286,19 @@ jobs:
       - name: Check WASM size
         run: |
           WASM_FILE=$(find crates/wasm/pkg -name '*.wasm' -type f | head -1)
-          if [ -n "$WASM_FILE" ]; then
-            SIZE=$(wc -c < "$WASM_FILE")
-            GZIP_SIZE=$(gzip -c "$WASM_FILE" | wc -c)
-            echo "### WASM Size Report" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Metric | Size |" >> "$GITHUB_STEP_SUMMARY"
-            echo "|--------|------|" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Raw | $(($SIZE / 1024)) KB |" >> "$GITHUB_STEP_SUMMARY"
-            echo "| Gzipped | $(($GZIP_SIZE / 1024)) KB |" >> "$GITHUB_STEP_SUMMARY"
-            if [ "$GZIP_SIZE" -gt 512000 ]; then
-              echo "::warning::WASM gzipped size exceeds 500KB ($GZIP_SIZE bytes)"
-            fi
+          if [ -z "$WASM_FILE" ]; then
+            echo "::error::WASM file not found after build"
+            exit 1
+          fi
+          SIZE=$(wc -c < "$WASM_FILE")
+          GZIP_SIZE=$(gzip -c "$WASM_FILE" | wc -c)
+          echo "### WASM Size Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Size |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Raw | $(($SIZE / 1024)) KB |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Gzipped | $(($GZIP_SIZE / 1024)) KB |" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$GZIP_SIZE" -gt 512000 ]; then
+            echo "::warning::WASM gzipped size exceeds 500KB ($GZIP_SIZE bytes)"
           fi
 
   # ── Python wheel build ────────────────────────────────────────────────
@@ -367,7 +420,7 @@ jobs:
 
       - uses: actions/setup-go@v5
         with:
-          go-version: "1.21"
+          go-version: "1.25.7"
 
       - name: Build C FFI (release)
         run: cargo build -p zpl_toolchain_ffi --release --locked
@@ -393,7 +446,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: "10.0.x"
 
       - name: Build C FFI (release)
         run: cargo build -p zpl_toolchain_ffi --release --locked

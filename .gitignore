@@ -25,6 +25,8 @@ __pycache__/
 dist/
 *.egg-info/
 .venv-python-wheel-tests/
+.venv-tools/
+.venv/
 
 # Node / TypeScript
 node_modules/

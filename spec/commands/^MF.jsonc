@@ -7,6 +7,7 @@
       "name": "Media Feed",
       "plane": "device",
       "scope": "document",
+      "placement": { "allowedInsideLabel": true, "allowedOutsideLabel": true },
       "arity": 2,
       "signature": { "params": ["p", "h"], "joiner": ",", "allowEmptyTrailing": true },
       "args": [
@@ -21,7 +22,7 @@
       ],
       "effects": { "sets": ["media.powerUpAction", "media.headCloseAction"] },
       "constraints": [
-        { "kind": "note", "message": "Value S (short calibration) is only supported on Xi4, RXi4, XiIIIPlus, PAX, ZM400/ZM600, RZ400/RZ600, and S4M printers." }
+        { "kind": "note", "expr": "when:arg:pIsValue:S||arg:hIsValue:S", "severity": "info", "message": "Value S (short calibration) is only supported on Xi4, RXi4, XiIIIPlus, PAX, ZM400/ZM600, RZ400/RZ600, and S4M printers." }
       ],
       "docs": "Dictates what happens to the media at power-up and at head-close after error clears."
     }

@@ -105,6 +105,39 @@ fn semicolon_comment_roundtrip() {
 }
 
 #[test]
+fn semicolon_comment_defaults_to_inline_on_format() {
+    let tables = &common::TABLES;
+    let input = "^XA\n^PW812\n; set print width\n^XZ\n";
+    let res = parse_with_tables(input, Some(tables));
+    let formatted = emit_zpl(&res.ast, Some(tables), &EmitConfig::default());
+    assert!(
+        formatted.contains("^PW812 ; set print width"),
+        "Expected default formatter output to keep semicolon comments inline, got:\n{}",
+        formatted
+    );
+}
+
+#[test]
+fn semicolon_comment_line_mode_keeps_comment_on_its_own_line() {
+    let tables = &common::TABLES;
+    let input = "^XA\n^PW812\n; set print width\n^XZ\n";
+    let res = parse_with_tables(input, Some(tables));
+    let formatted = emit_zpl(
+        &res.ast,
+        Some(tables),
+        &EmitConfig {
+            comment_placement: zpl_toolchain_core::CommentPlacement::Line,
+            ..EmitConfig::default()
+        },
+    );
+    assert!(
+        formatted.contains("^PW812\n; set print width"),
+        "Expected line mode to preserve standalone comments, got:\n{}",
+        formatted
+    );
+}
+
+#[test]
 fn fx_comment_preserved_in_output() {
     // Note: ^FX has an empty joiner, so the parser splits content
     // character-by-character and loses spaces (a parser-level limitation).
@@ -170,6 +203,7 @@ fn indent_label_mode() {
     let input = "^XA^FO50,100^FDHello^FS^XZ";
     let config = EmitConfig {
         indent: Indent::Label,
+        ..EmitConfig::default()
     };
     let res = parse_with_tables(input, Some(tables));
     let formatted = emit_zpl(&res.ast, Some(tables), &config);
@@ -194,6 +228,7 @@ fn indent_field_mode() {
     let input = "^XA^FO50,100^FDHello^FS^XZ";
     let config = EmitConfig {
         indent: Indent::Field,
+        ..EmitConfig::default()
     };
     let res = parse_with_tables(input, Some(tables));
     let formatted = emit_zpl(&res.ast, Some(tables), &config);
@@ -217,6 +252,7 @@ fn indent_none_is_flat() {
     let input = "^XA^FO50,100^FDHello^FS^XZ";
     let config = EmitConfig {
         indent: Indent::None,
+        ..EmitConfig::default()
     };
     let res = parse_with_tables(input, Some(tables));
     let formatted = emit_zpl(&res.ast, Some(tables), &config);
@@ -228,6 +264,94 @@ fn indent_none_is_flat() {
             line
         );
     }
+}
+
+#[test]
+fn compaction_field_compacts_printable_field_blocks() {
+    let tables = &common::TABLES;
+    let input = "^XA^FO30,30^A0N,35,35^FDWIDGET-3000^FS^XZ";
+    let config = EmitConfig {
+        indent: Indent::None,
+        compaction: zpl_toolchain_core::Compaction::Field,
+        ..EmitConfig::default()
+    };
+    let res = parse_with_tables(input, Some(tables));
+    let formatted = emit_zpl(&res.ast, Some(tables), &config);
+    assert!(
+        formatted.contains("^FO30,30^A0N,35,35^FDWIDGET-3000^FS"),
+        "Expected compacted field block, got:\n{}",
+        formatted
+    );
+}
+
+#[test]
+fn compaction_field_works_with_label_indent() {
+    let tables = &common::TABLES;
+    let input = "^XA^FO30,30^A0N,35,35^FDWIDGET-3000^FS^XZ";
+    let config = EmitConfig {
+        indent: Indent::Label,
+        compaction: zpl_toolchain_core::Compaction::Field,
+        ..EmitConfig::default()
+    };
+    let res = parse_with_tables(input, Some(tables));
+    let formatted = emit_zpl(&res.ast, Some(tables), &config);
+    assert!(
+        formatted
+            .lines()
+            .any(|line| line.trim() == "^FO30,30^A0N,35,35^FDWIDGET-3000^FS"),
+        "Expected compacted field block with label indent, got:\n{}",
+        formatted
+    );
+    assert!(
+        formatted
+            .lines()
+            .any(|line| line.starts_with("  ^FO30,30^A0N,35,35^FDWIDGET-3000^FS")),
+        "Expected compacted block to preserve label indentation, got:\n{}",
+        formatted
+    );
+}
+
+#[test]
+fn compaction_field_does_not_merge_non_field_commands_into_field_block() {
+    let tables = &common::TABLES;
+    let input = "^XA\n^FO30,30\n^CI27\n^FDWIDGET-3000\n^FS\n^XZ\n";
+    let config = EmitConfig {
+        indent: Indent::None,
+        compaction: zpl_toolchain_core::Compaction::Field,
+        ..EmitConfig::default()
+    };
+    let res = parse_with_tables(input, Some(tables));
+    let formatted = emit_zpl(&res.ast, Some(tables), &config);
+
+    assert!(
+        !formatted.contains("^FO30,30^CI27"),
+        "Expected non-field command ^CI to remain separate from field block, got:\n{}",
+        formatted
+    );
+    assert!(
+        formatted.contains("^FO30,30\n^CI27"),
+        "Expected ^CI to stay on its own line, got:\n{}",
+        formatted
+    );
+}
+
+#[test]
+fn compaction_field_keeps_barcode_default_flow_inside_field_block() {
+    let tables = &common::TABLES;
+    let input = "^XA\n^FO30,190\n^BY2,2,80\n^BEN,80,Y,N\n^FD012345678901\n^FS\n^XZ\n";
+    let config = EmitConfig {
+        indent: Indent::None,
+        compaction: zpl_toolchain_core::Compaction::Field,
+        ..EmitConfig::default()
+    };
+    let res = parse_with_tables(input, Some(tables));
+    let formatted = emit_zpl(&res.ast, Some(tables), &config);
+
+    assert!(
+        formatted.contains("^FO30,190^BY2,2,80^BEN,80,Y,N^FD012345678901^FS"),
+        "Expected barcode default/print sequence to stay compacted in field block, got:\n{}",
+        formatted
+    );
 }
 
 // ── USPS sample file round-trip ─────────────────────────────────────────

@@ -16,7 +16,8 @@
       ],
       "effects": { "sets": ["media.tearOffPosition"] },
       "constraints": [
-        { "kind": "note", "message": "For 600 dpi printers, the step size doubles. If the number of characters is less than 3, the command is ignored. If the parameter is missing or invalid, the command is ignored." }
+        { "kind": "note", "expr": "when:arg:aEmpty", "severity": "info", "audience": "contextual", "message": "Parameter missing or invalid: command is ignored." },
+        { "kind": "note", "audience": "contextual", "message": "For 600 dpi printers, the step size doubles. With fewer than 3 characters, the command is ignored." }
       ],
       "docs": "Adjusts the rest position of the media after a label is printed, changing the position at which the label is torn or cut."
     }

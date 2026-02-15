@@ -91,7 +91,10 @@
       "category": "rounding",
       "summary": "Rounding policy violation",
       "description": "Value does not conform to the rounding policy (e.g., not a multiple).",
-      "contextKeys": ["command", "arg", "value", "multiple"]
+      "contextKeys": ["command", "arg", "value", "multiple", "epsilon"],
+      "messageTemplates": {
+        "notMultiple": "{command}.{arg}={value} not a multiple of {multiple}"
+      }
     },
     {
       "id": "ZPL1401",
@@ -316,7 +319,30 @@
       "category": "semantic-validation",
       "summary": "Text or barcode extends beyond label bounds",
       "description": "A text field or barcode at the current ^FO/^FT position would extend beyond the effective label dimensions. Content may be clipped or misaligned on print.",
-      "contextKeys": ["object_type", "x", "y", "estimated_width", "estimated_height", "label_width", "label_height"]
+      "contextKeys": [
+        "object_type",
+        "x",
+        "y",
+        "estimated_width",
+        "estimated_height",
+        "label_width",
+        "label_height",
+        "overflow_x",
+        "overflow_y",
+        "overflow_x_ratio",
+        "overflow_y_ratio",
+        "confidence",
+        "audience"
+      ],
+      "objectBoundsPolicy": {
+        "lowConfidenceMaxOverflowDots": 24.0,
+        "lowConfidenceMaxOverflowRatio": 0.05,
+        "lowConfidenceSeverity": "info"
+      },
+      "messageTemplates": {
+        "lowConfidence": "{object_type} at ({x}, {y}) may extend beyond label bounds ({label_width}×{label_height} dots, estimated)",
+        "highConfidence": "{object_type} at ({x}, {y}) extends beyond label bounds ({label_width}×{label_height} dots)"
+      }
     },
     {
       "id": "ZPL2401",
@@ -325,7 +351,10 @@
       "category": "barcode-validation",
       "summary": "Invalid barcode data character",
       "description": "Field data contains characters not allowed by the active barcode's character set.",
-      "contextKeys": ["command", "character", "position", "allowedSet"]
+      "contextKeys": ["command", "character", "position", "allowedSet"],
+      "messageTemplates": {
+        "invalidChar": "invalid character '{character}' at position {position} in {command} field data (allowed: [{allowedSet}])"
+      }
     },
     {
       "id": "ZPL2402",
@@ -334,7 +363,14 @@
       "category": "barcode-validation",
       "summary": "Barcode data length violation",
       "description": "Field data length violates the active barcode's length requirements.",
-      "contextKeys": ["command", "actual", "expected", "min", "max", "parity"]
+      "contextKeys": ["command", "actual", "expected", "min", "max", "parity", "actualParity"],
+      "messageTemplates": {
+        "allowedLengths": "{command} field data length {actual} (expected one of [{expected}])",
+        "exactLength": "{command} field data length {actual} (expected exactly {expected})",
+        "minLength": "{command} field data too short: {actual} chars (minimum {min})",
+        "maxLength": "{command} field data too long: {actual} chars (maximum {max})",
+        "parity": "{command} field data length {actual} should be {parity} (got {actualParity})"
+      }
     },
     {
       "id": "ZPL3001",

@@ -19,7 +19,7 @@
           "doc": "Extension filter. Any extension conforming to Zebra conventions. Supports * and ? wildcards. Default: * (all extensions)." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Returns a formatted ASCII string of object names to the host. Each object is listed on a fixed-length line starting with an asterisk. An optional f parameter (c=column, d=default) is supported in firmware V60.16.0Z and V53.16.0Z or later." }
+        { "kind": "note", "audience": "contextual", "message": "Returns a formatted ASCII string of object names to the host. Each object is listed on a fixed-length line starting with an asterisk. An optional f parameter (c=column, d=default) is supported in firmware V60.16.0Z and V53.16.0Z or later." }
       ],
       "docs": "Transmits a directory listing of objects in a specific memory area back to the host device."
     }

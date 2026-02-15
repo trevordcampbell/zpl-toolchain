@@ -15,7 +15,12 @@
           "doc": "Kiosk present mode. 0 = eject presented page, 1 = retract presented page, 2 = take the action defined by the c parameter of ^KV command." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Supported on KR403 only. The command is ignored if parameters are missing or invalid." }
+        {
+          "kind": "note",
+          "severity": "info",
+          "audience": "contextual",
+          "message": "KR403 printer support. Missing or invalid parameters cause the command to be ignored."
+        }
       ],
       "docs": "Causes the printer to move a printed label out of the presenter area by ejecting, retracting, or taking the action defined by ^KV."
     }

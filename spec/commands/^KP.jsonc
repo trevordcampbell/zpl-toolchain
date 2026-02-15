@@ -20,7 +20,12 @@
       ],
       "effects": { "sets": ["security.password", "security.passwordLevel"] },
       "constraints": [
-        { "kind": "note", "message": "This command does not work when the printer is in Protected Mode. With Protected Mode, use JSON-formatted Protect commands with the SGD display.password.current instead." }
+        {
+          "kind": "note",
+          "severity": "warn",
+          "audience": "contextual",
+          "message": "Protected Mode blocks this command. In Protected Mode, use JSON-formatted Protect commands with SGD display.password.current."
+        }
       ],
       "docs": "Defines the password required to access the control panel switches and LCD Setup Mode."
     }

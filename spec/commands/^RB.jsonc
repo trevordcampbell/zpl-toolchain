@@ -34,7 +34,8 @@
       ],
       "effects": { "sets": ["rfid.epcStructure"] },
       "constraints": [
-        { "kind": "note", "message": "Partition sizes must add up to the total bit size (n). The largest individual partition size is 64 bits. All parameters are persistent and used in subsequent formats if not provided." }
+        { "kind": "note", "message": "Partition sizes must add up to the total bit size (n). The largest individual partition size is 64 bits.", "audience": "problem" },
+        { "kind": "note", "message": "Omitted parameters inherit from the previous ^RB; all parameters persist for subsequent formats.", "audience": "contextual" }
       ],
       "docs": "Defines the structure of EPC data for reading from or writing to an RFID tag, specifying partitions and their bit sizes."
     }

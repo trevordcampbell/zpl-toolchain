@@ -7,8 +7,8 @@ use std::collections::HashMap;
 
 use serde::{Deserialize, Serialize};
 use zpl_toolchain_spec_tables::{
-    Arg, ArgUnion, CommandCategory, CommandScope, Composite, Constraint, Effects, Example,
-    Placement, Plane, Signature, Stability,
+    Arg, ArgUnion, CommandCategory, CommandScope, Composite, Constraint, ConstraintDefaults,
+    Effects, Example, Placement, Plane, Signature, Stability,
 };
 
 fn default_scope_opt() -> Option<CommandScope> {
@@ -120,6 +120,9 @@ pub struct SourceCommand {
     /// Validation constraints for this command (ordering, compatibility, etc.).
     #[serde(default)]
     pub constraints: Option<Vec<Constraint>>,
+    /// Default values for constraints emitted by this command.
+    #[serde(default)]
+    pub constraint_defaults: Option<ConstraintDefaults>,
     /// Printer model gates that restrict which printers support this command.
     #[serde(default)]
     pub printer_gates: Option<Vec<String>>,

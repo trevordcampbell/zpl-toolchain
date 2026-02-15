@@ -21,7 +21,7 @@
       ],
       "effects": { "sets": ["text.defaultGlyph", "text.bidirectional", "text.characterShaping", "text.openType"] },
       "constraints": [
-        { "kind": "note", "message": "Available only for printers with firmware version V60.14.x, V50.14.x, or later." }
+        { "kind": "note", "message": "Firmware V60.14.x, V50.14.x, or later required.", "audience": "contextual" }
       ],
       "docs": "Configures advanced text layout features including default glyph behavior, bidirectional text layout, character shaping, and OpenType table support."
     }

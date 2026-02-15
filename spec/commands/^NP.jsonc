@@ -16,7 +16,7 @@
           "doc": "P = printer, M = MPS/Printserver." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Only applies to parallel port connect print servers. When the printer is primary, any wired print server inserted will use the printer's settings." }
+        { "kind": "note", "message": "Applies to parallel-port print servers only. While the printer is primary, any wired print server inserted will use the printer's settings.", "audience": "contextual" }
       ],
       "docs": "Specifies whether to use the printer's or the print server's LAN/WLAN settings at boot time."
     }

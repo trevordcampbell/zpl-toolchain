@@ -16,7 +16,7 @@
           "doc": "Network ID number assigned, must be a three-digit entry. Values: 001 to 999. Default: 000 (none)." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Use at the beginning of any label format to specify which printer on the network is to be used. The commands ^MW, ~NC, ^NI, ~NR, and ~NT are used only with RS-422/485 printer communications." }
+        { "kind": "note", "audience": "contextual", "message": "Use at the beginning of any label format to specify which printer on the network is to be used. The commands ^MW, ~NC, ^NI, ~NR, and ~NT require RS-422/485 printer communications." }
       ],
       "docs": "Connects to a particular printer on the network by calling up the printer's network ID number."
     }

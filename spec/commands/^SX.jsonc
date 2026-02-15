@@ -34,7 +34,12 @@
       ],
       "effects": { "sets": ["alerts.zebraNet"] },
       "constraints": [
-        { "kind": "note", "message": "If the condition type or destination parameter is missing or invalid, the command is ignored. Sub-options e and f are based on destination type." }
+        {
+          "kind": "note",
+          "severity": "info",
+          "audience": "contextual",
+          "message": "Missing or invalid condition type or destination parameters cause this command to be ignored. Sub-options e and f depend on destination type."
+        }
       ],
       "docs": "Configures the ZebraNet Alert System to send notifications for specific printer conditions to designated destinations (serial, parallel, email, TCP/IP, UDP/IP, or SNMP)."
     }

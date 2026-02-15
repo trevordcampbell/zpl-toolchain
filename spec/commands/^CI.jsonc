@@ -21,8 +21,10 @@
           "doc": "Destination character position (input) for remapping. Only valid when a = 0-13." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Up to 256 source/destination remapping pairs can follow (s1,d1,s2,d2,...). Remapping is only valid when a = 0-13. The spec models only the first 3 parameters (a, s1, d1); additional pairs are accepted by the parser but not individually validated. Full variable-length pair validation is a known limitation." },
-        { "kind": "note", "message": "Values 18-23, 25, and 32 are reserved. Values 28-30 require firmware V60.14.x/V50.14.x or later. Values 31-36 require firmware x.16.x or later." }
+        { "kind": "note", "expr": "when:arg:s1Present||arg:d1Present", "severity": "info", "audience": "contextual", "message": "Up to 256 source/destination remapping pairs can follow (s1,d1,s2,d2,...). Remapping is only valid when a = 0-13. The spec models only the first 3 parameters (a, s1, d1); additional pairs are accepted by the parser but not individually validated. Full variable-length pair validation is a known limitation." },
+        { "kind": "note", "expr": "when:arg:aIsValue:18|19|20|21|22|23|25|32", "severity": "info", "message": "Values 18-23, 25, and 32 are reserved." },
+        { "kind": "note", "expr": "when:arg:aIsValue:28|29|30&&!profile:firmwareGte:V60.14", "severity": "info", "message": "Values 28-30 require firmware V60.14.x/V50.14.x or later." },
+        { "kind": "note", "expr": "when:arg:aIsValue:31|33|34|35|36&&!profile:firmwareGte:V60.16", "severity": "info", "message": "Values 31, 33-36 require firmware V60.16.x or later." }
       ],
       "effects": { "sets": ["encoding.characterSet"] },
       "docs": "Select international character set (code page) and optionally remap individual characters."

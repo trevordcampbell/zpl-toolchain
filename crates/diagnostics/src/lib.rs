@@ -209,6 +209,27 @@ pub fn explain(id: &str) -> Option<&'static str> {
     include!(concat!(env!("OUT_DIR"), "/generated_explain.rs"))
 }
 
+/// Policy constants derived from `spec/diagnostics.jsonc`.
+pub mod policy {
+    use super::Severity;
+
+    include!(concat!(env!("OUT_DIR"), "/generated_policy.rs"));
+}
+
+/// Returns the default severity for a diagnostic code.
+///
+/// Auto-generated from `spec/diagnostics.jsonc` at build time.
+pub fn severity_for_code(id: &str) -> Option<Severity> {
+    include!(concat!(env!("OUT_DIR"), "/generated_severity.rs"))
+}
+
+/// Returns an optional message template for a diagnostic code + template variant.
+///
+/// Auto-generated from `spec/diagnostics.jsonc` at build time.
+pub fn message_template_for(id: &str, variant: &str) -> Option<&'static str> {
+    include!(concat!(env!("OUT_DIR"), "/generated_templates.rs"))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -366,6 +387,33 @@ mod tests {
         assert!(d.explain().is_none());
     }
 
+    #[test]
+    fn diagnostic_severity_lookup_known_and_unknown() {
+        assert_eq!(severity_for_code(codes::ARITY), Some(Severity::Error));
+        assert_eq!(
+            severity_for_code(codes::MISSING_EXPLICIT_DIMENSIONS),
+            Some(Severity::Info)
+        );
+        assert_eq!(
+            severity_for_code(codes::OBJECT_BOUNDS_OVERFLOW),
+            Some(Severity::Warn)
+        );
+        assert_eq!(severity_for_code("UNKNOWN_CODE"), None);
+    }
+
+    #[test]
+    fn diagnostic_message_template_lookup_known_and_unknown() {
+        assert_eq!(
+            message_template_for(codes::ROUNDING_VIOLATION, "notMultiple"),
+            Some("{command}.{arg}={value} not a multiple of {multiple}")
+        );
+        assert_eq!(
+            message_template_for(codes::ROUNDING_VIOLATION, "missingVariant"),
+            None
+        );
+        assert_eq!(message_template_for("UNKNOWN_CODE", "anything"), None);
+    }
+
     // ── explain() exhaustiveness ────────────────────────────────────────
 
     #[test]
@@ -405,6 +453,7 @@ mod tests {
             codes::GF_BOUNDS_OVERFLOW,
             codes::GF_MEMORY_EXCEEDED,
             codes::MISSING_EXPLICIT_DIMENSIONS,
+            codes::OBJECT_BOUNDS_OVERFLOW,
             codes::BARCODE_INVALID_CHAR,
             codes::BARCODE_DATA_LENGTH,
             codes::NOTE,

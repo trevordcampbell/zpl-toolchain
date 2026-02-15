@@ -16,7 +16,12 @@
           "doc": "Destination in the format d:o.x where d=device (R:, E:, B:, A: — must be specified), o=destination name (up to 8 chars, defaults to source name), x=extension (defaults to source extension). Wildcards supported." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Source and destination devices must be different and valid. At least one source parameter and one destination parameter must be specified. Zebra files (Z:*.*) cannot be transferred. If destination lacks space, the command is canceled." }
+        {
+          "kind": "note",
+          "severity": "warn",
+          "audience": "contextual",
+          "message": "Source and destination devices must be different and valid. At least one source parameter and one destination parameter are required. Zebra files (Z:*.*) cannot be transferred. Destination space exhaustion cancels the transfer."
+        }
       ],
       "docs": "Copies an object or group of objects from one storage device to another. Supports wildcards (*) for object names and extensions for batch transfers."
     }

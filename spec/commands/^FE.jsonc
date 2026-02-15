@@ -15,7 +15,17 @@
           "doc": "Delimiter character for field concatenation and substring extraction. Any character except the current format and control prefix." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Must precede each ^FD command where it is used. Only applies to the immediately following ^FD field." }
+        {
+          "kind": "note",
+          "expr": "after:^FD",
+          "severity": "info",
+          "message": "Must precede each ^FD command where it is used."
+        },
+        {
+          "kind": "note",
+          "audience": "contextual",
+          "message": "Only applies to the immediately following ^FD field."
+        }
       ],
       "docs": "Allows field data concatenation and substring extraction by referencing ^FN fields. Use #n# to insert an entire ^FN field, or #n,a,x,y# to insert a substring."
     }

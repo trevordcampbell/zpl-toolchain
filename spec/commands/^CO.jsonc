@@ -25,7 +25,12 @@
       ],
       "effects": { "sets": ["cache.enabled", "cache.additionalMemory", "cache.type"] },
       "constraints": [
-        { "kind": "note", "message": "If firmware x.12 or greater, this command is not required because the printer automatically expands the character cache as needed." }
+        {
+          "kind": "note",
+          "severity": "info",
+          "audience": "contextual",
+          "message": "Firmware X.12+ automatically expands character cache as needed, so this command is typically unnecessary on those versions."
+        }
       ],
       "docs": "Controls the scalable character cache size and type. Increasing cache size improves scalable font performance but reduces memory available for label bitmaps, graphics, and fonts."
     }

@@ -32,7 +32,11 @@
       ],
       "effects": { "sets": ["maintenance.alertType", "maintenance.printAlert", "maintenance.threshold", "maintenance.frequency", "maintenance.units"] },
       "constraints": [
-        { "kind": "note", "message": "Available only for firmware V60.15.x, V50.15.x, or later. The type parameter must be specified as R or C for print, threshold, and frequency to be saved. The Early Warning Maintenance setting must be ON (via ^JH)." }
+        {
+          "kind": "note",
+          "audience": "contextual",
+          "message": "Firmware V60.15.x, V50.15.x, or later required. The type parameter must be specified as R or C for print, threshold, and frequency to be saved. The Early Warning Maintenance setting must be ON (via ^JH)."
+        }
       ],
       "docs": "Controls how the printer issues printed maintenance alerts for printhead cleaning or replacement. Alerts print a warning label when distance thresholds are reached."
     }

@@ -10,7 +10,7 @@
       "placement": { "allowedInsideLabel": false, "allowedOutsideLabel": true },
       "arity": 0,
       "constraints": [
-        { "kind": "note", "message": "Available only for printers with firmware version V60.14.x, V50.14.x, or later." }
+        { "kind": "note", "audience": "contextual", "message": "Firmware V60.14.x, V50.14.x, or later required." }
       ],
       "docs": "Returns the complete list of font links to the host over a communication port."
     }

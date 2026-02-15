@@ -1,5 +1,7 @@
 # zpl — ZPL Toolchain CLI
 
+![ZPL Toolchain logo](https://raw.githubusercontent.com/trevordcampbell/zpl-toolchain/main/docs/assets/branding/logo-square-128.png)
+
 Command-line interface for parsing, validating, formatting, and printing ZPL II label code.
 
 Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) project.
@@ -26,11 +28,17 @@ zpl parse label.zpl
 # Validate ZPL (with optional printer profile)
 zpl lint label.zpl --profile profiles/zebra-generic-203.json
 
+# Validate with problem-focused note audience (hide contextual notes)
+zpl lint label.zpl --note-audience problem
+
 # Check syntax only
 zpl syntax-check label.zpl
 
 # Format ZPL
 zpl format label.zpl --write --indent label
+
+# Format with field compaction
+zpl format label.zpl --write --indent none --compaction field
 
 # Print ZPL to a network printer
 zpl print label.zpl -p 192.168.1.55
@@ -61,12 +69,24 @@ zpl explain ZPL1201
 - `zpl doctor` intentionally returns a structured diagnostics object in both success and failure cases:
   - `{ "success": <bool>, "tables": {...}, "profile": {...|null}, "printer": {...|null} }`
 
+## Note audience (lint & print)
+
+The spec supports `audience: "problem"` and `audience: "contextual"` for `kind: "note"` constraints. Contextual notes are explanatory (e.g. "sets defaults for subsequent commands") and are shown in hover/docs but not in problem lists.
+
+| `--note-audience` | Behavior |
+|-------------------|----------|
+| `all` (default)  | Include both problem and contextual notes in diagnostics output. |
+| `problem`        | Include only problem-level notes; exclude contextual notes. Use for CI or when you want a focused problem list. |
+
+Both `lint` and `print` (pre-print validation) honor this flag.
+
 ## Print Command Flags
 
 | Flag | Description |
 |------|-------------|
 | `-p, --printer <ADDR>` | Printer address: IP, hostname, `usb`, `usb:VID:PID`, or serial path |
 | `--profile <PATH>` | Printer profile JSON for pre-print validation |
+| `--note-audience <all\|problem>` | Note diagnostics audience filter for lint/pre-print validation (see [Note audience](#note-audience-lint--print)) |
 | `--no-lint` | Skip validation before printing |
 | `--strict` | Treat warnings as errors during validation |
 | `--dry-run` | Validate and resolve address without sending |

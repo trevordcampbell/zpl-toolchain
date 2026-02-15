@@ -18,7 +18,7 @@
           "doc": "New wireless password. Values: 0000 through 9999. If 0000, wireless settings run in unprotected mode." }
       ],
       "constraints": [
-        { "kind": "note", "message": "This command does not apply to the S4M. If a wireless password is set, MAC Address, ESSID, WLAN Security, WEP Type, WEP Index, and Reset Network will not appear on the control panel until the wireless password is entered." }
+        { "kind": "note", "audience": "contextual", "message": "This command does not apply to the S4M. With a wireless password set, MAC Address, ESSID, WLAN Security, WEP Type, WEP Index, and Reset Network will not appear on the control panel until the wireless password is entered." }
       ],
       "docs": "Sets the four-digit wireless password (separate from the general printer password)."
     }

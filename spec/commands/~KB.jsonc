@@ -10,7 +10,12 @@
       "scope": "session",
       "arity": 0,
       "constraints": [
-        { "kind": "note", "message": "Discharge Mode can be terminated by sending a printing format or pressing a control panel key. If the charger is plugged in, the battery is automatically recharged once discharge completes. Green power LED flashes in groups of three during discharge." }
+        {
+          "kind": "note",
+          "severity": "info",
+          "audience": "contextual",
+          "message": "Sending a print format or pressing a control-panel key exits Discharge Mode. A connected charger triggers automatic recharge after discharge completes. Green power LED flashes in groups of three during discharge."
+        }
       ],
       "docs": "Places the printer in battery discharge mode, allowing the battery to be fully drained without printing. Used to maintain rechargeable battery performance in portable printers."
     }

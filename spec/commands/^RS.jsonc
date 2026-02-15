@@ -42,7 +42,7 @@
       ],
       "effects": { "sets": ["rfid.tagType", "rfid.position", "rfid.retries", "rfid.errorHandling"] },
       "constraints": [
-        { "kind": "note", "message": "Use care when using with ^RF for reading tag data. Data read from the tag must be positioned to print above the read/write position. If a format specifies a programming position, it will be used for all labels until changed or tag calibration is run." }
+        { "kind": "note", "expr": "when:label:has:^RF", "message": "Position tag data above the read/write position. Programming position applies to all labels until changed or tag calibration is run.", "audience": "contextual" }
       ],
       "docs": "Sets up RFID parameters including tag type, programming position, retry count, and error handling for RFID label encoding."
     }

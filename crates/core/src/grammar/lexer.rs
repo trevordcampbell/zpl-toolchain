@@ -11,7 +11,7 @@ pub enum TokKind {
     Newline,
     /// One or more whitespace characters (excluding newlines).
     Whitespace,
-    /// A comment from `;` through end of line.
+    /// A comment from `;` through end of line or next command leader.
     Comment,
 }
 
@@ -78,8 +78,17 @@ pub fn tokenize_with_config(
                 end: i,
             });
         } else if c == ';' {
-            // Comment to end of line — preserved as a Comment token for trivia.
-            while i < b.len() && (b[i] as char) != '\n' {
+            // Comment token.
+            //
+            // We intentionally stop at command leaders as well as newline so field
+            // data payloads like "^FD>;>...^FS" do not swallow "^FS" into comment
+            // trivia. This keeps semicolons usable in GS1 payloads while preserving
+            // existing comment behavior for common ";...<newline>" forms.
+            while i < b.len() {
+                let ch = b[i] as char;
+                if ch == '\n' || ch == cmd_prefix || ch == ctrl_prefix {
+                    break;
+                }
                 i += 1;
             }
             toks.push(Token {

@@ -7,6 +7,7 @@
       "name": "Map Clear",
       "plane": "device",
       "scope": "document",
+      "placement": { "allowedInsideLabel": true, "allowedOutsideLabel": true },
       "arity": 1,
       "signature": { "params": ["c"], "joiner": ",", "allowEmptyTrailing": true },
       "args": [
@@ -15,7 +16,7 @@
           "doc": "Y = clear bitmap after printing, N = retain current bitmap for next label." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Must be used with ^FV to produce a label template." }
+        { "kind": "requires", "expr": "^FV", "scope": "label", "severity": "info", "message": "Must be used with ^FV to produce a label template." }
       ],
       "docs": "Controls whether the bitmap is cleared after the format has been printed. Use N to retain the current label image as background for the next label."
     }

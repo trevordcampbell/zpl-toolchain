@@ -16,7 +16,7 @@
           "doc": "C = check for wired print server at boot time, S = skip check." }
       ],
       "constraints": [
-        { "kind": "note", "message": "This command is ignored on Xi4, RXi4, ZM400, ZM600, RZ400, and RZ600 printers. Only one print server can be installed in the S4M at one time." }
+        { "kind": "note", "audience": "contextual", "message": "This command is ignored on Xi4, RXi4, ZM400, ZM600, RZ400, and RZ600 printers. A single print server can be installed in the S4M at a time." }
       ],
       "docs": "Tells the printer whether to search for a wired print server at bootup."
     }

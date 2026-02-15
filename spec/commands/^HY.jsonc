@@ -19,7 +19,7 @@
           "doc": "Extension format. G = .GRF (raw bitmap), P = .PNG (compressed bitmap). Default: format of stored image." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Extension of ^HG command. The image is uploaded in the form of a ~DY command with the data field always encoded in ZB64 format." }
+        { "kind": "note", "audience": "contextual", "message": "Extension of ^HG command. The image is uploaded in the form of a ~DY command with the data field always encoded in ZB64 format." }
       ],
       "docs": "Uploads graphic objects from the printer to the host in any supported format (GRF or PNG)."
     }

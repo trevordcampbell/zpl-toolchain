@@ -10,7 +10,7 @@
       "placement": { "allowedInsideLabel": false, "allowedOutsideLabel": true },
       "arity": 0,
       "constraints": [
-        { "kind": "note", "message": "If there are no ^SX alerts configured, the printer will not respond to this command." }
+        { "kind": "note", "expr": "when:label:missing:^SX", "audience": "contextual", "message": "Without ^SX alerts configured, the printer will not respond to this command." }
       ],
       "docs": "Returns the table of configured ZebraNet Alert settings to the host, showing condition type, destination, set/clear flags, email address, and port number for each alert."
     }

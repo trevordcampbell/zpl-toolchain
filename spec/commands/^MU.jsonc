@@ -22,7 +22,17 @@
       ],
       "effects": { "sets": ["format.units", "format.dpiConversion"] },
       "constraints": [
-        { "kind": "note", "message": "Should appear at the beginning of the label format. Works field-by-field. To reset conversion, enter matching values for b and c." }
+        {
+          "kind": "note",
+          "expr": "after:first:^FO",
+          "severity": "info",
+          "message": "Should appear at the beginning of the label format."
+        },
+        {
+          "kind": "note",
+          "audience": "contextual",
+          "message": "Works field-by-field. To reset conversion, enter matching values for b and c."
+        }
       ],
       "docs": "Sets the units of measurement (dots, inches, mm) and allows DPI conversion for cross-resolution label compatibility."
     }

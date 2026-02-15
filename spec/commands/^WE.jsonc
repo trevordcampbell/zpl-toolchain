@@ -40,7 +40,7 @@
           "doc": "Encryption key 4. Same format as key_1." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Provided only for backward-compatibility with printers using firmware prior to V50.15.x or X60.15.x. Use ^WX for newer firmware. Not valid for Link-OS v6 or later. Be careful to include the exact number of commas required when setting encryption keys." }
+        { "kind": "note", "message": "Legacy: for firmware prior to V50.15.x or X60.15.x. Use ^WX for newer firmware. Not valid for Link-OS v6 or later. Be careful to include the exact number of commas during encryption key setup.", "audience": "contextual" }
       ],
       "docs": "Enables Wired Equivalent Privacy (WEP) mode and sets WEP encryption values for wireless security."
     }

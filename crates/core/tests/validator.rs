@@ -71,6 +71,27 @@ fn diag_no_false_positives_valid_label() {
 }
 
 #[test]
+fn compliance_sample_does_not_emit_false_field_structure_warnings() {
+    let tables = &*common::TABLES;
+    let input = include_str!("../../../samples/compliance_label.zpl");
+    let result = parse_with_tables(input, Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::FIELD_NOT_CLOSED),
+        "compliance sample should not emit field-not-closed warnings: {:?}",
+        vr.issues
+    );
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::PARSER_FIELD_DATA_INTERRUPTED),
+        "compliance sample should not emit field-data interruption warnings: {:?}",
+        vr.issues
+    );
+}
+
+#[test]
 fn validation_result_includes_resolved_labels_per_input_label() {
     let tables = &*common::TABLES;
     let result = parse_with_tables("^XA^BY2,3,40^XZ^XA^BY3,2.5,60^XZ", Some(tables));
@@ -1733,6 +1754,84 @@ fn diag_zpl2311_text_overflow_x() {
 }
 
 #[test]
+fn diag_zpl2311_marginal_overflow_is_info_with_low_confidence() {
+    let tables = &*common::TABLES;
+    // Label width 100. Text starts at x=85 with 4 chars at width 5 each -> 20 dots.
+    // 85 + 20 = 105 (small 5-dot overflow), which should be treated as low-confidence.
+    let profile = common::profile_from_json(
+        r#"{"id":"test","schema_version":"1.0.0","dpi":203,"page":{"width_dots":100,"height_dots":200}}"#,
+    );
+    let result = parse_with_tables("^XA^PW100^LL200^CF0,5,5^FO85,10^FDABCD^FS^XZ", Some(tables));
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    let diag = vr
+        .issues
+        .iter()
+        .find(|d| d.id == codes::OBJECT_BOUNDS_OVERFLOW)
+        .expect("expected ZPL2311 for marginal overflow");
+    assert_eq!(
+        diag.severity,
+        Severity::Info,
+        "marginal text overflow should be informational: {:?}",
+        diag
+    );
+    assert!(
+        diag.message.contains("may extend"),
+        "marginal overflow message should communicate lower confidence: {:?}",
+        diag.message
+    );
+    let ctx = diag.context.as_ref().expect("expected context metadata");
+    assert_eq!(
+        ctx.get("confidence").map(String::as_str),
+        Some("low"),
+        "expected low confidence context for marginal overflow: {:?}",
+        ctx
+    );
+    assert_eq!(
+        ctx.get("audience").map(String::as_str),
+        Some("problem"),
+        "object bounds diagnostics should remain in problem surfaces: {:?}",
+        ctx
+    );
+}
+
+#[test]
+fn diag_zpl2311_large_overflow_remains_warn_with_high_confidence() {
+    let tables = &*common::TABLES;
+    let profile = common::profile_from_json(
+        r#"{"id":"test","schema_version":"1.0.0","dpi":203,"page":{"width_dots":100,"height_dots":200}}"#,
+    );
+    let result = parse_with_tables(
+        "^XA^PW100^LL200^CF0,30,30^FO50,10^FD0123456789^FS^XZ",
+        Some(tables),
+    );
+    let vr = validate_with_profile(&result.ast, tables, Some(&profile));
+    let diag = vr
+        .issues
+        .iter()
+        .find(|d| d.id == codes::OBJECT_BOUNDS_OVERFLOW)
+        .expect("expected ZPL2311 for large overflow");
+    assert_eq!(
+        diag.severity,
+        Severity::Warn,
+        "large overflow should remain warning: {:?}",
+        diag
+    );
+    let ctx = diag.context.as_ref().expect("expected context metadata");
+    assert_eq!(
+        ctx.get("confidence").map(String::as_str),
+        Some("high"),
+        "expected high confidence context for large overflow: {:?}",
+        ctx
+    );
+    assert_eq!(
+        ctx.get("audience").map(String::as_str),
+        Some("problem"),
+        "object bounds diagnostics should remain in problem surfaces: {:?}",
+        ctx
+    );
+}
+
+#[test]
 fn diag_zpl2311_barcode_overflow_y() {
     let tables = &*common::TABLES;
     // Label 60 dots tall. Barcode at y=50 with ^BY height 30 → 50+30=80 > 60.
@@ -2227,6 +2326,35 @@ fn diag_zpl3001_note_emitted() {
 }
 
 #[test]
+fn note_constraint_with_contextual_audience_sets_context_marker() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^BY2,3.0,10^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    let by_note = vr.issues.iter().find(|d| {
+        d.id == codes::NOTE
+            && d.context
+                .as_ref()
+                .and_then(|c| c.get("command"))
+                .is_some_and(|v| v == "^BY")
+    });
+    assert!(
+        by_note.is_some(),
+        "expected ^BY note diagnostic: {:?}",
+        vr.issues
+    );
+    assert_eq!(
+        by_note
+            .expect("checked")
+            .context
+            .as_ref()
+            .and_then(|ctx| ctx.get("audience"))
+            .map(String::as_str),
+        Some("contextual"),
+        "expected ^BY note to carry contextual audience marker"
+    );
+}
+
+#[test]
 fn note_ls_before_first_fs_is_not_emitted() {
     let tables = &*common::TABLES;
     let result = parse_with_tables("^XA^LS0^FO10,10^FDX^FS^XZ", Some(tables));
@@ -2260,6 +2388,249 @@ fn note_ls_after_first_fs_is_emitted_as_warn() {
         vr.issues
     );
     assert_eq!(ls_note.expect("checked above").severity, Severity::Warn);
+}
+
+#[test]
+fn note_mn_only_emits_when_b_ignored_by_mode() {
+    let tables = &*common::TABLES;
+
+    let without_b = parse_with_tables("^XA^MNN^XZ", Some(tables));
+    let vr_without_b = validate::validate(&without_b.ast, tables);
+    assert!(
+        !vr_without_b.issues.iter().any(|d| {
+            d.id == codes::NOTE
+                && d.context
+                    .as_ref()
+                    .and_then(|c| c.get("command"))
+                    .is_some_and(|v| v == "^MN")
+        }),
+        "^MN note should not emit when b is not provided: {:?}",
+        vr_without_b.issues
+    );
+
+    let with_ignored_b = parse_with_tables("^XA^MNN,20^XZ", Some(tables));
+    let vr_with_ignored_b = validate::validate(&with_ignored_b.ast, tables);
+    assert!(
+        vr_with_ignored_b.issues.iter().any(|d| {
+            d.id == codes::NOTE
+                && d.context
+                    .as_ref()
+                    .and_then(|c| c.get("command"))
+                    .is_some_and(|v| v == "^MN")
+        }),
+        "^MN note should emit when b is provided outside mode M: {:?}",
+        vr_with_ignored_b.issues
+    );
+}
+
+#[test]
+fn note_mf_only_emits_when_short_calibration_used() {
+    let tables = &*common::TABLES;
+
+    let no_s = parse_with_tables("^XA^MFN,N^XZ", Some(tables));
+    let vr_no_s = validate::validate(&no_s.ast, tables);
+    assert!(
+        !vr_no_s.issues.iter().any(|d| {
+            d.id == codes::NOTE
+                && d.context
+                    .as_ref()
+                    .and_then(|c| c.get("command"))
+                    .is_some_and(|v| v == "^MF")
+        }),
+        "^MF note should not emit when S is not used: {:?}",
+        vr_no_s.issues
+    );
+
+    let with_s = parse_with_tables("^XA^MFS,N^XZ", Some(tables));
+    let vr_with_s = validate::validate(&with_s.ast, tables);
+    assert!(
+        vr_with_s.issues.iter().any(|d| {
+            d.id == codes::NOTE
+                && d.context
+                    .as_ref()
+                    .and_then(|c| c.get("command"))
+                    .is_some_and(|v| v == "^MF")
+        }),
+        "^MF note should emit when S is used: {:?}",
+        vr_with_s.issues
+    );
+}
+
+#[test]
+fn note_ci_emits_only_for_relevant_charsets() {
+    let tables = &*common::TABLES;
+
+    let normal_charset = parse_with_tables("^XA^CI27^XZ", Some(tables));
+    let vr_normal = validate::validate(&normal_charset.ast, tables);
+    let ci_notes_normal = vr_normal
+        .issues
+        .iter()
+        .filter(|d| {
+            d.id == codes::NOTE
+                && d.context
+                    .as_ref()
+                    .and_then(|c| c.get("command"))
+                    .is_some_and(|v| v == "^CI")
+        })
+        .count();
+    assert_eq!(
+        ci_notes_normal, 0,
+        "non-reserved charset should not emit ^CI notes"
+    );
+
+    let reserved_charset = parse_with_tables("^XA^CI32^XZ", Some(tables));
+    let vr_reserved = validate::validate(&reserved_charset.ast, tables);
+    assert!(
+        vr_reserved.issues.iter().any(|d| {
+            d.id == codes::NOTE
+                && d.context
+                    .as_ref()
+                    .and_then(|c| c.get("command"))
+                    .is_some_and(|v| v == "^CI")
+        }),
+        "reserved/firmware-sensitive charset should emit ^CI note: {:?}",
+        vr_reserved.issues
+    );
+}
+
+#[test]
+fn note_mc_only_emits_when_label_has_no_fv() {
+    let tables = &*common::TABLES;
+
+    let no_fv = parse_with_tables("^XA^MCY^XZ", Some(tables));
+    let vr_no_fv = validate::validate(&no_fv.ast, tables);
+    assert!(
+        vr_no_fv.issues.iter().any(|d| {
+            d.id == codes::REQUIRED_COMMAND
+                && d.context
+                    .as_ref()
+                    .and_then(|c| c.get("command"))
+                    .is_some_and(|v| v == "^MC")
+        }),
+        "^MC should emit requires-info when ^FV is absent: {:?}",
+        vr_no_fv.issues
+    );
+
+    let with_fv = parse_with_tables("^XA^MCY^FO10,10^FVX^FS^XZ", Some(tables));
+    let vr_with_fv = validate::validate(&with_fv.ast, tables);
+    assert!(
+        !vr_with_fv.issues.iter().any(|d| {
+            d.id == codes::REQUIRED_COMMAND
+                && d.context
+                    .as_ref()
+                    .and_then(|c| c.get("command"))
+                    .is_some_and(|v| v == "^MC")
+        }),
+        "^MC requires-info should be suppressed when ^FV is present: {:?}",
+        vr_with_fv.issues
+    );
+}
+
+#[test]
+fn note_mw_only_emits_when_parameter_missing() {
+    let tables = &*common::TABLES;
+
+    let missing = parse_with_tables("^XA^MW^XZ", Some(tables));
+    let vr_missing = validate::validate(&missing.ast, tables);
+    assert!(
+        vr_missing.issues.iter().any(|d| {
+            d.id == codes::NOTE
+                && d.context
+                    .as_ref()
+                    .and_then(|c| c.get("command"))
+                    .is_some_and(|v| v == "^MW")
+        }),
+        "^MW note should emit when parameter is omitted: {:?}",
+        vr_missing.issues
+    );
+
+    let present = parse_with_tables("^XA^MWY^XZ", Some(tables));
+    let vr_present = validate::validate(&present.ast, tables);
+    assert!(
+        !vr_present.issues.iter().any(|d| {
+            d.id == codes::NOTE
+                && d.context
+                    .as_ref()
+                    .and_then(|c| c.get("command"))
+                    .is_some_and(|v| v == "^MW")
+        }),
+        "^MW note should not emit when parameter is provided: {:?}",
+        vr_present.issues
+    );
+}
+
+#[test]
+fn note_mu_only_emits_when_not_at_beginning() {
+    let tables = &*common::TABLES;
+
+    let at_beginning = parse_with_tables("^XA^MUD,300,300^FO10,10^FDX^FS^XZ", Some(tables));
+    let vr_at_beginning = validate::validate(&at_beginning.ast, tables);
+    assert!(
+        !vr_at_beginning.issues.iter().any(|d| {
+            d.id == codes::NOTE
+                && d.message
+                    .contains("Should appear at the beginning of the label format")
+                && d.context
+                    .as_ref()
+                    .and_then(|c| c.get("command"))
+                    .is_some_and(|v| v == "^MU")
+        }),
+        "^MU order note should not emit at beginning: {:?}",
+        vr_at_beginning.issues
+    );
+
+    let after_field_origin = parse_with_tables("^XA^FO10,10^FDX^FS^MUD,300,300^XZ", Some(tables));
+    let vr_after_field_origin = validate::validate(&after_field_origin.ast, tables);
+    assert!(
+        vr_after_field_origin.issues.iter().any(|d| {
+            d.id == codes::NOTE
+                && d.message
+                    .contains("Should appear at the beginning of the label format")
+                && d.context
+                    .as_ref()
+                    .and_then(|c| c.get("command"))
+                    .is_some_and(|v| v == "^MU")
+        }),
+        "^MU order note should emit when declared after first ^FO: {:?}",
+        vr_after_field_origin.issues
+    );
+}
+
+#[test]
+fn note_fe_only_emits_when_declared_after_fd_in_field() {
+    let tables = &*common::TABLES;
+
+    let before_fd = parse_with_tables("^XA^FO10,10^FE#^FD#1#^FS^XZ", Some(tables));
+    let vr_before_fd = validate::validate(&before_fd.ast, tables);
+    assert!(
+        !vr_before_fd.issues.iter().any(|d| {
+            d.id == codes::NOTE
+                && d.message
+                    .contains("Must precede each ^FD command where it is used")
+                && d.context
+                    .as_ref()
+                    .and_then(|c| c.get("command"))
+                    .is_some_and(|v| v == "^FE")
+        }),
+        "^FE note should not emit when ^FE precedes ^FD: {:?}",
+        vr_before_fd.issues
+    );
+
+    let after_fd = parse_with_tables("^XA^FO10,10^FD#1#^FE#^FS^XZ", Some(tables));
+    let vr_after_fd = validate::validate(&after_fd.ast, tables);
+    assert!(
+        vr_after_fd.issues.iter().any(|d| {
+            d.id == codes::NOTE
+                && d.message
+                    .contains("Must precede each ^FD command where it is used")
+                && d.context
+                    .as_ref()
+                    .and_then(|c| c.get("command"))
+                    .is_some_and(|v| v == "^FE")
+        }),
+        "^FE note should emit when ^FE comes after ^FD in field: {:?}",
+        vr_after_fd.issues
+    );
 }
 
 // ─── Structural Validation ───────────────────────────────────────────────────
@@ -3163,6 +3534,7 @@ fn diag_zpl2102_incompatible_command_via_synthetic_constraint() {
             message: "synthetic incompatible test".to_string(),
             severity: None,
             scope: None,
+            audience: None,
         });
     });
 
@@ -3187,6 +3559,7 @@ fn diag_zpl2104_order_after_via_synthetic_constraint() {
             message: "synthetic order-after test".to_string(),
             severity: None,
             scope: None,
+            audience: None,
         });
     });
 
@@ -3196,6 +3569,127 @@ fn diag_zpl2104_order_after_via_synthetic_constraint() {
     assert!(
         vr.issues.iter().any(|d| d.id == codes::ORDER_AFTER),
         "expected ORDER_AFTER from synthetic order-after constraint: {:?}",
+        vr.issues
+    );
+}
+
+#[test]
+fn diag_constraint_default_severity_applies_when_constraint_severity_omitted() {
+    let tables = mutate_command_in_tables(&common::TABLES, "^A", |cmd| {
+        cmd.constraint_defaults = Some(zpl_toolchain_spec_tables::ConstraintDefaults {
+            severity: Some(zpl_toolchain_spec_tables::ConstraintSeverity::Error),
+        });
+        let constraints = cmd.constraints.get_or_insert_with(Vec::new);
+        constraints.push(Constraint {
+            kind: ConstraintKind::Order,
+            expr: Some("after:^FO".to_string()),
+            message: "synthetic order-after default-severity test".to_string(),
+            severity: None,
+            scope: None,
+            audience: None,
+        });
+    });
+
+    let result = parse_with_tables("^XA^A0N,30,30^FO10,10^FDx^FS^XZ", Some(&tables));
+    let vr = validate::validate(&result.ast, &tables);
+    let diag = vr
+        .issues
+        .iter()
+        .find(|d| d.id == codes::ORDER_AFTER)
+        .expect("expected ORDER_AFTER from synthetic order-after constraint");
+    assert_eq!(
+        diag.severity,
+        Severity::Error,
+        "constraintDefaults.severity should apply when constraint severity is omitted: {:?}",
+        diag
+    );
+}
+
+#[test]
+fn diag_barcode_field_data_character_set_severity_from_spec() {
+    let tables = mutate_command_in_tables(&common::TABLES, "^BC", |cmd| {
+        cmd.field_data_rules = Some(zpl_toolchain_spec_tables::FieldDataRules {
+            character_set: Some("0-9".to_string()),
+            character_set_severity: Some(zpl_toolchain_spec_tables::ConstraintSeverity::Info),
+            min_length: None,
+            max_length: None,
+            exact_length: None,
+            allowed_lengths: None,
+            length_parity: None,
+            length_severity: None,
+            notes: None,
+        });
+    });
+
+    let result = parse_with_tables("^XA^FO10,10^BCN,30,Y,N,N^FDABC123^FS^XZ", Some(&tables));
+    let vr = validate::validate(&result.ast, &tables);
+    let diag = vr
+        .issues
+        .iter()
+        .find(|d| d.id == codes::BARCODE_INVALID_CHAR)
+        .expect("expected BARCODE_INVALID_CHAR from synthetic character set");
+    assert_eq!(
+        diag.severity,
+        Severity::Info,
+        "characterSetSeverity should drive BARCODE_INVALID_CHAR severity: {:?}",
+        diag
+    );
+}
+
+#[test]
+fn diag_barcode_field_data_length_severity_from_spec() {
+    let tables = mutate_command_in_tables(&common::TABLES, "^BC", |cmd| {
+        cmd.field_data_rules = Some(zpl_toolchain_spec_tables::FieldDataRules {
+            character_set: None,
+            character_set_severity: None,
+            min_length: Some(8),
+            max_length: None,
+            exact_length: None,
+            allowed_lengths: None,
+            length_parity: None,
+            length_severity: Some(zpl_toolchain_spec_tables::ConstraintSeverity::Error),
+            notes: None,
+        });
+    });
+
+    let result = parse_with_tables("^XA^FO10,10^BCN,30,Y,N,N^FD1234^FS^XZ", Some(&tables));
+    let vr = validate::validate(&result.ast, &tables);
+    let diag = vr
+        .issues
+        .iter()
+        .find(|d| d.id == codes::BARCODE_DATA_LENGTH)
+        .expect("expected BARCODE_DATA_LENGTH from synthetic minLength");
+    assert_eq!(
+        diag.severity,
+        Severity::Error,
+        "lengthSeverity should drive BARCODE_DATA_LENGTH severity: {:?}",
+        diag
+    );
+}
+
+#[test]
+fn diag_rounding_policy_uses_spec_epsilon() {
+    let tables = mutate_command_in_tables(&common::TABLES, "^BY", |cmd| {
+        let args = cmd.args.as_mut().expect("^BY should have args");
+        let first_arg = args.get_mut(0).expect("^BY first arg should exist");
+        match first_arg {
+            ArgUnion::Single(arg) => {
+                arg.rounding_policy = Some(zpl_toolchain_spec_tables::RoundingPolicy {
+                    unit: None,
+                    mode: zpl_toolchain_spec_tables::RoundingMode::ToMultiple,
+                    multiple: Some(2.0),
+                    epsilon: 0.6,
+                });
+            }
+            ArgUnion::OneOf { .. } => panic!("expected ^BY arg 0 to be single"),
+        }
+    });
+
+    let result = parse_with_tables("^XA^BY3,2,10^XZ", Some(&tables));
+    let vr = validate::validate(&result.ast, &tables);
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::ROUNDING_VIOLATION),
+        "rounding epsilon from spec should suppress expected borderline violation: {:?}",
         vr.issues
     );
 }

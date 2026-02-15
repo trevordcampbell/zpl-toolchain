@@ -16,7 +16,12 @@
       ],
       "effects": { "sets": ["barcode.moduleWidth", "barcode.ratio", "barcode.height"] },
       "constraints": [
-        { "kind": "note", "message": "^BY sets defaults for subsequent barcode commands" }
+        {
+          "kind": "note",
+          "severity": "info",
+          "audience": "contextual",
+          "message": "^BY sets defaults for subsequent barcode commands"
+        }
       ],
       "docs": "Set defaults for subsequent barcode fields (module width, ratio, height)."
     }

@@ -1,5 +1,7 @@
 # zpl_toolchain_core
 
+![ZPL Toolchain logo](https://raw.githubusercontent.com/trevordcampbell/zpl-toolchain/main/docs/assets/branding/logo-square-128.png)
+
 Parser, AST, validator, and glue for consuming generated spec tables.
 
 Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) project.
@@ -37,7 +39,7 @@ Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) pr
 - The crate root re-exports the most common entry points for convenience:
   - **Parser:** `parse_str`, `parse_with_tables`, `ParseResult`
   - **AST:** `Ast`, `Label`, `Node`, `ArgSlot`, `Presence`
-  - **Emitter:** `emit_zpl`, `strip_spans`, `EmitConfig`, `Indent`
+  - **Emitter:** `emit_zpl`, `strip_spans`, `EmitConfig`, `Indent`, `Compaction`, `CommentPlacement`
   - **Diagnostics:** `Diagnostic`, `Span`, `Severity`, `codes`
   - **Validator:** `validate_with_profile`, `ValidationResult`
   - **Tables:** `ParserTables`
@@ -45,10 +47,10 @@ Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) pr
 - Full module paths (`grammar::parser::parse_str`, etc.) remain available for less common types.
 
 ## Tests
-- 255 tests split across focused test files:
+- 300+ tests split across focused test files:
   - `parser.rs` (61 tests) — tokenization, command recognition, AST structure, field/raw data modes, span tracking, prefix/delimiter, parser diagnostics, error recovery.
   - `validator.rs` (111 tests) — validation diagnostics, profile constraints, printer gates, media modes, structural/semantic validation, cross-command constraints, barcode field data.
-  - `emit_roundtrip.rs` (23 tests) — formatter round-trip and idempotency.
+  - `emit_roundtrip.rs` (30+ tests) — formatter round-trip/idempotency, compaction, comment placement.
   - `fuzz_smoke.rs` (26 tests) — adversarial input and invariant checking.
   - `snapshots.rs` (11 tests) — golden AST/diagnostic snapshots.
   - `samples.rs`, `cross_command_state.rs`, `rich_fields.rs`, `opcode_trie.rs`, `arg_union.rs` — targeted integration tests.

@@ -92,10 +92,18 @@ if [ "$extension_push_changes" -eq 1 ]; then
         exit 1
     fi
 
+    echo "pre-push: refreshing @zpl-toolchain/core runtime artifacts..."
+    bash scripts/refresh-core-runtime.sh
+
     echo "pre-push: running vscode-extension checks..."
     (
       cd packages/vscode-extension
-      npm run test:ci
+      npm run test
+      if command -v code &>/dev/null || command -v code-insiders &>/dev/null || command -v cursor &>/dev/null || command -v codium &>/dev/null; then
+        npm run test:integration
+      else
+        echo "pre-push: skipping vscode-extension integration (no local editor executable found)."
+      fi
       npm run package:vsix
     )
 fi

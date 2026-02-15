@@ -184,6 +184,12 @@ npm run package:vsix
 freshness guard (`check:core-runtime-freshness`) that fails fast when
 `packages/ts/core/wasm/pkg` is stale relative to Rust/WASM sources or parser tables.
 
+Local helper to refresh these artifacts in one step:
+
+```bash
+bash scripts/refresh-core-runtime.sh
+```
+
 `npm run package:vsix` verifies that the extension can be packaged into a
 distributable VSIX with bundled runtime assets.
 

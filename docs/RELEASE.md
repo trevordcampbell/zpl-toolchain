@@ -6,6 +6,10 @@ Releases are fully automated via [release-plz](https://release-plz.ieni.dev/) an
 
 ### Day-to-day flow
 
+0. Start from a fresh `main` before release-related work:
+   - `git checkout main`
+   - `git pull --rebase origin main`
+   - `git checkout -b <feature-branch>`
 1. Push conventional commits to a new feature branch (enforced by git hooks — see below)
 2. Open a PR for merging these changes into `main`.
 3. Review and merge the PR

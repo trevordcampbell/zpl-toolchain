@@ -313,7 +313,11 @@ suite("VS Code extension integration", () => {
       .map((part) => (part instanceof vscode.MarkdownString ? part.value : String(part)))
       .join("\n");
     assert.match(content, /\^FV/, "Expected hover title to include ^FV.");
-    assert.match(content, /Arguments:/, "Expected hover to include argument metadata.");
+    assert.match(
+      content,
+      /variable data/i,
+      "Expected hover to include resolved alias documentation content."
+    );
   });
 
   test("hover-only notes do not pollute Problems diagnostics", async () => {

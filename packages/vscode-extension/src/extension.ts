@@ -17,7 +17,7 @@ const DIAGNOSTIC_SOURCE = "zpl-toolchain";
 const EXPLAIN_COMMAND_ID = "zplToolchain.explainDiagnostic";
 const APPLY_THEME_PRESET_COMMAND_ID = "zplToolchain.applyThemePreset";
 const COMMAND_PREFIX_REGEX = /[\^~][A-Za-z0-9@]*$/;
-const COMMAND_TOKEN_REGEX_SOURCE = "\\^A(?=[A-Za-z0-9])|[\\^~][A-Za-z0-9@]{1,2}";
+const COMMAND_TOKEN_REGEX_SOURCE = "\\^A[0-9]|\\^A(?=[A-Za-z])|[\\^~][A-Za-z0-9@]{1,2}";
 const COMMAND_COMPLETION_TRIGGER_CHARACTERS = [
   "^",
   "~",

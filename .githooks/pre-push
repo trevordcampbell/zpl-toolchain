@@ -99,11 +99,7 @@ if [ "$extension_push_changes" -eq 1 ]; then
     (
       cd packages/vscode-extension
       npm run test
-      if command -v code &>/dev/null || command -v code-insiders &>/dev/null || command -v cursor &>/dev/null || command -v codium &>/dev/null; then
-        npm run test:integration
-      else
-        echo "pre-push: skipping vscode-extension integration (no local editor executable found)."
-      fi
+      echo "pre-push: skipping vscode-extension integration in hook (covered in CI)."
       npm run package:vsix
     )
 fi

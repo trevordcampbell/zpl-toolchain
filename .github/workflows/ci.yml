@@ -226,9 +226,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: ./.github/actions/setup-rust
+        with:
+          targets: wasm32-unknown-unknown
+          cache-key: ci-vscode-extension-wasm
+
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@wasm-pack
+
       - uses: actions/setup-node@v4
         with:
           node-version: "24.13.1"
+
+      - name: Build WASM package for @zpl-toolchain/core
+        run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
+
+      - name: Install dependencies and build @zpl-toolchain/core
+        working-directory: packages/ts/core
+        run: npm ci && npm run build
 
       - name: Install Extension Host test runtime
         run: sudo apt-get update && sudo apt-get install -y xvfb xauth

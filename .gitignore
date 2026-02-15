@@ -60,6 +60,7 @@ z.plan.md
 *.tmp
 *.temp
 *.tmp-cache
+.cache/
 
 # local tool/cache dirs (hook/runtime refresh helpers)
 .tmp/

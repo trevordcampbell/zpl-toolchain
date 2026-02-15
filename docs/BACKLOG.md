@@ -2,7 +2,7 @@
 
 > Single source of truth for tactical work items. For the strategic roadmap (phases, priorities, and architectural decisions), see [ROADMAP.md](ROADMAP.md). Original plans archived at `docs/research/archive/`.
 >
-> Last updated: 2026-02-14
+> Last updated: 2026-02-15
 
 ---
 
@@ -25,6 +25,7 @@ Before implementation work starts in `crates/renderer/`, complete these research
 
 ### Tier 2: Developer Experience & Tooling (unblocks first release)
 
+- [ ] **Finalize VS Code extension publisher namespace strategy before first public publish** — current extension identity is `trevordcampbell.zpl-toolchain`; decide whether to keep this long-term or migrate publisher namespace to `zpl-toolchain` across VS Marketplace + Open VSX. Include token/namespace ownership setup, install/defaultFormatter ID migration plan, and docs/release workflow alignment.
 - [ ] **Investigate local vs fetched `@vscode/vsce` behavior drift** — in this environment, locally installed VSCE 3.7.1 reports `extension/dist/extension.js` missing, while freshly fetched `npx @vscode/vsce@3.7.1` packages successfully. Create a minimal repro, diff dependency trees/runtime env, and upstream a bug if reproducible.
 - [ ] **Evaluate arm64 CI lane for Extension Host integration tests** — current CI enforces extension-host integration on `ubuntu-latest` (x64). Assess adding a periodic or required `linux/arm64` run (self-hosted or hosted arm64 runner) to catch architecture-specific VS Code test-runtime regressions early.
 - [x] **`LineIndex` utility** — byte-offset → line/column conversion in `diagnostics` crate; zero external dependencies; reusable by WASM/LSP; 8 unit tests

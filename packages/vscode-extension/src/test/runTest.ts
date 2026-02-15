@@ -82,13 +82,19 @@ async function main(): Promise<void> {
 
   const extensionDevelopmentPath = path.resolve(__dirname, "../..");
   const extensionTestsPath = path.resolve(__dirname, "./suite/index");
+  const workspacePath = path.resolve(
+    extensionDevelopmentPath,
+    "test-fixtures",
+    "workspace",
+    "test.code-workspace"
+  );
   process.env.ZPL_VSCODE_EXTENSION_ROOT = extensionDevelopmentPath;
   process.env.ZPL_REPO_ROOT = path.resolve(extensionDevelopmentPath, "../..");
 
   await runTests({
     extensionDevelopmentPath,
     extensionTestsPath,
-    launchArgs: ["--disable-extensions"],
+    launchArgs: [workspacePath, "--disable-extensions"],
     ...(overrideExecutable ? { vscodeExecutablePath: overrideExecutable } : {}),
   });
 }

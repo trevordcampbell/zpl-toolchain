@@ -24,7 +24,13 @@ const tsCoreDistPath = path.resolve(
   "dist",
   "index.js"
 );
-const parserTablesPath = path.resolve(repoRoot, "generated", "parser_tables.json");
+const parserTablesPath = path.resolve(
+  repoRoot,
+  "crates",
+  "cli",
+  "data",
+  "parser_tables.json"
+);
 
 const rustSourceRoots = [
   path.resolve(repoRoot, "crates", "core", "src"),

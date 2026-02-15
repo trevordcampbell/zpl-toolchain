@@ -1,6 +1,6 @@
 # zpl-toolchain
 
-![ZPL Toolchain banner](https://raw.githubusercontent.com/trevordcampbell/zpl-toolchain/main/docs/assets/branding/banner-readme-1800x600.png)
+![ZPL Toolchain banner](./docs/assets/branding/banner-readme-1800x600.png)
 
 [![CI](https://github.com/trevordcampbell/zpl-toolchain/actions/workflows/ci.yml/badge.svg)](https://github.com/trevordcampbell/zpl-toolchain/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/zpl_toolchain_cli.svg)](https://crates.io/crates/zpl_toolchain_cli)

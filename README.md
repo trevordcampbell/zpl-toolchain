@@ -82,7 +82,7 @@ npx @zpl-toolchain/cli --help
 npm install @zpl-toolchain/core     # parsing, validation, formatting (WASM)
 npm install @zpl-toolchain/print    # printing (Node.js TCP, browser proxy)
 # VS Code extension (Marketplace)
-code --install-extension trevordcampbell.zpl-toolchain-vscode
+code --install-extension trevordcampbell.zpl-toolchain
 
 # Python
 pip install zpl-toolchain

@@ -21,6 +21,11 @@ Distribution channels:
 - Open VSX
 - Manual VSIX install (release artifact)
 
+Extension identity:
+
+- Extension ID: `trevordcampbell.zpl-toolchain`
+- Package name (`packages/vscode-extension/package.json#name`): `zpl-toolchain`
+
 ## MVP Features
 
 - ZPL language registration and syntax highlighting (`.zpl`)
@@ -46,7 +51,7 @@ Distribution channels:
 - `zplToolchain.hover.enabled` — enable/disable opcode hover docs
 - `zplToolchain.themePreset` — optional highlight preset (`custom`, `default`, `high-contrast`, `minimal`)
 - contributed defaults for `[zpl]`:
-  - `editor.defaultFormatter = trevordcampbell.zpl-toolchain-vscode`
+  - `editor.defaultFormatter = trevordcampbell.zpl-toolchain`
   - `editor.formatOnSave = true`
   - `editor.suggest.showDetails = true`
   - `editor.suggest.showInlineDetails = false`
@@ -180,7 +185,7 @@ cd packages/vscode-extension
 npm run package:vsix
 ```
 
-This emits `zpl-toolchain-vscode-<version>.vsix` in the package directory.
+This emits `zpl-toolchain-<version>.vsix` in the package directory.
 
 Packaging/publish scripts use an explicit VSCE version (`npx @vscode/vsce@3.7.1 ...`)
 for deterministic behavior. On a fresh machine this requires network access once to

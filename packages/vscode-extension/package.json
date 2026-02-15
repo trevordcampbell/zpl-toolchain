@@ -1,5 +1,5 @@
 {
-  "name": "zpl-toolchain-vscode",
+  "name": "zpl-toolchain",
   "displayName": "ZPL Toolchain",
   "description": "Parse, validate, format, explain, and complete ZPL directly in VS Code-family editors.",
   "version": "0.1.13",
@@ -128,7 +128,7 @@
     },
     "configurationDefaults": {
       "[zpl]": {
-        "editor.defaultFormatter": "trevordcampbell.zpl-toolchain-vscode",
+        "editor.defaultFormatter": "trevordcampbell.zpl-toolchain",
         "editor.formatOnSave": true,
         "editor.suggest.showDetails": true,
         "editor.suggest.showInlineDetails": false,

@@ -33,7 +33,7 @@ Releases are fully automated via [release-plz](https://release-plz.ieni.dev/) an
 | Shell installer (checksum-verified) | `curl -fsSL https://raw.githubusercontent.com/trevordcampbell/zpl-toolchain/main/install.sh | sh` |
 | Homebrew (in-repo formula) | `brew install --formula Formula/zpl-toolchain.rb` |
 | Homebrew (tap) | `brew install trevordcampbell/zpl-toolchain/zpl-toolchain` |
-| VS Code extension (Marketplace) | `code --install-extension trevordcampbell.zpl-toolchain-vscode` |
+| VS Code extension (Marketplace) | `code --install-extension trevordcampbell.zpl-toolchain` |
 | Pre-built binary (download) | [GitHub Releases](https://github.com/trevordcampbell/zpl-toolchain/releases) |
 | npx wrapper (downloads binary on first run) | `npx @zpl-toolchain/cli --help` |
 
@@ -56,6 +56,7 @@ Extension packaging and publishing are automated in `release-plz.yml`:
 
 Version alignment is enforced in CI: extension `package.json` version must match
 the release tag version.
+Published extension identity is `trevordcampbell.zpl-toolchain`.
 
 Manual fallback:
 

@@ -26,6 +26,11 @@ This extension is one piece of the full `zpl-toolchain` ecosystem:
 - CLI wrapper: `@zpl-toolchain/cli`
 - Release/process docs: `docs/RELEASE.md`, `docs/TESTING.md`, `docs/VSCODE_EXTENSION.md`
 
+Extension identity:
+
+- Extension ID: `trevordcampbell.zpl-toolchain`
+- Package name (`package.json#name`): `zpl-toolchain`
+
 ## Settings
 
 - `zplToolchain.profileJson` — optional inline printer profile JSON.
@@ -41,7 +46,7 @@ This extension is one piece of the full `zpl-toolchain` ecosystem:
 
 Formatter defaults contributed for `[zpl]`:
 
-- `editor.defaultFormatter = trevordcampbell.zpl-toolchain-vscode`
+- `editor.defaultFormatter = trevordcampbell.zpl-toolchain`
 - `editor.formatOnSave = true`
 - `editor.suggest.showDetails = true`
 - `editor.suggest.showInlineDetails = false`
@@ -81,7 +86,7 @@ Integration test note (`linux/arm64`):
 2. In VS Code/Cursor:
    - open Command Palette
    - run **Extensions: Install from VSIX...**
-   - select the generated `.vsix`
+   - select the generated `zpl-toolchain-<version>.vsix`
 
 ## Distribution
 

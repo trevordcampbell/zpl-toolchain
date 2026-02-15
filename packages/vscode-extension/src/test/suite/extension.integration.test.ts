@@ -40,7 +40,7 @@ function repoRoot(): string {
 }
 
 async function createTempZplFile(name: string, content: string): Promise<vscode.Uri> {
-  const dir = path.resolve(os.tmpdir(), "zpl-toolchain-vscode-extension-tests");
+  const dir = path.resolve(os.tmpdir(), "zpl-toolchain-extension-tests");
   await fs.mkdir(dir, { recursive: true });
   const filePath = path.resolve(dir, name);
   await fs.writeFile(filePath, content, "utf8");
@@ -123,7 +123,7 @@ suite("VS Code extension integration", () => {
   let extension: vscode.Extension<unknown> | undefined;
 
   suiteSetup(async () => {
-    extension = vscode.extensions.getExtension("trevordcampbell.zpl-toolchain-vscode");
+    extension = vscode.extensions.getExtension("trevordcampbell.zpl-toolchain");
     assert.ok(extension, "Expected extension to be discoverable by identifier.");
     if (!extension.isActive) {
       await extension.activate();

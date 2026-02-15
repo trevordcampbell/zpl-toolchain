@@ -17,7 +17,12 @@
       ],
       "effects": { "sets": ["parser.zplMode"] },
       "constraints": [
-        { "kind": "note", "message": "Remains active until another ^SZ command is sent or the printer is turned off. If the parameter is missing or invalid, the command is ignored." }
+        {
+          "kind": "note",
+          "severity": "info",
+          "audience": "contextual",
+          "message": "Remains active until another ^SZ command is sent or printer power-off. Missing or invalid parameters cause this command to be ignored."
+        }
       ],
       "docs": "Selects the programming language used by the printer, allowing labels formatted in both ZPL and ZPL II to be printed."
     }

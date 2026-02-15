@@ -9,8 +9,8 @@ use std::sync::OnceLock;
 use std::time::Duration;
 
 use zpl_toolchain_core::{
-    EmitConfig, Indent, ParseResult, ValidationResult, emit_zpl, parse_str, parse_with_tables,
-    validate_with_profile,
+    CommentPlacement, Compaction, EmitConfig, Indent, ParseResult, ValidationResult, emit_zpl,
+    parse_str, parse_with_tables, validate_with_profile,
 };
 use zpl_toolchain_profile::{Profile, load_profile_from_str};
 use zpl_toolchain_spec_tables::ParserTables;
@@ -124,8 +124,34 @@ pub fn parse_indent(indent: Option<&str>) -> Indent {
     }
 }
 
+/// Parse a compaction string into the `Compaction` enum.
+pub fn parse_compaction(compaction: Option<&str>) -> Compaction {
+    match compaction {
+        Some("field") => Compaction::Field,
+        _ => Compaction::None,
+    }
+}
+
+/// Parse a comment-placement string into the `CommentPlacement` enum.
+pub fn parse_comment_placement(comment_placement: Option<&str>) -> CommentPlacement {
+    match comment_placement {
+        Some("line") => CommentPlacement::Line,
+        _ => CommentPlacement::Inline,
+    }
+}
+
 /// Format ZPL input with the given indent style.
 pub fn format_zpl(input: &str, indent: Option<&str>) -> String {
+    format_zpl_with_options(input, indent, None, None)
+}
+
+/// Format ZPL input with indent and compaction options.
+pub fn format_zpl_with_options(
+    input: &str,
+    indent: Option<&str>,
+    compaction: Option<&str>,
+    comment_placement: Option<&str>,
+) -> String {
     let tables = embedded_tables();
     let res = match tables {
         Some(t) => parse_with_tables(input, Some(t)),
@@ -134,6 +160,8 @@ pub fn format_zpl(input: &str, indent: Option<&str>) -> String {
 
     let config = EmitConfig {
         indent: parse_indent(indent),
+        compaction: parse_compaction(compaction),
+        comment_placement: parse_comment_placement(comment_placement),
     };
     emit_zpl(&res.ast, tables, &config)
 }
@@ -372,8 +400,9 @@ pub fn query_printer_info_with_options(
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
-    use super::build_printer_config;
+    use super::{build_printer_config, parse_comment_placement, parse_compaction, parse_indent};
     use std::time::Duration;
+    use zpl_toolchain_core::{Compaction, Indent};
 
     #[test]
     fn timeout_ms_applies_scaled_timeouts() {
@@ -429,5 +458,29 @@ mod tests {
     fn empty_config_json_is_treated_as_none() {
         let cfg = build_printer_config(Some(1_000), Some("   ")).expect("config");
         assert_eq!(cfg.timeouts.connect, Duration::from_millis(1_000));
+    }
+
+    #[test]
+    fn parse_indent_and_compaction_are_independent() {
+        assert_eq!(parse_indent(Some("label")), Indent::Label);
+        assert_eq!(parse_compaction(Some("field")), Compaction::Field);
+        assert_eq!(parse_indent(Some("field")), Indent::Field);
+        assert_eq!(parse_compaction(None), Compaction::None);
+    }
+
+    #[test]
+    fn parse_comment_placement_defaults_to_inline() {
+        assert_eq!(
+            parse_comment_placement(None),
+            zpl_toolchain_core::CommentPlacement::Inline
+        );
+        assert_eq!(
+            parse_comment_placement(Some("line")),
+            zpl_toolchain_core::CommentPlacement::Line
+        );
+        assert_eq!(
+            parse_comment_placement(Some("bogus")),
+            zpl_toolchain_core::CommentPlacement::Inline
+        );
     }
 }

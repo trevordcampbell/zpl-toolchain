@@ -20,7 +20,11 @@
       ],
       "effects": { "sets": ["maintenance.infoMessage"] },
       "constraints": [
-        { "kind": "note", "message": "Available only for firmware V60.15.x, V50.15.x, or later. Printing of the message is controlled by ^MA. All characters following the comma and preceding the next ~ or ^ define the message string." }
+        {
+          "kind": "note",
+          "audience": "contextual",
+          "message": "Firmware V60.15.x, V50.15.x, or later required. Printing of the message is controlled by ^MA. All characters following the comma and preceding the next ~ or ^ define the message string."
+        }
       ],
       "docs": "Controls the content of maintenance alert messages that remind the operator to clean or replace the printhead."
     }

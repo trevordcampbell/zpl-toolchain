@@ -66,6 +66,7 @@ fn tables_with_spacing_command(
                 },
             ))]),
             constraints: None,
+            constraint_defaults: None,
             effects: None,
             plane: None,
             scope: None,
@@ -450,6 +451,30 @@ fn field_data_fv_also_works() {
         Some("Variable data"),
         "^FV first arg should be exactly 'Variable data': {:?}",
         fv_args,
+    );
+}
+
+#[test]
+fn field_data_gs1_semicolon_does_not_swallow_fs() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables(
+        "^XA^FO10,10^BCN,100,Y,N,N^FD>;>800093012345678901234^FS^XZ",
+        Some(tables),
+    );
+
+    let codes = extract_codes(&result);
+    assert!(
+        codes.contains(&"^FS".to_string()),
+        "inline GS1 payload should still terminate field at ^FS: {:?}",
+        codes
+    );
+    assert!(
+        !result
+            .diagnostics
+            .iter()
+            .any(|d| d.id == codes::PARSER_FIELD_DATA_INTERRUPTED),
+        "semicolon in field data should not trigger field-data interruption: {:?}",
+        result.diagnostics
     );
 }
 

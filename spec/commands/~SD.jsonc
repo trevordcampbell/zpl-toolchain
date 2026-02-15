@@ -17,7 +17,8 @@
       ],
       "effects": { "sets": ["media.darkness"] },
       "constraints": [
-        { "kind": "note", "message": "The ^MD command value, if applicable, is added to the ~SD command. On XiIIIPlus/Xi4/RXi4, the darkness setting range is 0 to 30 in increments of 0.1." }
+        { "kind": "note", "expr": "when:label:has:^MD", "message": "The ^MD command value is added to the ~SD value.", "audience": "contextual" },
+        { "kind": "note", "message": "On XiIIIPlus/Xi4/RXi4, the darkness range is 0 to 30 in 0.1 increments.", "audience": "contextual" }
       ],
       "docs": "Sets the darkness of printing. Equivalent to the darkness setting parameter on the control panel display."
     }

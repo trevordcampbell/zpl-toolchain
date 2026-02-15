@@ -5,7 +5,7 @@
  * before the WASM package is built. Once `npm run build:wasm` generates
  * `wasm/pkg/`, TypeScript uses the generated types from that directory instead.
  */
-declare module "../wasm/pkg/zpl_toolchain_wasm" {
+declare module "../wasm/pkg/zpl_toolchain_wasm.js" {
   /** Parse ZPL input and return { ast, diagnostics }. */
   export function parse(input: string): unknown;
 
@@ -21,8 +21,13 @@ declare module "../wasm/pkg/zpl_toolchain_wasm" {
     profileJson?: string
   ): unknown;
 
-  /** Format ZPL input with optional indent style. */
-  export function format(input: string, indent?: string): string;
+  /** Format ZPL input with optional indent and compaction styles. */
+  export function format(
+    input: string,
+    indent?: string,
+    compaction?: string,
+    commentPlacement?: string
+  ): string;
 
   /** Explain a diagnostic code. Returns the explanation or undefined. */
   export function explain(id: string): string | undefined;

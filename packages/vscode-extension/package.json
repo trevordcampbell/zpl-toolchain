@@ -1,0 +1,162 @@
+{
+  "name": "zpl-toolchain",
+  "displayName": "ZPL Toolchain",
+  "description": "Parse, validate, format, explain, and complete ZPL directly in VS Code-family editors.",
+  "version": "0.1.13",
+  "publisher": "trevordcampbell",
+  "license": "MIT OR Apache-2.0",
+  "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/trevordcampbell/zpl-toolchain.git",
+    "directory": "packages/vscode-extension"
+  },
+  "homepage": "https://github.com/trevordcampbell/zpl-toolchain",
+  "bugs": {
+    "url": "https://github.com/trevordcampbell/zpl-toolchain/issues"
+  },
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Formatters",
+    "Linters",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "zpl",
+    "zebra",
+    "label",
+    "printer",
+    "diagnostics"
+  ],
+  "icon": "media/icon.png",
+  "main": "./dist/extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "zpl",
+        "aliases": [
+          "ZPL",
+          "ZPL II"
+        ],
+        "extensions": [
+          ".zpl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "zpl",
+        "scopeName": "source.zpl",
+        "path": "./syntaxes/zpl.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "zplToolchain.explainDiagnostic",
+        "title": "ZPL Toolchain: Explain Diagnostic",
+        "category": "ZPL Toolchain"
+      },
+      {
+        "command": "zplToolchain.applyThemePreset",
+        "title": "ZPL Toolchain: Apply Theme Preset",
+        "category": "ZPL Toolchain"
+      }
+    ],
+    "configuration": {
+      "title": "ZPL Toolchain",
+      "properties": {
+        "zplToolchain.profileJson": {
+          "type": "string",
+          "default": "",
+          "description": "Optional printer profile JSON string used by validation."
+        },
+        "zplToolchain.diagnostics.debounceMs": {
+          "type": "number",
+          "default": 150,
+          "minimum": 0,
+          "maximum": 2000,
+          "description": "Debounce delay in milliseconds before re-validating edited ZPL documents."
+        },
+        "zplToolchain.format.indent": {
+          "type": "string",
+          "enum": [
+            "none",
+            "label",
+            "field"
+          ],
+          "default": "none",
+          "description": "Indent style passed to the ZPL formatter."
+        },
+        "zplToolchain.format.compaction": {
+          "type": "string",
+          "enum": [
+            "none",
+            "field"
+          ],
+          "default": "field",
+          "description": "Optional formatter compaction. 'field' keeps printable field blocks (^FO/^FT/^FM/^FN ... ^FS) on one line while preserving setup/global flow."
+        },
+        "zplToolchain.format.commentPlacement": {
+          "type": "string",
+          "enum": [
+            "inline",
+            "line"
+          ],
+          "default": "inline",
+          "description": "Comment formatting style for semicolon comments. 'inline' keeps standalone comment lines attached to the preceding command where safe; 'line' preserves fully line-oriented formatter output."
+        },
+        "zplToolchain.hover.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable command documentation hovers for ZPL opcodes."
+        },
+        "zplToolchain.themePreset": {
+          "type": "string",
+          "enum": [
+            "custom",
+            "default",
+            "high-contrast",
+            "minimal"
+          ],
+          "default": "custom",
+          "description": "Optional built-in highlight preset for ZPL scopes. Use command palette: ZPL Toolchain: Apply Theme Preset."
+        }
+      }
+    },
+    "configurationDefaults": {
+      "[zpl]": {
+        "editor.defaultFormatter": "trevordcampbell.zpl-toolchain",
+        "editor.formatOnSave": true,
+        "editor.suggest.showDetails": true,
+        "editor.suggest.showInlineDetails": false,
+        "editor.suggest.showStatusBar": true
+      }
+    }
+  },
+  "scripts": {
+    "check:core-runtime-freshness": "node ./scripts/check-core-runtime-freshness.mjs",
+    "copy:core-runtime": "node ./scripts/copy-core-runtime.mjs",
+    "copy:docs-bundle": "node ./scripts/copy-docs-bundle.mjs",
+    "build": "npm run check:core-runtime-freshness && npm run copy:core-runtime && npm run copy:docs-bundle && npx tsc -p ./tsconfig.json",
+    "typecheck": "npx tsc --noEmit -p ./tsconfig.json",
+    "test": "npm run typecheck && npm run build",
+    "test:integration": "node ./scripts/run-integration-tests.mjs",
+    "test:ci": "npm run test && npm run test:integration",
+    "package:vsix": "npm run build && npx @vscode/vsce@3.7.1 package",
+    "publish:vsce": "npm run build && npx @vscode/vsce@3.7.1 publish",
+    "publish:ovsx": "npm run build && npx ovsx publish"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^25.2.2",
+    "@types/vscode": "^1.95.0",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "^3.7.1",
+    "mocha": "^11.7.4",
+    "ovsx": "^0.10.6",
+    "typescript": "^5.0.0"
+  }
+}

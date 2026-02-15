@@ -27,7 +27,7 @@
       ],
       "effects": { "sets": ["network.clientIdentifier"] },
       "constraints": [
-        { "kind": "note", "message": "Applies only to Xi4, RXi4, ZM400, ZM600, RZ400, or RZ600 printers when used with the external ZebraNet 10/100 print server using firmware v1.1.5 or later." }
+        { "kind": "note", "audience": "contextual", "message": "Applies to Xi4, RXi4, ZM400, ZM600, RZ400, or RZ600 printers with the external ZebraNet 10/100 print server using firmware v1.1.5 or later." }
       ],
       "docs": "Allows the print server to have its own client identifier (DHCP Option 61)."
     }

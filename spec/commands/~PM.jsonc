@@ -16,7 +16,7 @@
           "doc": "Number of times for the flash wipe-out to occur. Only use if the printer will be resold, recycled, or reused by another group." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Only accepted via USB for security. Ignored if sent over Bluetooth, Ethernet, or other communication channels. Causes the printer to exit Protected Mode. Flash wipe takes considerable time." }
+        { "kind": "note", "message": "Only accepted via USB for security. Sent over Bluetooth, Ethernet, or other channels: command is ignored. Causes the printer to exit Protected Mode. Flash wipe takes considerable time.", "audience": "contextual" }
       ],
       "docs": "Places the printer into Decommissioning Mode, clearing configuration and optionally wiping flash memory for secure disposal or transfer."
     }

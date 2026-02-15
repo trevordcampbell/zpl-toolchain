@@ -142,6 +142,12 @@
           "type": "object",
           "properties": {
             "characterSet": { "type": "string", "description": "Regex character class for allowed characters (e.g., '0-9', 'A-Z0-9')" },
+            "characterSetSeverity": {
+              "type": "string",
+              "enum": ["error", "warn", "info"],
+              "default": "error",
+              "description": "Severity when field data contains disallowed characters."
+            },
             "minLength": { "type": "integer", "description": "Minimum data length" },
             "maxLength": { "type": "integer", "description": "Maximum data length" },
             "exactLength": { "type": "integer", "description": "Shorthand for minLength == maxLength" },
@@ -152,6 +158,12 @@
               "description": "Allowed discrete lengths for data (e.g., [2,5])"
             },
             "lengthParity": { "type": "string", "enum": ["even", "odd"], "description": "Required parity of data length" },
+            "lengthSeverity": {
+              "type": "string",
+              "enum": ["error", "warn", "info"],
+              "default": "warn",
+              "description": "Severity when field data length/parity requirements are violated."
+            },
             "notes": { "type": "string", "description": "Human-readable notes about the data format" }
           },
           "additionalProperties": false,
@@ -179,6 +191,14 @@
 
         // Validation/lint constraints
         "constraints": { "type": "array", "items": { "$ref": "#/$defs/constraint" } },
+        "constraintDefaults": {
+          "type": "object",
+          "properties": {
+            "severity": { "enum": ["error", "warn", "info"], "default": "warn" }
+          },
+          "additionalProperties": false,
+          "description": "Default values applied to command-level constraints when fields are omitted."
+        },
 
         // Capability gates matched by printer profiles
         "printerGates": { "type": "array", "items": { "type": "string" } },
@@ -373,7 +393,12 @@
       "properties": {
         "unit": { "type": "string" },
         "mode": { "enum": ["toMultiple"] },
-        "multiple": { "type": "number" }
+        "multiple": { "type": "number" },
+        "epsilon": {
+          "type": "number",
+          "default": 1e-9,
+          "description": "Floating-point tolerance for rounding checks."
+        }
       },
       "required": ["mode"],
       "additionalProperties": false
@@ -384,7 +409,8 @@
       "properties": {
         "when": { "type": "string" },
         "mode": { "enum": ["toMultiple"] },
-        "multiple": { "type": "number" }
+        "multiple": { "type": "number" },
+        "epsilon": { "type": "number" }
       },
       "required": ["when", "mode"],
       "additionalProperties": false
@@ -400,6 +426,10 @@
         "expr": { "type": "string", "description": "Small DSL condition; optional for kind=note/custom" },
         "message": { "type": "string" },
         "severity": { "enum": ["error", "warn", "info"], "default": "warn" },
+        "audience": {
+          "enum": ["problem", "contextual"],
+          "description": "Optional diagnostics surface for note constraints. Use 'contextual' for explanatory notes that should not appear in problem lists."
+        },
         "scope": {
           "enum": ["label", "field"],
           "default": "label",

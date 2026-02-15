@@ -26,7 +26,12 @@
       ],
       "effects": { "sets": ["serial.baud", "serial.dataBits", "serial.parity", "serial.stopBits", "serial.protocol", "serial.zebraProtocol"] },
       "constraints": [
-        { "kind": "note", "message": "If any parameters are missing, out of specification, not supported, or have a ZPL-override DIP switch set, the command is ignored. Use ^JUS to persist changes through power-up." }
+        {
+          "kind": "note",
+          "severity": "info",
+          "audience": "contextual",
+          "message": "Missing, out-of-spec, unsupported parameters, or ZPL-override DIP switch settings cause this command to be ignored. Use ^JUS to persist changes through power-up."
+        }
       ],
       "docs": "Changes the serial communications parameters. All parameters must be specified or the command is ignored."
     }

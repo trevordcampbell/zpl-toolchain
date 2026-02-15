@@ -22,7 +22,7 @@
           "doc": "Password. 1 to 32 alphanumeric characters including special characters." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Provided only for backward-compatibility with firmware prior to V50.15.x or X60.15.x. For newer firmware, use ^WX to set the security type and related parameters." }
+        { "kind": "note", "message": "Legacy: for firmware prior to V50.15.x or X60.15.x. For newer firmware, use ^WX to set the security type and related parameters.", "audience": "contextual" }
       ],
       "docs": "Enables Cisco LEAP mode and sets LEAP user authentication parameters for wireless radio cards."
     }

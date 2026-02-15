@@ -16,7 +16,11 @@
       ],
       "effects": { "sets": ["media.darkness"] },
       "constraints": [
-        { "kind": "note", "message": "Each ^MD command adjusts relative to the current darkness value. On XiIIIPlus/Xi4/RXi4, accepts values in increments of 0.1. On G-Series printers the value is persistent across power cycles." }
+        {
+          "kind": "note",
+          "audience": "contextual",
+          "message": "Each ^MD command adjusts relative to the current darkness value. On XiIIIPlus/Xi4/RXi4, accepts values in increments of 0.1. On G-Series printers the value is persistent across power cycles."
+        }
       ],
       "docs": "Adjusts the media darkness relative to the current darkness setting. Range -30 to +30, clamped to the 0-30 absolute range."
     }

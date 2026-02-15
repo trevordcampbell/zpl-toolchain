@@ -1,5 +1,7 @@
 # zpl-toolchain
 
+![ZPL Toolchain banner](./docs/assets/branding/banner-readme-1800x600.png)
+
 [![CI](https://github.com/trevordcampbell/zpl-toolchain/actions/workflows/ci.yml/badge.svg)](https://github.com/trevordcampbell/zpl-toolchain/actions/workflows/ci.yml)
 [![crates.io](https://img.shields.io/crates/v/zpl_toolchain_cli.svg)](https://crates.io/crates/zpl_toolchain_cli)
 [![npm](https://img.shields.io/npm/v/@zpl-toolchain/core.svg)](https://www.npmjs.com/package/@zpl-toolchain/core)
@@ -35,7 +37,7 @@ ZPL II is the standard language for Zebra thermal label printers, used across lo
 
 ### Formatting
 
-- **Auto-formatter** — spec-driven, configurable indentation (none / label / field), trailing-arg trimming, idempotent output
+- **Auto-formatter** — spec-driven, configurable indentation (none / label / field), optional field compaction, semicolon comment placement mode (inline / line), trailing-arg trimming, idempotent output
 
 ### Printing
 
@@ -51,6 +53,7 @@ ZPL II is the standard language for Zebra thermal label printers, used across lo
 ### Developer Experience
 
 - **CLI** — `parse`, `syntax-check` (`check` alias), `lint` (`validate` alias), `format`, `print`, `explain`, `doctor` with `--output pretty|json` auto-detection
+- **VS Code extension** — syntax highlighting, diagnostics, formatting, hover docs, and diagnostic explain actions in VS Code-family editors (see `docs/VSCODE_EXTENSION.md`)
 - **Language bindings** — unified API across WASM, Python, C FFI, Go, and .NET
 - **Zero clippy warnings, 465+ passing tests** — parser, validator, emitter, print client, preflight, batch API, browser SDK, and more
 
@@ -78,6 +81,8 @@ npx @zpl-toolchain/cli --help
 # TypeScript
 npm install @zpl-toolchain/core     # parsing, validation, formatting (WASM)
 npm install @zpl-toolchain/print    # printing (Node.js TCP, browser proxy)
+# VS Code extension (Marketplace)
+code --install-extension trevordcampbell.zpl-toolchain
 
 # Python
 pip install zpl-toolchain
@@ -88,6 +93,7 @@ go get github.com/trevordcampbell/zpl-toolchain/packages/go/zpltoolchain
 
 > Pre-built binaries are also available from [GitHub Releases](https://github.com/trevordcampbell/zpl-toolchain/releases).
 > The shell installer and npm wrapper support `linux/x64` and `darwin/arm64`. Windows: use the npm wrapper or download from releases. For Intel Mac or Linux ARM64, use `cargo install zpl_toolchain_cli`. See [docs/HOMEBREW.md](docs/HOMEBREW.md) for Homebrew usage.
+> VS Code extension install from Marketplace/Open VSX is available once the extension publishing workflow has run at least once; before that, install from a generated `.vsix`.
 
 ### Lint a label
 
@@ -210,6 +216,17 @@ cargo install zpl_toolchain_cli --no-default-features --features "tcp usb"
 > **Note:** Serial/Bluetooth addresses require the `--serial` flag and an OS serial port path (for example `/dev/cu.*`, `/dev/tty*`, `COM*`, `/dev/rfcomm*`), not a Bluetooth MAC address. USB printing on Linux may require [udev rules](docs/PRINT_CLIENT.md#linux-udev-rules). See the [Print Client Guide](docs/PRINT_CLIENT.md) for transport setup details.
 > For stronger delivery checks, use `--verify` (or `--status` / `--wait`). With `--wait`, verification re-queries status after completion. Write success alone does not guarantee physical print completion.
 
+### Note audience (`lint` and `print`)
+
+Both `lint` and `print` support filtering note diagnostics by audience:
+
+| `--note-audience` | Behavior |
+|-------------------|----------|
+| `all` (default)   | Includes both problem and contextual notes |
+| `problem`         | Includes only problem notes; excludes contextual notes |
+
+Contextual notes are explanatory guidance intended for contextual surfaces (for example hover/details) instead of primary problem lists.
+
 ### Examples
 
 ```bash
@@ -221,6 +238,12 @@ zpl lint label.zpl --profile profiles/zebra-generic-203.json
 
 # Auto-format in place
 zpl format label.zpl --write
+
+# Auto-format with field compaction (shared core formatter option)
+zpl format label.zpl --write --indent none --compaction field
+
+# Keep semicolon comments on separate lines
+zpl format label.zpl --write --comment-placement line
 
 # Explain a diagnostic
 zpl explain ZPL1401
@@ -363,6 +386,7 @@ zpl-toolchain/
     ts/core/           @zpl-toolchain/core (TypeScript, WASM-based)
     ts/print/          @zpl-toolchain/print (TypeScript, Node.js TCP)
     ts/cli/            @zpl-toolchain/cli (npx wrapper for pre-built CLI binary)
+    vscode-extension/  VS Code-family editor extension (diagnostics/format/hover)
     go/zpltoolchain/   Go wrapper (cgo)
     dotnet/ZplToolchain/  .NET wrapper (P/Invoke)
   spec/
@@ -398,6 +422,7 @@ cargo run -p zpl_toolchain_spec_compiler -- build --spec-dir spec --out-dir gene
 | [Barcode Data Rules](docs/BARCODE_DATA_RULES.md) | Barcode field data validation |
 | [State Map](docs/STATE_MAP.md) | Cross-command state tracking |
 | [Roadmap](docs/ROADMAP.md) | Long-term vision, phases, and priorities |
+| [VS Code Extension](docs/VSCODE_EXTENSION.md) | Extension setup, usage, and packaging |
 | [Release Process](docs/RELEASE.md) | Automated release workflow and publishing |
 | [Homebrew](docs/HOMEBREW.md) | Install via Homebrew, formula update guide |
 | [Changelog](CHANGELOG.md) | Release history |
@@ -406,7 +431,7 @@ cargo run -p zpl_toolchain_spec_compiler -- build --spec-dir spec --out-dir gene
 ## What's Next
 
 - **Web playground** — browser-based editor with live diagnostics and preview (WASM-powered)
-- **VS Code extension** — diagnostics, format-on-save, hover docs, and command completions
+- **VS Code extension enhancements** — profile switcher, richer quick fixes, and live preview integration
 - **ZPL renderer** — native SVG/PNG rendering with incremental command support
 - **Label builder API** — programmatic label construction across all bindings
 - **mDNS printer discovery** — zero-configuration printer finding on local networks

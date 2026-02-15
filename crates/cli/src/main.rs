@@ -10,7 +10,7 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use zpl_toolchain_core::grammar::{
     dump::to_pretty_json,
-    emit::{EmitConfig, Indent, emit_zpl},
+    emit::{CommentPlacement, Compaction, EmitConfig, Indent, emit_zpl},
     parser::{parse_str, parse_with_tables},
     tables::ParserTables,
 };
@@ -93,6 +93,9 @@ enum Cmd {
         /// Printer profile JSON for hardware-specific validation (see profiles/).
         #[arg(long, value_name = "PATH")]
         profile: Option<String>,
+        /// Which note audiences to include in diagnostics.
+        #[arg(long, value_enum, default_value_t = NoteAudienceMode::All)]
+        note_audience: NoteAudienceMode,
     },
 
     // ── File transformation ─────────────────────────────────────────
@@ -113,6 +116,12 @@ enum Cmd {
         /// Indentation style.
         #[arg(long, value_enum, default_value_t = IndentStyle::None)]
         indent: IndentStyle,
+        /// Optional compaction mode.
+        #[arg(long, value_enum, default_value_t = CompactionStyle::None)]
+        compaction: CompactionStyle,
+        /// Semicolon comment placement mode.
+        #[arg(long, value_enum, default_value_t = CommentPlacementStyle::Inline)]
+        comment_placement: CommentPlacementStyle,
     },
 
     // ── Printing ─────────────────────────────────────────────────────
@@ -136,6 +145,9 @@ enum Cmd {
         /// Skip validation and send raw ZPL directly.
         #[arg(long)]
         no_lint: bool,
+        /// Which note audiences to include in pre-print diagnostics.
+        #[arg(long, value_enum, default_value_t = NoteAudienceMode::All)]
+        note_audience: NoteAudienceMode,
         /// Treat warnings as errors (abort printing on warnings).
         #[arg(long)]
         strict: bool,
@@ -314,6 +326,33 @@ enum IndentStyle {
     Field,
 }
 
+/// Compaction mode for the `format` command.
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum CompactionStyle {
+    /// No compaction.
+    None,
+    /// Compact printable field blocks onto one line.
+    Field,
+}
+
+/// Semicolon comment placement for the `format` command.
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum CommentPlacementStyle {
+    /// Keep semicolon comments inline with the preceding command where safe.
+    Inline,
+    /// Preserve semicolon comments on their own lines.
+    Line,
+}
+
+/// Controls which note audiences are surfaced by CLI diagnostics.
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum NoteAudienceMode {
+    /// Include all note diagnostics.
+    All,
+    /// Include only problem-surface notes (exclude contextual notes).
+    Problem,
+}
+
 #[cfg(feature = "serial")]
 #[derive(Debug, Clone, Copy, ValueEnum)]
 enum CliSerialFlowControl {
@@ -369,6 +408,24 @@ impl From<IndentStyle> for Indent {
     }
 }
 
+impl From<CompactionStyle> for Compaction {
+    fn from(s: CompactionStyle) -> Self {
+        match s {
+            CompactionStyle::None => Compaction::None,
+            CompactionStyle::Field => Compaction::Field,
+        }
+    }
+}
+
+impl From<CommentPlacementStyle> for CommentPlacement {
+    fn from(s: CommentPlacementStyle) -> Self {
+        match s {
+            CommentPlacementStyle::Inline => CommentPlacement::Inline,
+            CommentPlacementStyle::Line => CommentPlacement::Line,
+        }
+    }
+}
+
 // ── Main ────────────────────────────────────────────────────────────────
 
 fn main() -> Result<()> {
@@ -382,20 +439,39 @@ fn main() -> Result<()> {
             file,
             tables,
             profile,
-        } => cmd_lint(&file, tables.as_deref(), profile.as_deref(), format),
+            note_audience,
+        } => cmd_lint(
+            &file,
+            tables.as_deref(),
+            profile.as_deref(),
+            note_audience,
+            format,
+        ),
         Cmd::Format {
             file,
             tables,
             write,
             check,
             indent,
-        } => cmd_format(&file, tables.as_deref(), write, check, indent, format),
+            compaction,
+            comment_placement,
+        } => cmd_format(
+            &file,
+            tables.as_deref(),
+            write,
+            check,
+            indent,
+            compaction,
+            comment_placement,
+            format,
+        ),
         Cmd::Print {
             files,
             printer,
             profile,
             tables,
             no_lint,
+            note_audience,
             strict,
             dry_run,
             status,
@@ -424,6 +500,7 @@ fn main() -> Result<()> {
             profile_path: profile.as_deref(),
             tables_path: tables.as_deref(),
             no_lint,
+            note_audience,
             strict,
             dry_run,
             status,
@@ -585,6 +662,7 @@ fn cmd_lint(
     file: &str,
     tables_path: Option<&str>,
     profile_path: Option<&str>,
+    note_audience: NoteAudienceMode,
     format: Format,
 ) -> Result<()> {
     let input = read_input(file)?;
@@ -610,6 +688,7 @@ fn cmd_lint(
     let mut vr = validate::validate_with_profile(&res.ast, &tables, prof.as_ref());
     // Merge parser diagnostics into lint surface.
     vr.issues.extend(res.diagnostics);
+    filter_contextual_notes(&mut vr.issues, note_audience);
 
     match format {
         Format::Json => {
@@ -635,12 +714,32 @@ fn cmd_lint(
     Ok(())
 }
 
+fn filter_contextual_notes(issues: &mut Vec<Diagnostic>, note_audience: NoteAudienceMode) {
+    if matches!(note_audience, NoteAudienceMode::All) {
+        return;
+    }
+
+    issues.retain(|diag| {
+        if diag.id != diag::codes::NOTE {
+            return true;
+        }
+
+        diag.context
+            .as_ref()
+            .and_then(|ctx| ctx.get("audience"))
+            .is_none_or(|value| value != "contextual")
+    });
+}
+
+#[allow(clippy::too_many_arguments)]
 fn cmd_format(
     file: &str,
     tables_path: Option<&str>,
     write: bool,
     check: bool,
     indent: IndentStyle,
+    compaction: CompactionStyle,
+    comment_placement: CommentPlacementStyle,
     format: Format,
 ) -> Result<()> {
     let input = read_input(file)?;
@@ -661,6 +760,8 @@ fn cmd_format(
 
     let config = EmitConfig {
         indent: indent.into(),
+        compaction: compaction.into(),
+        comment_placement: comment_placement.into(),
     };
     let formatted = emit_zpl(&res.ast, tables.as_ref(), &config);
 
@@ -783,6 +884,7 @@ struct PrintOpts<'a> {
     profile_path: Option<&'a str>,
     tables_path: Option<&'a str>,
     no_lint: bool,
+    note_audience: NoteAudienceMode,
     strict: bool,
     dry_run: bool,
     status: bool,
@@ -825,6 +927,7 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
         profile_path,
         tables_path,
         no_lint,
+        note_audience,
         strict,
         dry_run,
         status,
@@ -886,6 +989,7 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
             let res = parse_with_tables(content, Some(&tables));
             let mut vr = validate::validate_with_profile(&res.ast, &tables, prof.as_ref());
             vr.issues.extend(res.diagnostics);
+            filter_contextual_notes(&mut vr.issues, note_audience);
 
             if format == Format::Pretty && !vr.issues.is_empty() {
                 render_diagnostics(content, path, &vr.issues, format);

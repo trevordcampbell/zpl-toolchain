@@ -16,7 +16,12 @@
           "doc": "Cut mode override. 0 = use the kiosk cut amount setting from ^KV, 1 = ignore kiosk cut amount from ^KV and do a full cut." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Works only when the printer is in Print Mode Kiosk (^MMK). If the printer is not in Kiosk mode, this command has no effect. Supported on KR403." }
+        {
+          "kind": "note",
+          "severity": "info",
+          "audience": "contextual",
+          "message": "Print Mode Kiosk (^MMK) is required; outside kiosk mode this command has no effect. KR403 platform support."
+        }
       ],
       "docs": "Causes the printer to cycle the media cutter. Only effective in Kiosk print mode (^MMK). The command is ignored if parameters are missing or invalid."
     }

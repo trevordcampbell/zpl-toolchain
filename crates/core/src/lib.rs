@@ -25,7 +25,7 @@ pub use grammar::parser::{ParseResult, parse_str, parse_with_tables};
 pub use grammar::ast::{ArgSlot, Ast, Label, Node, Presence};
 
 // Emitter
-pub use grammar::emit::{EmitConfig, Indent, emit_zpl, strip_spans};
+pub use grammar::emit::{CommentPlacement, Compaction, EmitConfig, Indent, emit_zpl, strip_spans};
 
 // Diagnostics (re-exported from the diagnostics crate)
 pub use grammar::diag::{Diagnostic, Severity, Span, codes};

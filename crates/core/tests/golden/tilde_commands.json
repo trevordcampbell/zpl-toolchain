@@ -107,10 +107,11 @@
   "validator_issues": [
     {
       "context": {
+        "audience": "contextual",
         "command": "~TA"
       },
       "id": "ZPL3001",
-      "message": "For 600 dpi printers, the step size doubles. If the number of characters is less than 3, the command is ignored. If the parameter is missing or invalid, the command is ignored.",
+      "message": "For 600 dpi printers, the step size doubles. With fewer than 3 characters, the command is ignored.",
       "severity": "warn",
       "span": {
         "end": 7,

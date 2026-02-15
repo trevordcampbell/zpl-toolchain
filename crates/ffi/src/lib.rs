@@ -193,6 +193,7 @@ pub unsafe extern "C" fn zpl_validate_with_tables(
 /// Format a ZPL string. Returns the formatted ZPL as a C string.
 ///
 /// `indent` is a null-terminated string: "none", "label", or "field". Pass NULL for "none".
+/// For compaction-aware formatting, use `zpl_format_with_options`.
 ///
 /// The caller MUST free the returned pointer with `zpl_free()`.
 ///
@@ -201,13 +202,61 @@ pub unsafe extern "C" fn zpl_validate_with_tables(
 /// `input` and `indent` must be valid, null-terminated C string pointers (or NULL).
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn zpl_format(input: *const c_char, indent: *const c_char) -> *mut c_char {
+    unsafe { zpl_format_with_options(input, indent, ptr::null()) }
+}
+
+/// Format a ZPL string with indent and compaction controls.
+///
+/// `indent`: "none" (default), "label", or "field".
+/// `compaction`: "none" (default) or "field".
+///
+/// The caller MUST free the returned pointer with `zpl_free()`.
+///
+/// # Safety
+///
+/// `input`, `indent`, and `compaction` must be valid, null-terminated C string pointers (or NULL).
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn zpl_format_with_options(
+    input: *const c_char,
+    indent: *const c_char,
+    compaction: *const c_char,
+) -> *mut c_char {
+    unsafe { zpl_format_with_options_v2(input, indent, compaction, ptr::null()) }
+}
+
+/// Format a ZPL string with indent, compaction, and comment placement controls.
+///
+/// `indent`: "none" (default), "label", or "field".
+/// `compaction`: "none" (default) or "field".
+/// `comment_placement`: "inline" (default) or "line".
+///
+/// The caller MUST free the returned pointer with `zpl_free()`.
+///
+/// # Safety
+///
+/// `input`, `indent`, `compaction`, and `comment_placement` must be valid,
+/// null-terminated C string pointers (or NULL).
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn zpl_format_with_options_v2(
+    input: *const c_char,
+    indent: *const c_char,
+    compaction: *const c_char,
+    comment_placement: *const c_char,
+) -> *mut c_char {
     guard_ffi_json(|| {
         let Some(input) = (unsafe { cstr_to_str(input) }) else {
             return ptr::null_mut();
         };
 
         let indent_str = unsafe { cstr_to_str(indent) };
-        let formatted = common::format_zpl(input, indent_str);
+        let compaction_str = unsafe { cstr_to_str(compaction) };
+        let comment_placement_str = unsafe { cstr_to_str(comment_placement) };
+        let formatted = common::format_zpl_with_options(
+            input,
+            indent_str,
+            compaction_str,
+            comment_placement_str,
+        );
         to_c_string(&formatted)
     })
 }

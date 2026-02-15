@@ -143,11 +143,12 @@
   "validator_issues": [
     {
       "context": {
+        "audience": "contextual",
         "command": "^BY"
       },
       "id": "ZPL3001",
       "message": "^BY sets defaults for subsequent barcode commands",
-      "severity": "warn",
+      "severity": "info",
       "span": {
         "end": 15,
         "start": 4

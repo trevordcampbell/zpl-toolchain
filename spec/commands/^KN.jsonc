@@ -19,7 +19,7 @@
       ],
       "effects": { "sets": ["network.printerName", "network.printerDescription"] },
       "constraints": [
-        { "kind": "note", "message": "If ^KN is issued without parameters, the printer name and description are set to blank strings. Use ^JUS to save settings." }
+        { "kind": "note", "expr": "when:arg:aEmpty&&arg:bEmpty", "audience": "contextual", "message": "With no parameters, the printer name and description are set to blank strings. Use ^JUS to save settings." }
       ],
       "docs": "Sets the printer's network name and description, displayed on configuration labels and the printer's web page."
     }

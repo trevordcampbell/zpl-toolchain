@@ -25,7 +25,12 @@
       ],
       "effects": { "sets": ["font.identifierMap"] },
       "constraints": [
-        { "kind": "note", "message": "If the assigned letter matches a built-in font, the downloaded font is used in its place until power-off. If different, it acts as an additional font. Persists until power-off or reassigned." }
+        {
+          "kind": "note",
+          "severity": "info",
+          "audience": "contextual",
+          "message": "A matching built-in font letter replaces that built-in font until power-off; a different letter adds an extra font. Assignment persists until power-off or reassignment."
+        }
       ],
       "docs": "Assigns a single alphanumeric character identifier to a downloaded font stored in printer memory. This allows the font to be referenced by ^A using the assigned letter."
     }

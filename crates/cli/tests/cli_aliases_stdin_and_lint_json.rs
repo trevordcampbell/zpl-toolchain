@@ -119,3 +119,73 @@ fn lint_json_includes_resolved_labels() {
         "expected resolved_labels in lint json output: {stdout}"
     );
 }
+
+#[test]
+fn lint_note_audience_problem_filters_contextual_notes() {
+    let (_dir, path) = write_temp_zpl("^XA\n^BY2,3,80\n^XZ\n");
+
+    let all_output = zpl_cmd()
+        .args([
+            "lint",
+            &path,
+            "--tables",
+            &tables_path(),
+            "--output",
+            "json",
+            "--note-audience",
+            "all",
+        ])
+        .output()
+        .expect("run lint with all note audiences");
+    assert!(
+        all_output.status.success(),
+        "lint with all note audiences should succeed, stderr={}",
+        String::from_utf8_lossy(&all_output.stderr)
+    );
+    let all_json: serde_json::Value =
+        serde_json::from_slice(&all_output.stdout).expect("valid lint json");
+    let all_note_count = all_json["diagnostics"]
+        .as_array()
+        .map(|items| {
+            items
+                .iter()
+                .filter(|diag| diag.get("id").and_then(|value| value.as_str()) == Some("ZPL3001"))
+                .count()
+        })
+        .unwrap_or(0);
+    assert!(all_note_count >= 1, "expected contextual note in all mode");
+
+    let problem_output = zpl_cmd()
+        .args([
+            "lint",
+            &path,
+            "--tables",
+            &tables_path(),
+            "--output",
+            "json",
+            "--note-audience",
+            "problem",
+        ])
+        .output()
+        .expect("run lint with problem note audience");
+    assert!(
+        problem_output.status.success(),
+        "lint with problem note audience should succeed, stderr={}",
+        String::from_utf8_lossy(&problem_output.stderr)
+    );
+    let problem_json: serde_json::Value =
+        serde_json::from_slice(&problem_output.stdout).expect("valid lint json");
+    let problem_note_count = problem_json["diagnostics"]
+        .as_array()
+        .map(|items| {
+            items
+                .iter()
+                .filter(|diag| diag.get("id").and_then(|value| value.as_str()) == Some("ZPL3001"))
+                .count()
+        })
+        .unwrap_or(0);
+    assert_eq!(
+        problem_note_count, 0,
+        "expected contextual notes to be filtered out in problem mode"
+    );
+}

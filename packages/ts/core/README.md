@@ -1,5 +1,7 @@
 # @zpl-toolchain/core
 
+![ZPL Toolchain logo](https://raw.githubusercontent.com/trevordcampbell/zpl-toolchain/main/docs/assets/branding/logo-square-128.png)
+
 TypeScript wrapper for the ZPL toolchain WASM bindings. Provides full TypeScript types and an ergonomic API for parsing, validating, formatting, and explaining ZPL code.
 
 Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) project.
@@ -24,6 +26,7 @@ console.log(result.ast.labels.length); // 1
 
 // Format ZPL
 const formatted = format("^XA^FD Hello ^FS^XZ", "label");
+const compactInline = format("^XA^FO30,30^A0N,30,30^FDHello^FS^XZ", "none", "field", "inline");
 
 // Validate ZPL
 const validation = validate("^XA^FDHello^FS^XZ");
@@ -42,7 +45,7 @@ const explanation = explain("ZPL1201");
 | `parseWithTables(input, tablesJson)` | `(string, string) → ParseResult` | Parse with explicit parser tables |
 | `validate(input, profileJson?)` | `(string, string?) → ValidationResult` | Parse + validate |
 | `validateWithTables(input, tablesJson, profileJson?)` | `(string, string, string?) → ValidationResult` | Parse + validate with explicit parser tables |
-| `format(input, indent?)` | `(string, IndentStyle?) → string` | Format ZPL |
+| `format(input, indent?, compaction?, commentPlacement?)` | `(string, IndentStyle?, CompactionStyle?, CommentPlacementStyle?) → string` | Format ZPL |
 | `explain(id)` | `(string) → string \| null` | Explain a diagnostic code |
 
 Errors thrown by the WASM layer are wrapped with operation context (for example, `@zpl-toolchain/core parse failed: ...`) to make failures easier to diagnose in logs and callers.
@@ -55,6 +58,8 @@ All types are exported and match the Rust AST serialization format:
 - **`Severity`** — `"error" | "warn" | "info"` (lowercase, matching Rust serde)
 - **`Presence`** — `"unset" | "empty" | "value"` (lowercase)
 - **`IndentStyle`** — `"none" | "label" | "field"`
+- **`CompactionStyle`** — `"none" | "field"`
+- **`CommentPlacementStyle`** — `"inline" | "line"`
 - **`ValidationResult.resolved_labels`** — optional renderer-ready per-label resolved state snapshots
 
 See `src/index.ts` for the full type definitions.

@@ -48,6 +48,13 @@ This guide describes how to author ZPL II command specifications under `spec/com
   - `composites` (optional): declare path-like expansions (e.g. for `^XG d:o.x`).
   - `args`: richer per-arg metadata (name/type/rangeWhen/rounding); prefer this.
   - `constraints`: declarative rules (`requires`, `incompatible`, `order`, `note`, etc.).
+    - `kind: "note"` supports optional `audience`:
+      - `"problem"` for diagnostics lists
+      - `"contextual"` for explanatory guidance intended for rich help surfaces
+        (hover/details/docs), not problem lists
+    - `kind: "note"` also supports optional `expr` predicates (`when:`, `before:`,
+      `after:`) for conditional emission.
+  - For `kind: "note"`, see [Note constraints](#note-constraints-kind-note) below.
   - `fieldDataRules` (optional): validation rules for `^FD` content when this barcode command is active.
     - `characterSet`: compact charset notation (e.g., `"0-9"`, `"A-Z0-9 \\-.$/+%"`).
     - `minLength`, `maxLength`, `exactLength`: data length constraints.
@@ -55,6 +62,61 @@ This guide describes how to author ZPL II command specifications under `spec/com
     - `notes`: human-readable description (not used for automated validation).
     - See `docs/BARCODE_DATA_RULES.md` for the full reference.
   - `docs`, `examples` (optional): documentation strings and command examples.
+
+## Note constraints (kind: note)
+
+Note constraints emit ZPL3001 diagnostics. Use `audience` and `expr` to control where and when they surface.
+
+### Audience
+
+- `audience: "problem"` (default) — Emit in CLI diagnostics and editor Problems panels.
+- `audience: "contextual"` — Emit only in rich help surfaces (hover, docs, details). Omit from Problems to keep lists focused.
+
+Use `audience: "contextual"` for explanatory guidance (e.g. "sets defaults for subsequent commands") rather than actionable issues.
+
+### Conditional emission (`expr`)
+
+| Prefix | Meaning |
+|--------|---------|
+| `after:<codes>` | Emit only if target command(s) appear earlier in the label (or field). |
+| `after:first:<codes>` | Same, but only if at least one target has appeared for the first time. |
+| `before:<codes>` | Emit only if target command(s) have not yet appeared. |
+| `before:first:<codes>` | Same, but scoped to first occurrence within the evaluation scope. |
+| `when:<predicate>` | Emit only when the predicate expression evaluates to true. |
+
+Codes in `after:`/`before:` are pipe-separated (e.g. `after:^FD|^FV`).
+
+### `when:` predicates
+
+Supported predicates (combine with `&&`, `||`, `!`):
+
+- **Arg-based:** `arg:<key>IsValue:V1|V2`, `arg:<key>Present`, `arg:<key>Empty`
+- **Label-based:** `label:has:^CODE1|^CODE2`, `label:missing:^CODE`
+- **Profile-based:** (when a profile is loaded; all return false when no profile)
+  - `profile:id:ID1|ID2` — profile id exact match
+  - `profile:dpi:203|300` — DPI match
+  - `profile:feature:X|Y` — any listed feature is present (`cutter`, `rfid`, etc.)
+  - `profile:featureMissing:X` — feature explicitly absent
+  - `profile:firmware:V60` — firmware version starts with prefix
+  - `profile:firmwareGte:V60.14` — firmware version ≥ (major.minor comparison)
+  - `profile:model:X|Y` — profile id contains any listed substring
+
+Examples:
+
+```jsonc
+{ "kind": "note", "expr": "when:arg:pIsValue:S||arg:hIsValue:S", "message": "Short calibration only on Xi4/RXi4..." }
+{ "kind": "note", "expr": "when:arg:bPresent&&!arg:modeIsValue:M", "message": "Parameter b only used when mode=M." }
+{ "kind": "note", "expr": "when:arg:aIsValue:28|29|30&&!profile:firmwareGte:V60.14", "message": "Values 28-30 require firmware V60.14.x or later." }
+{ "kind": "note", "expr": "when:!profile:model:kr403", "message": "KR403 printer required." }
+{ "kind": "note", "expr": "after:first:^FS", "message": "Compatibility note after first ^FS." }
+```
+
+### Scope
+
+- `scope: "label"` (default) — Evaluate ordering against commands in the entire label.
+- `scope: "field"` — Evaluate within the current field (`^FO`…`^FS`).
+
+Use `scope: "field"` for field-scoped commands so ordering is checked per-field, not label-wide.
 
 ## Authoring examples
 
@@ -141,6 +203,9 @@ Compiler validation rules:
 ## Validation & build
 
 - Run `zpl-spec-compiler build` to validate files against the schema and emit parser tables.
+- Run `zpl-spec-compiler note-audit --spec-dir spec --format json`
+  to review note-quality findings (missing conditionalization opportunities,
+  likely contextual-only notes). In CI, findings are treated as failures.
 - The compiler merges all `spec/commands/*.jsonc` into a single registry; combined files are not supported.
 
 ## Tips

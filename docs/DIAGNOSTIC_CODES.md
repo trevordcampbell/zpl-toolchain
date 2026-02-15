@@ -34,6 +34,7 @@ Common context keys include:
 | `supported` | List of supported values (for media checks) |
 | `profile` | Profile ID |
 | `expected` | Expected token (for parser diagnostics) |
+| `epsilon` | Rounding tolerance threshold (for rounding policy checks) |
 
 ## Diagnostic Codes
 
@@ -119,7 +120,7 @@ Common context keys include:
 - **Description**: Value does not conform to the rounding policy (e.g., not a multiple).
 - **Example**: `^PW203` — ^PW value should be a multiple of 8, but 203 is not
 - **Fix**: Round the value to conform to the rounding policy.
-- **Context keys**: `command`, `arg`, `value`, `multiple`
+- **Context keys**: `command`, `arg`, `value`, `multiple`, `epsilon`
 
 ### 14xx: Profile Constraints
 
@@ -327,9 +328,10 @@ Common context keys include:
 - **Category**: Semantic Validation
 - **Description**: A text field or barcode at the current ^FO/^FT position would extend beyond the effective label dimensions. Content may be clipped or misaligned on print.
 - **Implementation note (current)**: This preflight is estimate-based (heuristic), not pixel-accurate rendering. It is designed to be fast and renderer-independent, so edge-case false positives/negatives are possible.
+- **Confidence model**: Marginal estimated overflow is tagged as low-confidence and downgraded to informational severity with "may extend" wording; larger overflow remains warn-level with high confidence.
 - **Example**: Text at x=50 with 30×30 font and 20 chars (600 dots wide) on a 100-dot label; barcode at y=50 with 30-dot height on a 60-dot label
 - **Fix**: Reduce font size, shorten text, move origin, or increase label dimensions.
-- **Context keys**: `object_type`, `x`, `y`, `estimated_width`, `estimated_height`, `label_width`, `label_height`
+- **Context keys**: `object_type`, `x`, `y`, `estimated_width`, `estimated_height`, `label_width`, `label_height`, `overflow_x`, `overflow_y`, `overflow_x_ratio`, `overflow_y_ratio`, `confidence`, `audience`
 
 ### 24xx: Barcode Field Data Validation
 
@@ -347,7 +349,7 @@ Common context keys include:
 - **Description**: Field data length violates the active barcode's length requirements (exact, min/max, or parity).
 - **Example**: `^BE,50^FD12345^FS` — EAN-13 requires exactly 12 digits, but only 5 provided
 - **Fix**: Adjust field data to meet the barcode's length requirements.
-- **Context keys**: `command`, `actual`, `expected` / `min` / `max` / `parity`
+- **Context keys**: `command`, `actual`, `expected` / `min` / `max` / `parity` / `actualParity`
 
 ### 30xx: Notes
 
@@ -427,4 +429,4 @@ Common context keys include:
 
 ## Machine-Readable Spec
 
-The canonical machine-readable version of this document lives at `crates/diagnostics/spec/diagnostics.jsonc` (v1.1.0). Each entry includes a `constName` (Rust constant name) and `contextKeys` array declaring the structured context keys that diagnostic carries. This file is the **single source of truth** — `crates/diagnostics/build.rs` auto-generates the Rust `codes::*` constants and `explain()` function from it at build time. To add a new diagnostic, add an entry to `diagnostics.jsonc` and the Rust code regenerates automatically.
+The canonical machine-readable version of this document lives at `crates/diagnostics/spec/diagnostics.jsonc` (v1.1.0). Each entry includes a `constName` (Rust constant name), a `contextKeys` array declaring structured context keys, and optional `messageTemplates` for variant-specific message formatting. This file is the **single source of truth** — `crates/diagnostics/build.rs` auto-generates Rust diagnostic constants and lookup helpers from it at build time. To add a new diagnostic, add an entry to `diagnostics.jsonc` and the Rust code regenerates automatically.

@@ -32,7 +32,8 @@
           "doc": "Gen 2 memory bank. E = EPC 96-bit, A = EPC with auto-adjust PC bits, 0 = Reserved, 1 = EPC, 2 = TID, 3 = User." }
       ],
       "constraints": [
-        { "kind": "note", "message": "When reading a tag, use a field variable (^FN) to print tag data on the label or return data to the host. Data for write operations is provided via ^FD." }
+        { "kind": "note", "expr": "when:arg:oIsValue:R|P", "message": "Use a field variable (^FN) to print tag data on the label or return data to the host.", "audience": "contextual" },
+        { "kind": "note", "expr": "when:arg:oIsValue:W|L|S", "message": "Data for write operations is provided via ^FD.", "audience": "contextual" }
       ],
       "docs": "Reads or writes (encodes) an RFID tag, or specifies the access password. Data is provided via ^FD command."
     }

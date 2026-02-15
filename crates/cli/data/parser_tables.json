@@ -5245,10 +5245,11 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
           "message": "^BY sets defaults for subsequent barcode commands",
-          "severity": null
+          "severity": "info"
         }
       ],
       "effects": {
@@ -5766,16 +5767,29 @@
       ],
       "constraints": [
         {
-          "expr": null,
+          "audience": "contextual",
+          "expr": "when:arg:s1Present||arg:d1Present",
           "kind": "note",
           "message": "Up to 256 source/destination remapping pairs can follow (s1,d1,s2,d2,...). Remapping is only valid when a = 0-13. The spec models only the first 3 parameters (a, s1, d1); additional pairs are accepted by the parser but not individually validated. Full variable-length pair validation is a known limitation.",
-          "severity": null
+          "severity": "info"
         },
         {
-          "expr": null,
+          "expr": "when:arg:aIsValue:18|19|20|21|22|23|25|32",
           "kind": "note",
-          "message": "Values 18-23, 25, and 32 are reserved. Values 28-30 require firmware V60.14.x/V50.14.x or later. Values 31-36 require firmware x.16.x or later.",
-          "severity": null
+          "message": "Values 18-23, 25, and 32 are reserved.",
+          "severity": "info"
+        },
+        {
+          "expr": "when:arg:aIsValue:28|29|30&&!profile:firmwareGte:V60.14",
+          "kind": "note",
+          "message": "Values 28-30 require firmware V60.14.x/V50.14.x or later.",
+          "severity": "info"
+        },
+        {
+          "expr": "when:arg:aIsValue:31|33|34|35|36&&!profile:firmwareGte:V60.16",
+          "kind": "note",
+          "message": "Values 31, 33-36 require firmware V60.16.x or later.",
+          "severity": "info"
         }
       ],
       "effects": {
@@ -5877,10 +5891,11 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "If two or more parameters specify the same letter designator, all are reset to defaults. If any parameter is out of specification, the command is ignored. Use ^JUS to persist across power cycles.",
-          "severity": null
+          "message": "Duplicate letter designators reset all assignments to defaults. Out-of-spec parameters cause the command to be ignored. Use ^JUS to persist across power cycles.",
+          "severity": "info"
         }
       ],
       "effects": {
@@ -5943,10 +5958,11 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Works only when the printer is in Print Mode Kiosk (^MMK). If the printer is not in Kiosk mode, this command has no effect. Supported on KR403.",
-          "severity": null
+          "message": "Print Mode Kiosk (^MMK) is required; outside kiosk mode this command has no effect. KR403 platform support.",
+          "severity": "info"
         }
       ],
       "effects": null,
@@ -6054,10 +6070,11 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "If firmware x.12 or greater, this command is not required because the printer automatically expands the character cache as needed.",
-          "severity": null
+          "message": "Firmware X.12+ automatically expands character cache as needed, so this command is typically unnecessary on those versions.",
+          "severity": "info"
         }
       ],
       "effects": {
@@ -6123,10 +6140,11 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Supported on KR403 only. The command is ignored if parameters are missing or invalid.",
-          "severity": null
+          "message": "KR403 printer support. Missing or invalid parameters cause the command to be ignored.",
+          "severity": "info"
         }
       ],
       "effects": null,
@@ -6254,6 +6272,10 @@
       "hexEscapeModifier": false,
       "name": "Code Validation",
       "opensField": false,
+      "placement": {
+        "allowedInsideLabel": true,
+        "allowedOutsideLabel": true
+      },
       "plane": "device",
       "rawPayload": false,
       "requiresField": false,
@@ -6362,10 +6384,11 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "If the assigned letter matches a built-in font, the downloaded font is used in its place until power-off. If different, it acts as an additional font. Persists until power-off or reassigned.",
-          "severity": null
+          "message": "A matching built-in font letter replaces that built-in font until power-off; a different letter adds an extra font. Assignment persists until power-off or reassignment.",
+          "severity": "info"
         }
       ],
       "effects": {
@@ -6740,10 +6763,11 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Ignored if the Real Time Clock hardware is not present. Must be included within each label field command string each time Real-Time Clock values are required.",
-          "severity": null
+          "message": "Without Real-Time Clock hardware this command is ignored. Include it in each label field command string whenever Real-Time Clock values are needed.",
+          "severity": "info"
         }
       ],
       "effects": null,
@@ -6828,9 +6852,16 @@
       ],
       "constraints": [
         {
+          "expr": "after:^FD",
+          "kind": "note",
+          "message": "Must precede each ^FD command where it is used.",
+          "severity": "info"
+        },
+        {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Must precede each ^FD command where it is used. Only applies to the immediately following ^FD field.",
+          "message": "Only applies to the immediately following ^FD field.",
           "severity": null
         }
       ],
@@ -8738,6 +8769,7 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
           "message": "~HL is processed immediately; ^HL is processed after all previous formats. In firmware X.20.16Z and later, logging is disabled by default and ^HL clears the log and restarts recording; ~HL does not automatically clear the log.",
@@ -9019,9 +9051,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Available only for printers with firmware version V60.14.x, V50.14.x, or later.",
+          "message": "Firmware V60.14.x, V50.14.x, or later required.",
           "severity": null
         }
       ],
@@ -9272,6 +9305,7 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
           "message": "Returns a formatted ASCII string of object names to the host. Each object is listed on a fixed-length line starting with an asterisk. An optional f parameter (c=column, d=default) is supported in firmware V60.16.0Z and V53.16.0Z or later.",
@@ -9385,6 +9419,7 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
           "message": "Extension of ^HG command. The image is uploaded in the form of a ~DY command with the data field always encoded in ZB64 format.",
@@ -11212,9 +11247,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Applies only to Xi4, RXi4, ZM400, ZM600, RZ400, or RZ600 printers when used with the external ZebraNet 10/100 print server using firmware v1.1.5 or later.",
+          "message": "Applies to Xi4, RXi4, ZM400, ZM600, RZ400, or RZ600 printers with the external ZebraNet 10/100 print server using firmware v1.1.5 or later.",
           "severity": null
         }
       ],
@@ -11282,10 +11318,11 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "If Real-Time Clock hardware is not present, Display Mode is forced to 0 (Version Number). If Display Mode is 0 and RTC hardware is present, config label and control panel use format 1.",
-          "severity": null
+          "message": "Without Real-Time Clock hardware, Display Mode is forced to 0 (Version Number). With Display Mode 0 and RTC hardware present, config label and control panel use format 1.",
+          "severity": "info"
         }
       ],
       "effects": {
@@ -11445,9 +11482,10 @@
       ],
       "constraints": [
         {
-          "expr": null,
+          "audience": "contextual",
+          "expr": "when:arg:aEmpty&&arg:bEmpty",
           "kind": "note",
-          "message": "If ^KN is issued without parameters, the printer name and description are set to blank strings. Use ^JUS to save settings.",
+          "message": "With no parameters, the printer name and description are set to blank strings. Use ^JUS to save settings.",
           "severity": null
         }
       ],
@@ -11534,10 +11572,11 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "This command does not work when the printer is in Protected Mode. With Protected Mode, use JSON-formatted Protect commands with the SGD display.password.current instead.",
-          "severity": null
+          "message": "Protected Mode blocks this command. In Protected Mode, use JSON-formatted Protect commands with SGD display.password.current.",
+          "severity": "warn"
         }
       ],
       "effects": {
@@ -11700,9 +11739,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Supported only on KR403 printers. Sets parameters for Kiosk mode (^MMK).",
+          "message": "KR403 printer required. Sets parameters for Kiosk mode (^MMK).",
           "severity": null
         }
       ],
@@ -11977,6 +12017,10 @@
       "hexEscapeModifier": false,
       "name": "Label Reverse Print",
       "opensField": false,
+      "placement": {
+        "allowedInsideLabel": true,
+        "allowedOutsideLabel": true
+      },
       "plane": "device",
       "rawPayload": false,
       "requiresField": false,
@@ -12250,9 +12294,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Available only for firmware V60.15.x, V50.15.x, or later. The type parameter must be specified as R or C for print, threshold, and frequency to be saved. The Early Warning Maintenance setting must be ON (via ^JH).",
+          "message": "Firmware V60.15.x, V50.15.x, or later required. The type parameter must be specified as R or C for print, threshold, and frequency to be saved. The Early Warning Maintenance setting must be ON (via ^JH).",
           "severity": null
         }
       ],
@@ -12322,10 +12367,11 @@
       ],
       "constraints": [
         {
-          "expr": null,
-          "kind": "note",
+          "expr": "^FV",
+          "kind": "requires",
           "message": "Must be used with ^FV to produce a label template.",
-          "severity": null
+          "scope": "label",
+          "severity": "info"
         }
       ],
       "effects": null,
@@ -12334,6 +12380,10 @@
       "hexEscapeModifier": false,
       "name": "Map Clear",
       "opensField": false,
+      "placement": {
+        "allowedInsideLabel": true,
+        "allowedOutsideLabel": true
+      },
       "plane": "device",
       "rawPayload": false,
       "requiresField": false,
@@ -12382,6 +12432,7 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
           "message": "Each ^MD command adjusts relative to the current darkness value. On XiIIIPlus/Xi4/RXi4, accepts values in increments of 0.1. On G-Series printers the value is persistent across power cycles.",
@@ -12476,10 +12527,10 @@
       ],
       "constraints": [
         {
-          "expr": null,
+          "expr": "when:arg:pIsValue:S||arg:hIsValue:S",
           "kind": "note",
           "message": "Value S (short calibration) is only supported on Xi4, RXi4, XiIIIPlus, PAX, ZM400/ZM600, RZ400/RZ600, and S4M printers.",
-          "severity": null
+          "severity": "info"
         }
       ],
       "effects": {
@@ -12493,6 +12544,10 @@
       "hexEscapeModifier": false,
       "name": "Media Feed",
       "opensField": false,
+      "placement": {
+        "allowedInsideLabel": true,
+        "allowedOutsideLabel": true
+      },
       "plane": "device",
       "rawPayload": false,
       "requiresField": false,
@@ -12563,9 +12618,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Available only for firmware V60.15.x, V50.15.x, or later. Printing of the message is controlled by ^MA. All characters following the comma and preceding the next ~ or ^ define the message string.",
+          "message": "Firmware V60.15.x, V50.15.x, or later required. Printing of the message is controlled by ^MA. All characters following the comma and preceding the next ~ or ^ define the message string.",
           "severity": null
         }
       ],
@@ -12628,6 +12684,7 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
           "message": "The maximum label length must be equal to or greater than the actual label length for calibration to work properly.",
@@ -12766,9 +12823,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Available modes depend on printer model and installed options. Command is ignored if parameters are missing or invalid.",
+          "message": "Available modes depend on printer model and installed options. Omitted or invalid parameters cause the command to be ignored.",
           "severity": null
         }
       ],
@@ -12859,10 +12917,10 @@
       ],
       "constraints": [
         {
-          "expr": null,
+          "expr": "when:arg:bPresent&&!arg:modeIsValue:M",
           "kind": "note",
           "message": "Parameter b is only used when mode is set to M (mark sensing). Range varies: -80 to 283 (direct-thermal), -240 to 566 (600 dpi), -75 to 283 (KR403), -120 to 283 (all others).",
-          "severity": null
+          "severity": "info"
         }
       ],
       "effects": {
@@ -12932,9 +12990,16 @@
       ],
       "constraints": [
         {
+          "expr": "when:arg:aEmpty",
+          "kind": "note",
+          "message": "A value must be entered or the command is ignored.",
+          "severity": "info"
+        },
+        {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Each mode must be disabled with an individual ^MP command. A value must be entered or the command is ignored.",
+          "message": "Each mode must be disabled with an individual ^MP command.",
           "severity": null
         }
       ],
@@ -13106,9 +13171,16 @@
       ],
       "constraints": [
         {
+          "expr": "after:first:^FO",
+          "kind": "note",
+          "message": "Should appear at the beginning of the label format.",
+          "severity": "info"
+        },
+        {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Should appear at the beginning of the label format. Works field-by-field. To reset conversion, enter matching values for b and c.",
+          "message": "Works field-by-field. To reset conversion, enter matching values for b and c.",
           "severity": null
         }
       ],
@@ -13173,10 +13245,10 @@
       ],
       "constraints": [
         {
-          "expr": null,
+          "expr": "when:arg:aEmpty",
           "kind": "note",
           "message": "When a parameter is not given, the instruction is ignored.",
-          "severity": null
+          "severity": "info"
         }
       ],
       "effects": {
@@ -13237,9 +13309,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "This command is ignored on Xi4, RXi4, ZM400, ZM600, RZ400, and RZ600 printers. Only one print server can be installed in the S4M at one time.",
+          "message": "This command is ignored on Xi4, RXi4, ZM400, ZM600, RZ400, and RZ600 printers. A single print server can be installed in the S4M at a time.",
           "severity": null
         }
       ],
@@ -13846,9 +13919,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Only applies to parallel port connect print servers. When the printer is primary, any wired print server inserted will use the printer's settings.",
+          "message": "Applies to parallel-port print servers only. While the printer is primary, any wired print server inserted will use the printer's settings.",
           "severity": null
         }
       ],
@@ -14356,9 +14430,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Available only for printers with firmware version V60.14.x, V50.14.x, or later.",
+          "message": "Firmware V60.14.x, V50.14.x, or later required.",
           "severity": null
         }
       ],
@@ -14455,9 +14530,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "~PH feeds one label after the format currently being printed is done or when the printer is in pause. ^PH feeds one blank label after the current format prints.",
+          "message": "~PH feeds one label after the format currently being printed is done or during printer pause. ^PH feeds one blank label after the current format prints.",
           "severity": null
         }
       ],
@@ -14565,9 +14641,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Supported only on KR403 printers. See ~PL for present length addition.",
+          "message": "KR403 printer required. See ~PL for present length addition.",
           "severity": null
         }
       ],
@@ -14634,6 +14711,10 @@
       "hexEscapeModifier": false,
       "name": "Print Orientation",
       "opensField": false,
+      "placement": {
+        "allowedInsideLabel": true,
+        "allowedOutsideLabel": true
+      },
       "plane": "device",
       "rawPayload": false,
       "requiresField": false,
@@ -15415,9 +15496,17 @@
       ],
       "constraints": [
         {
+          "audience": "problem",
           "expr": null,
           "kind": "note",
-          "message": "Partition sizes must add up to the total bit size (n). The largest individual partition size is 64 bits. All parameters are persistent and used in subsequent formats if not provided.",
+          "message": "Partition sizes must add up to the total bit size (n). The largest individual partition size is 64 bits.",
+          "severity": null
+        },
+        {
+          "audience": "contextual",
+          "expr": null,
+          "kind": "note",
+          "message": "Omitted parameters inherit from the previous ^RB; all parameters persist for subsequent formats.",
           "severity": null
         }
       ],
@@ -15599,9 +15688,17 @@
       ],
       "constraints": [
         {
-          "expr": null,
+          "audience": "contextual",
+          "expr": "when:arg:oIsValue:R|P",
           "kind": "note",
-          "message": "When reading a tag, use a field variable (^FN) to print tag data on the label or return data to the host. Data for write operations is provided via ^FD.",
+          "message": "Use a field variable (^FN) to print tag data on the label or return data to the host.",
+          "severity": null
+        },
+        {
+          "audience": "contextual",
+          "expr": "when:arg:oIsValue:W|L|S",
+          "kind": "note",
+          "message": "Data for write operations is provided via ^FD.",
           "severity": null
         }
       ],
@@ -15974,9 +16071,10 @@
       ],
       "constraints": [
         {
-          "expr": null,
+          "audience": "contextual",
+          "expr": "when:label:has:^RF",
           "kind": "note",
-          "message": "Use care when using with ^RF for reading tag data. Data read from the tag must be positioned to print above the read/write position. If a format specifies a programming position, it will be used for all labels until changed or tag calibration is run.",
+          "message": "Position tag data above the read/write position. Programming position applies to all labels until changed or tag calibration is run.",
           "severity": null
         }
       ],
@@ -16371,10 +16469,11 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "If any parameters are missing, out of specification, not supported, or have a ZPL-override DIP switch set, the command is ignored. Use ^JUS to persist changes through power-up.",
-          "severity": null
+          "message": "Missing, out-of-spec, unsupported parameters, or ZPL-override DIP switch settings cause this command to be ignored. Use ^JUS to persist changes through power-up.",
+          "severity": "info"
         }
       ],
       "effects": {
@@ -16644,9 +16743,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Available only for printers with firmware versions V53.15.x or later. Both parameters must be accepted values or the entire command is ignored.",
+          "message": "Firmware V53.15.x or later required. Both parameters must be accepted values; otherwise the entire command is ignored.",
           "severity": null
         }
       ],
@@ -16857,10 +16957,11 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Incrementing/decrementing occurs when all replicates for each serial number have been printed (per ^PQ r parameter). If media runs out, the first label reprinted has the same serial number as the partial label (controlled by ^JZ).",
-          "severity": null
+          "message": "Incrementing/decrementing occurs after all replicates for each serial number are printed (per ^PQ r parameter). On media-out recovery, the first reprinted label keeps the serial number from the partial label (controlled by ^JZ).",
+          "severity": "info"
         }
       ],
       "effects": null,
@@ -17063,10 +17164,16 @@
       ],
       "constraints": [
         {
-          "expr": null,
+          "expr": "when:arg:aIsValue:2",
           "kind": "note",
-          "message": "For each label only one ^SO2 command can be used. If more than one offset is required, ^SO3 must be used. The clock_set value must be specified.",
-          "severity": null
+          "message": "A single ^SO2 command is supported per label; use ^SO3 for additional offsets.",
+          "severity": "info"
+        },
+        {
+          "expr": "when:arg:aEmpty",
+          "kind": "note",
+          "message": "The clock_set value must be specified.",
+          "severity": "info"
         }
       ],
       "effects": null,
@@ -17129,6 +17236,7 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
           "message": "Can improve throughput on complex labels by allowing printing to begin before the entire label is formatted. Precise positioning requires trial and error. Drops any field that is out of order.",
@@ -18011,10 +18119,11 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "If the condition type or destination parameter is missing or invalid, the command is ignored. Sub-options e and f are based on destination type.",
-          "severity": null
+          "message": "Missing or invalid condition type or destination parameters cause this command to be ignored. Sub-options e and f depend on destination type.",
+          "severity": "info"
         }
       ],
       "effects": {
@@ -18080,10 +18189,11 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Remains active until another ^SZ command is sent or the printer is turned off. If the parameter is missing or invalid, the command is ignored.",
-          "severity": null
+          "message": "Remains active until another ^SZ command is sent or printer power-off. Missing or invalid parameters cause this command to be ignored.",
+          "severity": "info"
         }
       ],
       "effects": {
@@ -18200,6 +18310,7 @@
           "severity": "info"
         },
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
           "message": "^TB is the preferred command for printing fields or blocks of text instead of ^FB. Supports complex text layout features. Justification comes from ^FO, ^FT, or ^FN. Data between < and > is processed as escape sequences. Available in firmware V60.14.x, V50.14.x, or later.",
@@ -18280,10 +18391,11 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Source and destination devices must be different and valid. At least one source parameter and one destination parameter must be specified. Zebra files (Z:*.*) cannot be transferred. If destination lacks space, the command is canceled.",
-          "severity": null
+          "message": "Source and destination devices must be different and valid. At least one source parameter and one destination parameter are required. Zebra files (Z:*.*) cannot be transferred. Destination space exhaustion cancels the transfer.",
+          "severity": "warn"
         }
       ],
       "effects": null,
@@ -18680,9 +18792,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Provided only for backward-compatibility with printers using firmware prior to V50.15.x or X60.15.x. Use ^WX for newer firmware. Not valid for Link-OS v6 or later. Be careful to include the exact number of commas required when setting encryption keys.",
+          "message": "Legacy: for firmware prior to V50.15.x or X60.15.x. Use ^WX for newer firmware. Not valid for Link-OS v6 or later. Be careful to include the exact number of commas during encryption key setup.",
           "severity": null
         }
       ],
@@ -18789,9 +18902,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Provided only for backward-compatibility with firmware prior to V50.15.x or X60.15.x. For newer firmware, use ^WX to set the security type and related parameters.",
+          "message": "Legacy: for firmware prior to V50.15.x or X60.15.x. For newer firmware, use ^WX to set the security type and related parameters.",
           "severity": null
         }
       ],
@@ -18869,9 +18983,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "This command does not apply to the S4M. If a wireless password is set, MAC Address, ESSID, WLAN Security, WEP Type, WEP Index, and Reset Network will not appear on the control panel until the wireless password is entered.",
+          "message": "This command does not apply to the S4M. With a wireless password set, MAC Address, ESSID, WLAN Security, WEP Type, WEP Index, and Reset Network will not appear on the control panel until the wireless password is entered.",
           "severity": null
         }
       ],
@@ -19588,9 +19703,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Supporting parameters vary by security type. Values 2, 3 for security type and parameters b, c, d, e, f, g, h are ignored for Link-OS 6.0 or later. When using certificate files, the time on the printer must be set correctly. The ^WX command replaces individual ZPL commands for different security types.",
+          "message": "Supporting parameters vary by security type. Values 2, 3 for security type and parameters b, c, d, e, f, g, h are ignored for Link-OS 6.0 or later. For certificate files, the time on the printer must be set correctly. The ^WX command replaces individual ZPL commands for different security types.",
           "severity": null
         }
       ],
@@ -21205,9 +21321,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Only responds to mobile printers. Returns <STX>hh.hh,bb.bb,bt<ETX><CR><LF> where hh.hh = head voltage, bb.bb = battery voltage, bt = battery temperature in Celsius.",
+          "message": "Responds to mobile printers only. Returns <STX>hh.hh,bb.bb,bt<ETX><CR><LF> where hh.hh = head voltage, bb.bb = battery voltage, bt = battery temperature in Celsius.",
           "severity": null
         }
       ],
@@ -21384,9 +21501,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Returns three data strings to the host. String 1: communication settings, paper out, pause, label length, buffer status, diagnostics mode, corrupt RAM, temperature. String 2: function settings, head up, ribbon out, thermal transfer mode, print mode, label waiting, labels remaining, graphics count. String 3: password and static RAM status. Will not respond if MEDIA OUT, RIBBON OUT, HEAD OPEN, REWINDER FULL, or HEAD OVER-TEMPERATURE.",
+          "message": "Returns three data strings to the host. String 1: communication settings, paper out, pause, label length, buffer status, diagnostics mode, corrupt RAM, temperature. String 2: function settings, head up, ribbon out, thermal transfer mode, print mode, label waiting, labels remaining, graphics count. String 3: password and static RAM status. Does not respond during MEDIA OUT, RIBBON OUT, HEAD OPEN, REWINDER FULL, or HEAD OVER-TEMPERATURE.",
           "severity": null
         }
       ],
@@ -21416,9 +21534,10 @@
       ],
       "constraints": [
         {
-          "expr": null,
+          "audience": "contextual",
+          "expr": "when:label:missing:^SX",
           "kind": "note",
-          "message": "If there are no ^SX alerts configured, the printer will not respond to this command.",
+          "message": "Without ^SX alerts configured, the printer will not respond to this command.",
           "severity": null
         }
       ],
@@ -21878,10 +21997,11 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Discharge Mode can be terminated by sending a printing format or pressing a control panel key. If the charger is plugged in, the battery is automatically recharged once discharge completes. Green power LED flashes in groups of three during discharge.",
-          "severity": null
+          "message": "Sending a print format or pressing a control-panel key exits Discharge Mode. A connected charger triggers automatic recharge after discharge completes. Green power LED flashes in groups of three during discharge.",
+          "severity": "info"
         }
       ],
       "effects": null,
@@ -21931,9 +22051,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Use at the beginning of any label format to specify which printer on the network is to be used. The commands ^MW, ~NC, ^NI, ~NR, and ~NT are used only with RS-422/485 printer communications.",
+          "message": "Use at the beginning of any label format to specify which printer on the network is to be used. The commands ^MW, ~NC, ^NI, ~NR, and ~NT require RS-422/485 printer communications.",
           "severity": null
         }
       ],
@@ -22037,9 +22158,10 @@
       ],
       "constraints": [
         {
-          "expr": null,
+          "audience": "contextual",
+          "expr": "when:!profile:model:kr403",
           "kind": "note",
-          "message": "Supported only on KR403 printers. Total eject during ^PN = 50 mm + ~PL value + ^PN value.",
+          "message": "KR403 printer required. Total eject during ^PN = 50 mm + ~PL value + ^PN value.",
           "severity": null
         }
       ],
@@ -22122,9 +22244,10 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "Only accepted via USB for security. Ignored if sent over Bluetooth, Ethernet, or other communication channels. Causes the printer to exit Protected Mode. Flash wipe takes considerable time.",
+          "message": "Only accepted via USB for security. Sent over Bluetooth, Ethernet, or other channels: command is ignored. Causes the printer to exit Protected Mode. Flash wipe takes considerable time.",
           "severity": null
         }
       ],
@@ -22229,10 +22352,18 @@
       ],
       "constraints": [
         {
-          "expr": null,
+          "audience": "contextual",
+          "expr": "when:arg:cIsValue:C|R",
           "kind": "note",
-          "message": "Values C and R are supported only on Xi4, RXi4, ZM400/ZM600, RZ400/RZ600, S4M, and G-Series printers. A value must be specified or the command is ignored.",
+          "message": "Values C and R require Xi4, RXi4, ZM400/ZM600, RZ400/RZ600, S4M, or G-Series printers.",
           "severity": null
+        },
+        {
+          "audience": "contextual",
+          "expr": "when:arg:cEmpty",
+          "kind": "note",
+          "message": "A value must be specified or the command is ignored.",
+          "severity": "info"
         }
       ],
       "effects": null,
@@ -22292,9 +22423,17 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
+          "expr": "when:label:has:^MD",
+          "kind": "note",
+          "message": "The ^MD command value is added to the ~SD value.",
+          "severity": null
+        },
+        {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "The ^MD command value, if applicable, is added to the ~SD command. On XiIIIPlus/Xi4/RXi4, the darkness setting range is 0 to 30 in increments of 0.1.",
+          "message": "On XiIIIPlus/Xi4/RXi4, the darkness range is 0 to 30 in 0.1 increments.",
           "severity": null
         }
       ],
@@ -22356,9 +22495,17 @@
       ],
       "constraints": [
         {
+          "audience": "contextual",
+          "expr": "when:arg:aEmpty",
+          "kind": "note",
+          "message": "Parameter missing or invalid: command is ignored.",
+          "severity": "info"
+        },
+        {
+          "audience": "contextual",
           "expr": null,
           "kind": "note",
-          "message": "For 600 dpi printers, the step size doubles. If the number of characters is less than 3, the command is ignored. If the parameter is missing or invalid, the command is ignored.",
+          "message": "For 600 dpi printers, the step size doubles. With fewer than 3 characters, the command is ignored.",
           "severity": null
         }
       ],

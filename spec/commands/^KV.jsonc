@@ -34,7 +34,7 @@
       ],
       "effects": { "sets": ["kiosk.cutAmount", "kiosk.cutMargin", "kiosk.presentType", "kiosk.presentTimeout", "kiosk.loopLength"] },
       "constraints": [
-        { "kind": "note", "message": "Supported only on KR403 printers. Sets parameters for Kiosk mode (^MMK)." }
+        { "kind": "note", "audience": "contextual", "message": "KR403 printer required. Sets parameters for Kiosk mode (^MMK)." }
       ],
       "docs": "Sets kiosk mode parameters including cut amount, cut margin, present type, present timeout, and presenter loop length."
     }

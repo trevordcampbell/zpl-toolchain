@@ -31,6 +31,18 @@ enum Cmd {
         #[arg(long)]
         strict: bool,
     },
+    /// Audit note constraints for conditionalization opportunities.
+    NoteAudit {
+        /// Spec directory containing commands/ subfolder
+        #[arg(long, default_value = "spec")]
+        spec_dir: PathBuf,
+        /// Output format: json or human
+        #[arg(long, default_value = "json")]
+        format: String,
+        /// Exit with success even when findings are present.
+        #[arg(long, default_value_t = false)]
+        allow_findings: bool,
+    },
 }
 
 fn main() -> Result<()> {
@@ -42,6 +54,11 @@ fn main() -> Result<()> {
             out_dir,
             strict,
         } => build(spec_dir, out_dir, strict)?,
+        Cmd::NoteAudit {
+            spec_dir,
+            format,
+            allow_findings,
+        } => note_audit(spec_dir, &format, allow_findings)?,
     }
     Ok(())
 }
@@ -155,5 +172,33 @@ fn build(spec_dir: PathBuf, out_dir: PathBuf, strict: bool) -> Result<()> {
     write_json_pretty(out_dir.join("parser_tables.json"), &tables)?;
 
     println!("{}", serde_json::json!({"ok": true}));
+    Ok(())
+}
+
+fn note_audit(spec_dir: PathBuf, format: &str, allow_findings: bool) -> Result<()> {
+    let loaded = pipeline::load_spec_files(&spec_dir)?;
+    let findings = pipeline::audit_notes(&loaded.commands);
+
+    let payload = serde_json::json!({
+        "ok": findings.is_empty(),
+        "commands_loaded": loaded.commands.len(),
+        "findings": findings,
+    });
+
+    if format == "human" {
+        for finding in &findings {
+            eprintln!(
+                "warn [{}] {} {}: {}",
+                finding.level, finding.code, finding.location, finding.message
+            );
+        }
+    } else {
+        println!("{payload}");
+    }
+
+    if !allow_findings && !findings.is_empty() {
+        std::process::exit(1);
+    }
+
     Ok(())
 }

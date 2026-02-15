@@ -1,6 +1,6 @@
 # ZPL Toolchain — Roadmap
 
-> **Status (2026-02-14):** Foundation complete. v0.1.12 published to crates.io, npm, and PyPI. This document captures the long-term vision, organized by phase, with honest assessments of complexity and approach.
+> **Status (2026-02-14):** Foundation complete. v0.1.13 published to crates.io, npm, and PyPI. VS Code extension MVP is implemented in-repo (syntax highlighting, diagnostics, format-on-save, hover docs, diagnostic explain actions) with Marketplace/Open VSX publish automation ready. This document captures the long-term vision, organized by phase, with honest assessments of complexity and approach.
 >
 > For tactical work items, see [BACKLOG.md](BACKLOG.md). For the original (pre-implementation) vision document, see [docs/research/archive/original-implementation-plan.md](research/archive/original-implementation-plan.md).
 
@@ -31,7 +31,7 @@ These items can all start now, in parallel, with no dependencies on each other:
 |----------|------|-------|--------|-------|
 | 1 | Test corpus expansion | 1a | 2–4 weeks | Confidence, regression safety |
 | 2 | Web playground (diagnostics only) | 2a | 1–2 weeks | Highest visibility, no-install access |
-| 3 | VS Code extension MVP | 2b | 1–2 weeks | Daily developer value |
+| 3 | ~~VS Code extension MVP~~ | 2b | Done (implemented in repo; first extension marketplace release pending) | Daily developer value |
 | 4 | ~~TCP print client~~ | 5a | Done (v0.1.0) | End-to-end: lint → print |
 | 5 | Performance benchmarks | 1b | 1 week | Baseline before renderer (needs corpus) |
 
@@ -91,7 +91,7 @@ Ships initially as a **diagnostics-only playground** (parse, validate, format, h
 
 **Effort:** 1–2 weeks | **Risk:** Low | **Depends on:** Nothing (WASM bindings ready)
 
-### 2b. VS Code Extension (MVP)
+### 2b. VS Code Extension (MVP) (Completed)
 
 Skip full LSP — use WASM directly in the extension host. ZPL files are small (usually <50KB); full reparse on every keystroke is fine.
 
@@ -102,6 +102,13 @@ Skip full LSP — use WASM directly in the extension host. ZPL files are small (
 - **Explain diagnostic** code action linking to `DIAGNOSTIC_CODES.md`
 
 **Why not LSP:** ZPL is a simple language. The LSP protocol adds JSON-RPC overhead, a separate server process, and maintenance burden — all unnecessary when WASM runs directly in the extension host with sub-millisecond latency.
+
+**Renderer integration seam (already in place):**
+
+- Extension includes a `RendererBridge` stub service boundary in `packages/vscode-extension`.
+- MVP diagnostics/format/hover pipeline remains renderer-agnostic and reusable.
+- Live preview can be added additively (Webview + strict CSP + typed messages) once
+  renderer WASM entrypoints are ready in Phase 3.
 
 **Effort:** 1–2 weeks (reuses playground code) | **Risk:** Low | **Depends on:** Nothing
 
@@ -511,6 +518,7 @@ Phase 5a is complete. Phases 1, 2, and 4 are fully independent and can proceed i
 
 | Date | Change |
 |------|--------|
+| 2026-02-14 | VS Code extension polish + release hardening: richer completions with category/scope metadata, formatter `commentPlacement` propagated across core/CLI/WASM/Python/FFI/Go/.NET, extension integration coverage expanded (including non-default formatter settings), and linux/arm64 extension-test runner auto-detects local editor CLIs for better local architecture coverage. |
 | 2026-02-08 | Implemented Phase 5a: print client with TCP/USB/serial transports, split Printer/StatusQuery trait design, STX/ETX frame parser, ~HS/~HI status parsing, retry with exponential backoff, CLI integration (`zpl print`), Python/FFI bindings, TypeScript package. Design doc and user guide added. |
 | 2026-02-08 | Council review: clarified Phase 2a/3c relationship (same app, not separate). Removed Labelary dependency. Added state tracking refactor as Phase 3 prerequisite. Elevated Phase 5a (print client) to immediate priorities. Fixed dependency graph and mermaid diagram. Cleaned up backlog conflicts. |
 | 2026-02-08 | Added Phase 4c: image-to-`^GF` encoding. Deferred HTML/CSS label authoring and PDF-to-ZPL conversion with clear revisit triggers. |

@@ -16,7 +16,7 @@
       ],
       "effects": { "sets": ["presenter.additionalLength"] },
       "constraints": [
-        { "kind": "note", "message": "Supported only on KR403 printers. Total eject during ^PN = 50 mm + ~PL value + ^PN value." }
+        { "kind": "note", "expr": "when:!profile:model:kr403", "audience": "contextual", "message": "KR403 printer required. Total eject during ^PN = 50 mm + ~PL value + ^PN value." }
       ],
       "docs": "Sets additional media eject length added to the standard 50 mm clearance during a presenter cycle."
     }

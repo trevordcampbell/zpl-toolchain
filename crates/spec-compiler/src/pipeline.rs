@@ -7,6 +7,7 @@ use std::ffi::OsStr;
 use std::path::Path;
 
 use anyhow::Result;
+use serde::Serialize;
 
 use crate::source::{SourceCommand, SourceSpecFile};
 use crate::{build_opcode_trie, parse_jsonc};
@@ -85,6 +86,106 @@ pub struct ValidationError {
     pub code: String,
     /// Human-readable descriptions of each validation issue found.
     pub errors: Vec<String>,
+}
+
+/// Finding emitted by `note-audit` for note-constraint quality checks.
+#[derive(Debug, Clone, Serialize)]
+pub struct NoteAuditFinding {
+    /// Canonical command code.
+    pub code: String,
+    /// Severity level for this audit finding.
+    pub level: String,
+    /// Constraint location within the command spec.
+    pub location: String,
+    /// Human-readable finding message.
+    pub message: String,
+}
+
+fn message_looks_conditional(message: &str) -> bool {
+    let m = message.to_ascii_lowercase();
+    [
+        "only when",
+        "only if",
+        "supported only",
+        "available only",
+        "only on",
+        "only for",
+        "requires firmware",
+        "requires profile",
+        "if ",
+        " when ",
+    ]
+    .iter()
+    .any(|needle| m.contains(needle))
+}
+
+fn message_looks_explanatory(message: &str) -> bool {
+    let m = message.to_ascii_lowercase();
+    [
+        "sets defaults for subsequent",
+        "returns",
+        "is processed",
+        "remains active until",
+        "can improve throughput",
+        "extension of",
+        "for backward-compatibility",
+    ]
+    .iter()
+    .any(|needle| m.contains(needle))
+}
+
+/// Audit note constraints to identify obvious conditionalization/surface opportunities.
+pub fn audit_notes(commands: &[SourceCommand]) -> Vec<NoteAuditFinding> {
+    let mut findings = Vec::new();
+    for command in commands {
+        let code = command
+            .canonical_code()
+            .unwrap_or_else(|| "<unknown>".to_string());
+        let Some(constraints) = command.constraints.as_ref() else {
+            continue;
+        };
+
+        for (index, constraint) in constraints.iter().enumerate() {
+            if constraint.kind != zpl_toolchain_spec_tables::ConstraintKind::Note {
+                continue;
+            }
+            let location = format!("constraints[{index}]");
+            if constraint.message.trim().is_empty() {
+                findings.push(NoteAuditFinding {
+                    code: code.clone(),
+                    level: "error".to_string(),
+                    location: location.clone(),
+                    message: "note constraint message is empty".to_string(),
+                });
+                continue;
+            }
+
+            if constraint.expr.as_deref().is_none()
+                && message_looks_conditional(&constraint.message)
+            {
+                findings.push(NoteAuditFinding {
+                    code: code.clone(),
+                    level: "warn".to_string(),
+                    location: location.clone(),
+                    message:
+                        "note message looks conditional but has no expr (consider when:/before:/after:)"
+                            .to_string(),
+                });
+            }
+
+            if constraint.audience.is_none() && message_looks_explanatory(&constraint.message) {
+                findings.push(NoteAuditFinding {
+                    code: code.clone(),
+                    level: "info".to_string(),
+                    location,
+                    message:
+                        "note appears explanatory; consider audience=contextual to keep problem lists focused"
+                            .to_string(),
+                });
+            }
+        }
+    }
+    findings
 }
 
 /// Load profile schema and return the set of valid field paths.
@@ -411,12 +512,13 @@ fn validate_command_constraints_spec(
                 zpl_toolchain_spec_tables::ConstraintKind::EmptyData => {
                     // No expr needed
                 }
-                // Range, Note, and Custom: no expr grammar to validate.
-                // Range expr is freeform, Note has optional expr, Custom is
-                // escape-hatch.
+                // Range and Custom: no expr grammar to validate.
+                // Range expr is freeform; Custom is escape-hatch.
                 zpl_toolchain_spec_tables::ConstraintKind::Range
-                | zpl_toolchain_spec_tables::ConstraintKind::Note
                 | zpl_toolchain_spec_tables::ConstraintKind::Custom => {}
+                zpl_toolchain_spec_tables::ConstraintKind::Note => {
+                    validate_note_expr(expr, ci, errors);
+                }
             }
 
             // Validate constraint target opcodes exist in the command set
@@ -433,6 +535,15 @@ fn validate_command_constraints_spec(
             // Validate message is not empty
             if constraint.message.is_empty() {
                 errors.push(format!("constraints[{}] missing or empty message", ci));
+            }
+
+            if constraint.audience.is_some()
+                && constraint.kind != zpl_toolchain_spec_tables::ConstraintKind::Note
+            {
+                errors.push(format!(
+                    "constraints[{}] audience is only supported for kind=note",
+                    ci
+                ));
             }
         }
     }
@@ -626,6 +737,93 @@ fn validate_target_expr(targets: &str, constraint_idx: usize, errors: &mut Vec<S
     }
 }
 
+/// Known when: predicate prefixes (must have non-empty suffix where applicable).
+const WHEN_PREDICATE_PREFIXES: &[&str] = &[
+    "arg:",
+    "label:has:",
+    "label:missing:",
+    "profile:id:",
+    "profile:dpi:",
+    "profile:feature:",
+    "profile:featureMissing:",
+    "profile:firmware:",
+    "profile:firmwareGte:",
+    "profile:model:",
+];
+
+fn is_valid_when_predicate(token: &str) -> bool {
+    let predicate = token.trim().strip_prefix('!').unwrap_or(token).trim();
+    if predicate.is_empty() {
+        return false;
+    }
+    WHEN_PREDICATE_PREFIXES
+        .iter()
+        .any(|p| predicate.starts_with(p) && predicate.len() > p.len())
+        || (predicate.starts_with("arg:") && {
+            // arg:keyPresent, arg:keyEmpty, arg:keyIsValue:V
+            predicate.ends_with("Present")
+                || predicate.ends_with("Empty")
+                || predicate.contains("IsValue:")
+        })
+}
+
+fn validate_when_predicate_terms(condition: &str, constraint_idx: usize, errors: &mut Vec<String>) {
+    for disjunction in condition.split("||") {
+        for term in disjunction.split("&&") {
+            let token = term.trim();
+            if token.is_empty() {
+                errors.push(format!(
+                    "constraints[{}].expr when: has empty term (surrounded by &&/||)",
+                    constraint_idx
+                ));
+            } else if !is_valid_when_predicate(token) {
+                errors.push(format!(
+                    "constraints[{}].expr when: term '{}' is not a recognized predicate (use arg:, label:has:, label:missing:, or profile:* )",
+                    constraint_idx, token
+                ));
+            }
+        }
+    }
+}
+
+fn validate_note_expr(expr: &str, constraint_idx: usize, errors: &mut Vec<String>) {
+    if expr.is_empty() {
+        return;
+    }
+    if let Some(targets) = expr.strip_prefix("after:first:") {
+        validate_target_expr(targets, constraint_idx, errors);
+        return;
+    }
+    if let Some(targets) = expr.strip_prefix("before:first:") {
+        validate_target_expr(targets, constraint_idx, errors);
+        return;
+    }
+    if let Some(targets) = expr.strip_prefix("after:") {
+        validate_target_expr(targets, constraint_idx, errors);
+        return;
+    }
+    if let Some(targets) = expr.strip_prefix("before:") {
+        validate_target_expr(targets, constraint_idx, errors);
+        return;
+    }
+    if let Some(condition) = expr.strip_prefix("when:") {
+        let condition = condition.trim();
+        if condition.is_empty() {
+            errors.push(format!(
+                "constraints[{}].expr has empty when: predicate",
+                constraint_idx
+            ));
+        } else {
+            validate_when_predicate_terms(condition, constraint_idx, errors);
+        }
+        return;
+    }
+    errors.push(format!(
+        "constraints[{}].expr '{}' is not a recognized note expression prefix",
+        constraint_idx, expr
+    ));
+}
+
 /// Extract target opcodes from a constraint's expr field.
 fn extract_constraint_targets(constraint: &zpl_toolchain_spec_tables::Constraint) -> Vec<String> {
     let expr = constraint.expr.as_deref().unwrap_or("");
@@ -700,6 +898,7 @@ pub fn generate_tables(
             signature: cmd.signature.clone(),
             args: cmd.args.clone(),
             constraints: cmd.constraints.clone(),
+            constraint_defaults: cmd.constraint_defaults.clone(),
             effects: cmd.effects.clone(),
             plane: cmd.plane,
             scope: cmd.scope,
@@ -767,7 +966,10 @@ pub fn generate_docs_bundle(
             Some(c) if !c.is_empty() => c,
             _ => continue,
         };
-        present_code_set.insert(code.clone());
+        let all_codes = cmd.all_codes();
+        for c in &all_codes {
+            present_code_set.insert(c.clone());
+        }
         let params = cmd.signature_params();
 
         let mut entry = serde_json::Map::new();
@@ -780,15 +982,19 @@ pub fn generate_docs_bundle(
         if let Some(docs) = &cmd.docs {
             entry.insert("docs".into(), serde_json::json!(docs));
         }
+        if let Some(name) = &cmd.name {
+            entry.insert("name".into(), serde_json::json!(name));
+        }
+        let effective_category = effective_command_category(cmd, &code);
+        entry.insert("category".into(), serde_json::to_value(effective_category)?);
+        entry.insert("scope".into(), serde_json::to_value(cmd.scope)?);
 
         // Stable anchor
         entry.insert("anchor".into(), serde_json::json!(anchor_from_code(&code)));
 
         // Format template
         if let Some(sig) = &cmd.signature {
-            let joiner = &sig.joiner;
-            let params_fmt: Vec<String> = params.iter().map(|k| format!("{{{}}}", k)).collect();
-            let fmt = format!("{}{}", code, params_fmt.join(joiner));
+            let fmt = format_template_from_signature(&code, sig, &params);
             entry.insert("formatTemplate".into(), serde_json::json!(fmt));
         }
 
@@ -859,7 +1065,23 @@ pub fn generate_docs_bundle(
             entry.insert("missingFieldsTotal".into(), serde_json::json!(miss.len()));
         }
 
-        docs_by_code.insert(code, serde_json::Value::Object(entry));
+        let canonical_entry = serde_json::Value::Object(entry);
+        docs_by_code.insert(code.clone(), canonical_entry.clone());
+        for alias in all_codes {
+            if alias == code {
+                continue;
+            }
+            let mut alias_entry = serde_json::Map::new();
+            alias_entry.insert("anchor".into(), serde_json::json!(anchor_from_code(&alias)));
+            alias_entry.insert("aliasOf".into(), serde_json::json!(code));
+            alias_entry.insert("hasSpec".into(), serde_json::json!(false));
+            if let Some(name) = &cmd.name {
+                alias_entry.insert("name".into(), serde_json::json!(name));
+            }
+            alias_entry.insert("category".into(), serde_json::to_value(effective_category)?);
+            alias_entry.insert("scope".into(), serde_json::to_value(cmd.scope)?);
+            docs_by_code.insert(alias, serde_json::Value::Object(alias_entry));
+        }
     }
 
     // Add placeholders for master list codes not in spec
@@ -884,6 +1106,34 @@ pub fn generate_docs_bundle(
         "schema_versions": schema_versions.iter().cloned().collect::<Vec<_>>(),
         "format_version": TABLE_FORMAT_VERSION,
     }))
+}
+
+fn format_template_from_signature(
+    code: &str,
+    sig: &zpl_toolchain_spec_tables::Signature,
+    params: &[String],
+) -> String {
+    let mut out = String::from(code);
+    let mut i = 0usize;
+    while i < params.len() {
+        if let Some(rule) = &sig.split_rule
+            && i == rule.param_index
+        {
+            let split_len = rule.char_counts.len().max(1);
+            let end = (i + split_len).min(params.len());
+            for key in &params[i..end] {
+                out.push_str(&format!("{{{}}}", key));
+            }
+            i = end;
+        } else {
+            out.push_str(&format!("{{{}}}", params[i]));
+            i += 1;
+        }
+        if i < params.len() {
+            out.push_str(&sig.joiner);
+        }
+    }
+    out
 }
 
 // ─── Generate constraints bundle ────────────────────────────────────────────
@@ -1095,6 +1345,85 @@ fn anchor_from_code(code: &str) -> String {
     code.trim_start_matches('^')
         .trim_start_matches('~')
         .to_string()
+}
+
+fn effective_command_category(
+    cmd: &SourceCommand,
+    code: &str,
+) -> Option<zpl_toolchain_spec_tables::CommandCategory> {
+    use zpl_toolchain_spec_tables::CommandCategory as C;
+
+    if let Some(category) = cmd.category {
+        return Some(category);
+    }
+
+    let code_upper = code.to_ascii_uppercase();
+    if code_upper.starts_with("^B") || code_upper.starts_with("~B") {
+        return Some(C::Barcode);
+    }
+
+    let mut hint_text = String::new();
+    if let Some(name) = &cmd.name {
+        hint_text.push_str(name);
+        hint_text.push(' ');
+    }
+    if let Some(docs) = &cmd.docs {
+        hint_text.push_str(docs);
+    }
+    let hint = hint_text.to_ascii_lowercase();
+
+    if hint.contains("rfid") {
+        return Some(C::Rfid);
+    }
+    if hint.contains("wireless") || hint.contains("wlan") {
+        return Some(C::Wireless);
+    }
+    if hint.contains("network") {
+        return Some(C::Network);
+    }
+    if hint.contains("barcode") {
+        return Some(C::Barcode);
+    }
+    if hint.contains("graphic") || hint.contains("image") {
+        return Some(C::Graphics);
+    }
+    if hint.contains("font") || hint.contains("text") || hint.contains("field data") {
+        return Some(C::Text);
+    }
+    if hint.contains("host") || hint.contains("diagnostic") || hint.contains("status") {
+        return Some(C::Host);
+    }
+    if hint.contains("memory")
+        || hint.contains("object")
+        || hint.contains("download")
+        || hint.contains("storage")
+    {
+        return Some(C::Storage);
+    }
+    if hint.contains("media") || hint.contains("print mode") || hint.contains("cutter") {
+        return Some(C::Media);
+    }
+    if hint.contains("keyboard") || hint.contains("kiosk") {
+        return Some(C::Kdu);
+    }
+    if hint.contains("config")
+        || hint.contains("setting")
+        || hint.contains("calibration")
+        || hint.contains("default")
+    {
+        return Some(C::Config);
+    }
+
+    match cmd
+        .scope
+        .unwrap_or(zpl_toolchain_spec_tables::CommandScope::Field)
+    {
+        zpl_toolchain_spec_tables::CommandScope::Field
+        | zpl_toolchain_spec_tables::CommandScope::Label
+        | zpl_toolchain_spec_tables::CommandScope::Document => Some(C::Format),
+        zpl_toolchain_spec_tables::CommandScope::Session
+        | zpl_toolchain_spec_tables::CommandScope::Job => Some(C::Config),
+    }
 }
 
 /// Standard fields that every non-structural command is expected to have.
@@ -1316,6 +1645,28 @@ mod tests {
     }
 
     #[test]
+    fn format_template_respects_split_rule_without_extra_joiners() {
+        let sig = zpl_toolchain_spec_tables::Signature {
+            params: vec!["f".into(), "o".into(), "h".into(), "w".into()],
+            joiner: ",".into(),
+            no_space_after_opcode: true,
+            allow_empty_trailing: true,
+            split_rule: Some(zpl_toolchain_spec_tables::SplitRule {
+                param_index: 0,
+                char_counts: vec![1, 1],
+            }),
+        };
+        let params = vec![
+            "f".to_string(),
+            "o".to_string(),
+            "h".to_string(),
+            "w".to_string(),
+        ];
+        let fmt = super::format_template_from_signature("^A", &sig, &params);
+        assert_eq!(fmt, "^A{f}{o},{h},{w}");
+    }
+
+    #[test]
     fn validate_default_from_always_requires_default_from_state_key() {
         use super::validate_cross_field;
         use crate::source::SourceSpecFile;
@@ -1398,5 +1749,217 @@ mod tests {
             .expect("by_producer object");
         assert!(by.contains_key("^P"));
         assert!(by.contains_key("~P"));
+    }
+
+    #[test]
+    fn note_audit_flags_conditional_note_without_expr() {
+        use super::audit_notes;
+        use crate::source::SourceSpecFile;
+
+        let json = r#"{
+            "schemaVersion":"1.1.1",
+            "commands":[
+              {
+                "codes":["^T1"],
+                "arity":0,
+                "constraints":[
+                  { "kind":"note", "message":"Supported only on KR403 printers." }
+                ]
+              }
+            ]
+        }"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let findings = audit_notes(&spec.commands);
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.message.contains("looks conditional but has no expr")),
+            "expected conditional note finding: {:?}",
+            findings
+        );
+    }
+
+    #[test]
+    fn note_audit_flags_explanatory_note_without_audience() {
+        use super::audit_notes;
+        use crate::source::SourceSpecFile;
+
+        let json = r#"{
+            "schemaVersion":"1.1.1",
+            "commands":[
+              {
+                "codes":["^T2"],
+                "arity":0,
+                "constraints":[
+                  { "kind":"note", "message":"Sets defaults for subsequent barcode commands." }
+                ]
+              }
+            ]
+        }"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let findings = audit_notes(&spec.commands);
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.message.contains("consider audience=contextual")),
+            "expected explanatory note finding: {:?}",
+            findings
+        );
+    }
+
+    #[test]
+    fn note_audit_flags_empty_message() {
+        use super::audit_notes;
+        use crate::source::SourceSpecFile;
+
+        let json = r#"{
+            "schemaVersion":"1.1.1",
+            "commands":[
+              {
+                "codes":["^T3"],
+                "arity":0,
+                "constraints":[
+                  { "kind":"note", "message":"   " }
+                ]
+              }
+            ]
+        }"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let findings = audit_notes(&spec.commands);
+        let empty_finding = findings
+            .iter()
+            .find(|f| f.message.contains("empty") && f.level == "error");
+        assert!(
+            empty_finding.is_some(),
+            "expected empty message error finding: {:?}",
+            findings
+        );
+    }
+
+    #[test]
+    fn validate_constraints_reject_audience_on_non_note() {
+        use super::validate_cross_field;
+        use crate::source::SourceSpecFile;
+        use std::path::Path;
+
+        let json = r#"{
+            "schemaVersion":"1.1.1",
+            "commands":[
+              {
+                "codes":["^T2"],
+                "arity":0,
+                "constraints":[
+                  { "kind":"requires", "expr":"^XA", "audience":"contextual", "message":"bad audience placement" }
+                ]
+              }
+            ]
+        }"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec");
+        let errs = validate_cross_field(&spec.commands, &spec_dir);
+        assert!(
+            errs.iter()
+                .flat_map(|entry| entry.errors.iter())
+                .any(|msg| msg.contains("audience is only supported for kind=note")),
+            "expected audience-on-non-note validation failure: {:?}",
+            errs
+        );
+    }
+
+    #[test]
+    fn validate_constraints_reject_unknown_note_expr_prefix() {
+        use super::validate_cross_field;
+        use crate::source::SourceSpecFile;
+        use std::path::Path;
+
+        let json = r#"{
+            "schemaVersion":"1.1.1",
+            "commands":[
+              {
+                "codes":["^T3"],
+                "arity":0,
+                "constraints":[
+                  { "kind":"note", "expr":"during:^XA", "message":"bad note expr prefix" }
+                ]
+              }
+            ]
+        }"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec");
+        let errs = validate_cross_field(&spec.commands, &spec_dir);
+        assert!(
+            errs.iter()
+                .flat_map(|entry| entry.errors.iter())
+                .any(|msg| msg.contains("recognized note expression prefix")),
+            "expected note expr validation failure: {:?}",
+            errs
+        );
+    }
+
+    #[test]
+    fn validate_note_expr_accepts_profile_predicates() {
+        use super::validate_cross_field;
+        use crate::source::SourceSpecFile;
+        use std::path::Path;
+
+        let json = r#"{
+            "schemaVersion":"1.1.1",
+            "commands":[
+              {
+                "codes":["^TP"],
+                "arity":0,
+                "constraints":[
+                  { "kind":"note", "expr":"when:profile:dpi:203", "message":"203 DPI hint" },
+                  { "kind":"note", "expr":"when:profile:id:zebra-xi4-203||profile:feature:cutter", "message":"Xi4 or cutter hint" },
+                  { "kind":"note", "expr":"when:arg:xPresent&&profile:firmwareGte:V60.14", "message":"Firmware hint" }
+                ]
+              }
+            ]
+        }"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec");
+        let errs = validate_cross_field(&spec.commands, &spec_dir);
+        assert!(
+            errs.is_empty(),
+            "profile predicates should be accepted: {:?}",
+            errs
+        );
+    }
+
+    #[test]
+    fn validate_note_expr_rejects_unknown_when_predicate() {
+        use super::validate_cross_field;
+        use crate::source::SourceSpecFile;
+        use std::path::Path;
+
+        let json = r#"{
+            "schemaVersion":"1.1.1",
+            "commands":[
+              {
+                "codes":["^T4"],
+                "arity":0,
+                "constraints":[
+                  { "kind":"note", "expr":"when:unknown:foo", "message":"bad predicate" }
+                ]
+              }
+            ]
+        }"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec");
+        let errs = validate_cross_field(&spec.commands, &spec_dir);
+        assert!(
+            errs.iter()
+                .flat_map(|entry| entry.errors.iter())
+                .any(|msg| msg.contains("not a recognized predicate")),
+            "expected unknown predicate validation failure: {:?}",
+            errs
+        );
     }
 }

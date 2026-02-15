@@ -26,6 +26,22 @@ public class ZplTests
     }
 
     [Fact]
+    public void Format_WithCompaction_CompactsFieldBlockWithLabelIndent()
+    {
+        var input = "^XA\n^PW609\n^LL406\n^FO30,30\n^A0N,35,35\n^FDWIDGET-3000\n^FS\n^XZ\n";
+        var formatted = Zpl.FormatWithOptions(input, "label", "field");
+        Assert.Contains("  ^FO30,30^A0N,35,35^FDWIDGET-3000^FS", formatted);
+    }
+
+    [Fact]
+    public void Format_WithCommentPlacementLine_PreservesStandaloneCommentLine()
+    {
+        var input = "^XA\n^PW812\n; set print width\n^XZ\n";
+        var formatted = Zpl.FormatWithOptions(input, "none", "none", "line");
+        Assert.Contains("^PW812\n; set print width", formatted);
+    }
+
+    [Fact]
     public void Validate_ValidZpl_ReturnsResult()
     {
         var result = Zpl.Validate("^XA^FDHello^FS^XZ");

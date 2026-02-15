@@ -16,7 +16,17 @@
       ],
       "effects": { "sets": ["controlPanel.modeProtection"] },
       "constraints": [
-        { "kind": "note", "message": "Each mode must be disabled with an individual ^MP command. A value must be entered or the command is ignored." }
+        {
+          "kind": "note",
+          "expr": "when:arg:aEmpty",
+          "severity": "info",
+          "message": "A value must be entered or the command is ignored."
+        },
+        {
+          "kind": "note",
+          "audience": "contextual",
+          "message": "Each mode must be disabled with an individual ^MP command."
+        }
       ],
       "docs": "Disables various mode functions on the control panel. Once disabled, the settings for that mode function can no longer be changed and the associated LED does not light."
     }

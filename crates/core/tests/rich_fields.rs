@@ -67,6 +67,7 @@ fn rounding_policy_to_multiple_warns() {
                         unit: None,
                         mode: zpl_toolchain_spec_tables::RoundingMode::ToMultiple,
                         multiple: Some(5.0),
+                        epsilon: 1e-9,
                     }),
                     rounding_policy_when: None,
                     resource: None,
@@ -75,6 +76,7 @@ fn rounding_policy_to_multiple_warns() {
             ))]),
 
             constraints: None,
+            constraint_defaults: None,
             effects: None,
             plane: None,
             scope: None,
@@ -186,6 +188,7 @@ fn conditional_range_enforced() {
             ]),
 
             constraints: None,
+            constraint_defaults: None,
             effects: None,
             plane: None,
             scope: None,

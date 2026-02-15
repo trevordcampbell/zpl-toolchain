@@ -31,7 +31,11 @@
       ],
       "effects": { "sets": ["print.mode"] },
       "constraints": [
-        { "kind": "note", "message": "Available modes depend on printer model and installed options. Command is ignored if parameters are missing or invalid." }
+        {
+          "kind": "note",
+          "audience": "contextual",
+          "message": "Available modes depend on printer model and installed options. Omitted or invalid parameters cause the command to be ignored."
+        }
       ],
       "docs": "Determines the action the printer takes after a label or group of labels has printed (tear-off, peel, rewind, cutter, applicator, etc.)."
     }

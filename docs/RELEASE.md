@@ -15,8 +15,8 @@ Releases are fully automated via [release-plz](https://release-plz.ieni.dev/) an
    - Publishes crates to crates.io (dependency-ordered)
    - Creates a git tag (`v0.x.y`)
    - Creates a GitHub Release with changelog notes
-   - Triggers npm, PyPI, binary build, Go module tagging, and Homebrew tap update jobs
-7. Done — all registries updated, artifacts uploaded, Go tag pushed, Homebrew formula synced
+   - Triggers npm, PyPI, VS Code extension publish, binary build, Go module tagging, and Homebrew tap update jobs
+7. Done — all registries updated, extension marketplaces updated, artifacts uploaded, Go tag pushed, Homebrew formula synced
 
 > **Self-healing releases:** `release_always = true` in `release-plz.toml` means
 > the release step runs on every push to main, not only when the commit comes from
@@ -33,6 +33,7 @@ Releases are fully automated via [release-plz](https://release-plz.ieni.dev/) an
 | Shell installer (checksum-verified) | `curl -fsSL https://raw.githubusercontent.com/trevordcampbell/zpl-toolchain/main/install.sh | sh` |
 | Homebrew (in-repo formula) | `brew install --formula Formula/zpl-toolchain.rb` |
 | Homebrew (tap) | `brew install trevordcampbell/zpl-toolchain/zpl-toolchain` |
+| VS Code extension (Marketplace) | `code --install-extension trevordcampbell.zpl-toolchain` |
 | Pre-built binary (download) | [GitHub Releases](https://github.com/trevordcampbell/zpl-toolchain/releases) |
 | npx wrapper (downloads binary on first run) | `npx @zpl-toolchain/cli --help` |
 
@@ -42,6 +43,31 @@ pre-built binaries directly from GitHub Releases instead of compiling from sourc
 
 Tap publishing is automated from release CI. See
 [docs/HOMEBREW.md](HOMEBREW.md#automated-tap-updates-via-ci) for setup details.
+
+### VS Code extension publishing
+
+Extension packaging and publishing are automated in `release-plz.yml`:
+
+1. Build VSIX from the release tag (`packages/vscode-extension`)
+2. Upload VSIX as a workflow artifact and GitHub Release asset
+3. Publish the same VSIX to:
+   - Visual Studio Marketplace (`vsce`)
+   - Open VSX (`ovsx`)
+
+Version alignment is enforced in CI: extension `package.json` version must match
+the release tag version.
+Published extension identity is `trevordcampbell.zpl-toolchain`.
+
+Manual fallback:
+
+```bash
+cd packages/vscode-extension
+npm ci
+npm run build
+npx @vscode/vsce package
+npx @vscode/vsce publish -p "$VSCE_TOKEN"
+npx ovsx publish ./*.vsix -p "$OVSX_TOKEN"
+```
 
 ### Parser tables
 
@@ -92,11 +118,11 @@ the automated upload failed), trigger the manual workflow from the GitHub Action
 To avoid repeat regressions and CI surprises, keep these guardrails in mind:
 
 - **Clippy/build policy:** run full-workspace clippy (`cargo clippy --workspace -- -D warnings`) and keep CI/devcontainer PyO3-compatible with `PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1` (needed when host Python is newer than PyO3's max tested version).
-- **Hook enforcement:** pre-commit runs clippy when Rust files are staged; pre-push runs full-workspace clippy, full-workspace nextest, and Python wheel runtime tests (`scripts/test-python-wheel-local.sh`).
+- **Hook enforcement:** pre-commit runs clippy for staged Rust changes and VS Code extension type-checks for staged extension changes; pre-push runs full-workspace clippy, spec note-audit, CI/devcontainer toolchain alignment checks, full-workspace nextest, Python wheel runtime tests (`scripts/test-python-wheel-local.sh`), and extension checks (`npm run test` + `npm run package:vsix`) when extension-related files are in the push range. The hook auto-refreshes core runtime artifacts first via `scripts/refresh-core-runtime.sh` to avoid stale WASM/TS runtime failures; Extension Host integration remains CI-enforced (`test:ci`) for stable cross-host behavior.
 - **TypeScript core CI dependency:** `packages/ts/core` type-check/build depends on generated `wasm/pkg` artifacts, so CI must build WASM before TS core checks.
 - **Python runtime confidence:** runtime checks should validate the installed wheel behavior (build wheel, install wheel, run tests), not only `cargo test` for the PyO3 crate.
 - **release-plz scope:** release-plz PR package lists only crates with `publish = true` (Cargo ecosystem). npm/PyPI versions are synchronized in workflow steps and published by downstream jobs.
-- **Local binding verification:** use `scripts/test-python-wheel-local.sh` and `scripts/test-dotnet-local.sh` for reproducible local confidence before push/release.
+- **Local binding verification:** use `scripts/test-python-wheel-local.sh`, `scripts/test-dotnet-local.sh`, and `scripts/test-go-local.sh` for reproducible local confidence before push/release.
 
 ## Pre-release verification
 
@@ -113,7 +139,9 @@ cargo nextest run --workspace
 bash scripts/test-python-wheel-local.sh
 (cd packages/ts/print && npm ci && npm run build && npm test)
 (cd packages/ts/cli && npm test)
+(cd packages/vscode-extension && npm ci && npm run test:ci && npm run package:vsix)
 bash scripts/test-dotnet-local.sh
+bash scripts/test-go-local.sh
 ```
 
 ## Version scheme
@@ -179,6 +207,8 @@ they are distributed through npm, PyPI, and binary downloads instead.
 | `CARGO_REGISTRY_TOKEN` | crates.io | release-plz.yml |
 | `NPM_TOKEN` | npmjs.com (`@zpl-toolchain/core`, `@zpl-toolchain/print`, `@zpl-toolchain/cli`) | release-plz.yml |
 | `PYPI_TOKEN` | pypi.org | release-plz.yml |
+| `VSCE_TOKEN` | Visual Studio Marketplace PAT for extension publishing | release-plz.yml |
+| `OVSX_TOKEN` | Open VSX PAT for extension publishing | release-plz.yml |
 | `HOMEBREW_TAP_TOKEN` | GitHub PAT for writing to Homebrew tap repo | release-plz.yml |
 
 ## Required GitHub variables
@@ -196,7 +226,7 @@ The `.githooks/` directory contains three hooks, activated via `git config core.
 |------|---------|--------|
 | `commit-msg` | Every commit | Conventional Commits format |
 | `pre-commit` | Every commit | Parser tables sync + `cargo fmt --check` + clippy on staged Rust changes |
-| `pre-push` | Every push | `cargo clippy -D warnings` + full test suite |
+| `pre-push` | Every push | `cargo clippy -D warnings` + `note-audit` + CI/devcontainer toolchain alignment + full workspace test suite + conditional VS Code extension checks when extension-related files are being pushed |
 
 Skip any hook when needed: `git commit --no-verify` or `git push --no-verify`.
 
@@ -205,7 +235,7 @@ Skip any hook when needed: `git commit --no-verify` or `git push --no-verify`.
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `ci.yml` | Push / PR | Build, test, clippy, fmt |
-| `release-plz.yml` | Push to main | Release PR + automated publish (crates.io, npm, PyPI, binaries, Go tag, Homebrew tap) |
+| `release-plz.yml` | Push to main | Release PR + automated publish (crates.io, npm, PyPI, VS Code extension marketplaces, binaries, Go tag, Homebrew tap) |
 | `release.yml` | `workflow_dispatch` (manual) | Emergency fallback: rebuild binaries + upload to GitHub Release |
 | `homebrew-tap-validate.yml` | `workflow_dispatch` (manual) | Dry-run Homebrew tap sync for a specific tag (no commit/push) |
 
@@ -215,6 +245,7 @@ Skip any hook when needed: `git commit --no-verify` or `git push --no-verify`.
 |------|---------|
 | `release-plz.toml` | release-plz workspace config (single-tag mode, changelog) |
 | `scripts/update-homebrew-tap.sh` | Regenerates and pushes tap formula from release checksums |
+| `packages/vscode-extension/` | VS Code extension source, packaging, and publish scripts |
 | `scripts/publish.sh` | Manual publishing script (dry-run by default) |
 | `.githooks/*` | Git hooks (conventional commits, fmt, clippy, tests) |
 | `.env` | Local API tokens for manual publishing (gitignored) |

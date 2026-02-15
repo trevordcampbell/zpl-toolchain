@@ -28,6 +28,28 @@ func TestFormatReturnsOutput(t *testing.T) {
 	}
 }
 
+func TestFormatWithOptionsCompactsFieldBlockWithLabelIndent(t *testing.T) {
+	input := "^XA\n^PW609\n^LL406\n^FO30,30\n^A0N,35,35\n^FDWIDGET-3000\n^FS\n^XZ\n"
+	formatted, err := FormatWithOptions(input, "label", "field")
+	if err != nil {
+		t.Fatalf("FormatWithOptions failed: %v", err)
+	}
+	if !strings.Contains(formatted, "  ^FO30,30^A0N,35,35^FDWIDGET-3000^FS") {
+		t.Fatalf("expected compacted/indented field block, got: %q", formatted)
+	}
+}
+
+func TestFormatWithOptionsCommentPlacementLinePreservesStandaloneComment(t *testing.T) {
+	input := "^XA\n^PW812\n; set print width\n^XZ\n"
+	formatted, err := FormatWithOptionsEx(input, "none", "none", "line")
+	if err != nil {
+		t.Fatalf("FormatWithOptions failed: %v", err)
+	}
+	if !strings.Contains(formatted, "^PW812\n; set print width") {
+		t.Fatalf("expected standalone comment line, got: %q", formatted)
+	}
+}
+
 func TestValidateReturnsResult(t *testing.T) {
 	vr, err := Validate("^XA^FDHello^FS^XZ", "")
 	if err != nil {

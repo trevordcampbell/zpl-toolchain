@@ -19,7 +19,7 @@
       ],
       "constraints": [
         { "kind": "order", "expr": "before:^FS", "message": "^TB should appear before its ^FS", "severity": "info" },
-        { "kind": "note", "message": "^TB is the preferred command for printing fields or blocks of text instead of ^FB. Supports complex text layout features. Justification comes from ^FO, ^FT, or ^FN. Data between < and > is processed as escape sequences. Available in firmware V60.14.x, V50.14.x, or later." }
+        { "kind": "note", "message": "^TB is the preferred command for printing fields or blocks of text instead of ^FB. Supports complex text layout features. Justification comes from ^FO, ^FT, or ^FN. Data between < and > is processed as escape sequences. Available in firmware V60.14.x, V50.14.x, or later.", "audience": "contextual" }
       ],
       "docs": "Prints a text block with defined width and height. Features automatic word-wrap. If text exceeds block height, it is truncated. Supports complex text layout features. Preferred over ^FB."
     }

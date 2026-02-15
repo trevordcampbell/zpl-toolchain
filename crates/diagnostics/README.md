@@ -23,10 +23,12 @@ automatically.
 ## Functions
 - `explain(code: &str) -> Option<&'static str>` -- human-readable explanation for all 46 diagnostic codes (auto-generated).
 - `Diagnostic::explain(&self) -> Option<&'static str>` -- convenience method that calls the free `explain()` function with the diagnostic's own `id`.
+- `severity_for_code(code: &str) -> Option<Severity>` -- default severity lookup from spec (auto-generated).
+- `message_template_for(code: &str, variant: &str) -> Option<&'static str>` -- optional message template lookup from spec (auto-generated).
 
 ## Guidance
 - Use stable IDs: `ZPL1xxx` (value-level), `ZPL2xxx` (structural/semantic), `ZPL3xxx` (notes), `ZPL.PARSER.xxxx` (parser).
 - Keep messages concise and actionable.
-- To add a new diagnostic: add an entry to `spec/diagnostics.jsonc` (in this crate) with `id`, `constName`, `severity`, `category`, `summary`, `description`, and `contextKeys`.
+- To add a new diagnostic: add an entry to `spec/diagnostics.jsonc` (in this crate) with `id`, `constName`, `severity`, `category`, `summary`, `description`, `contextKeys`, and optionally `messageTemplates` for variant-specific message formatting.
 - See `docs/DIAGNOSTIC_CODES.md` for the full reference.
 

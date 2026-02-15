@@ -1,0 +1,16 @@
+src/**
+tsconfig.json
+scripts/**
+package-lock.json
+.gitignore
+*.tmp
+.tmp*
+test-fixtures/**
+dist/test/**
+node_modules/typescript/**
+node_modules/@types/**
+vendor/core/wasm/pkg/README.md
+vendor/core/wasm/pkg/package.json
+vendor/core/wasm/pkg/.gitignore
+**/*.map
+**/*.ts

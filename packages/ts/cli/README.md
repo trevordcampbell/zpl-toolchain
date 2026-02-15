@@ -1,5 +1,7 @@
 # @zpl-toolchain/cli
 
+![ZPL Toolchain logo](https://raw.githubusercontent.com/trevordcampbell/zpl-toolchain/main/docs/assets/branding/logo-square-128.png)
+
 `npx` wrapper for the `zpl` CLI binary.
 
 This package downloads the matching pre-built binary from GitHub Releases on first run, caches it locally, and then executes it.

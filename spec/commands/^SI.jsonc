@@ -19,7 +19,7 @@
       ],
       "effects": { "sets": ["sensor.intensity"] },
       "constraints": [
-        { "kind": "note", "message": "Available only for printers with firmware versions V53.15.x or later. Both parameters must be accepted values or the entire command is ignored." }
+        { "kind": "note", "audience": "contextual", "message": "Firmware V53.15.x or later required. Both parameters must be accepted values; otherwise the entire command is ignored." }
       ],
       "docs": "Changes the values for the media sensors, which are also set during the media calibration process."
     }

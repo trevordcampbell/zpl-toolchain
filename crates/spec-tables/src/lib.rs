@@ -283,6 +283,9 @@ pub struct CommandEntry {
     /// Command-level validation constraints (order, requires, incompatible, etc.).
     #[serde(default)]
     pub constraints: Option<Vec<Constraint>>,
+    /// Default values for command-level constraints.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub constraint_defaults: Option<ConstraintDefaults>,
     /// Cross-command state effects: which state keys this command sets.
     #[serde(default)]
     pub effects: Option<Effects>,
@@ -386,6 +389,9 @@ pub struct FieldDataRules {
     /// Regex character class for allowed characters (e.g., "0-9", "A-Z0-9").
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub character_set: Option<String>,
+    /// Severity for character set violations (defaults to Error).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub character_set_severity: Option<ConstraintSeverity>,
     /// Minimum data length.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub min_length: Option<usize>,
@@ -401,6 +407,9 @@ pub struct FieldDataRules {
     /// Required parity of data length ("even" or "odd").
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub length_parity: Option<String>,
+    /// Severity for length/parity violations (defaults to Warn).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub length_severity: Option<ConstraintSeverity>,
     /// Human-readable notes about the data format.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
@@ -657,6 +666,13 @@ pub struct RoundingPolicy {
     /// The multiple to which the value should be rounded.
     #[serde(default)]
     pub multiple: Option<f64>,
+    /// Floating-point tolerance for rounding checks.
+    #[serde(default = "default_rounding_epsilon")]
+    pub epsilon: f64,
+}
+
+fn default_rounding_epsilon() -> f64 {
+    1e-9
 }
 
 /// A rounding policy that applies only when a predicate is satisfied.
@@ -670,6 +686,18 @@ pub struct ConditionalRounding {
     /// The multiple to which the value should be rounded.
     #[serde(default)]
     pub multiple: Option<f64>,
+    /// Optional epsilon override for this conditional rounding rule.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub epsilon: Option<f64>,
+}
+
+/// Default values for command-level constraints.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ConstraintDefaults {
+    /// Default severity for constraints when omitted on an individual constraint.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub severity: Option<ConstraintSeverity>,
 }
 
 /// Constraint kinds for command-level constraints.
@@ -733,6 +761,16 @@ pub enum ConstraintSeverity {
     Warn,
     /// Informational note.
     Info,
+}
+
+/// Audience/surface for note diagnostics.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub enum NoteAudience {
+    /// Emit in diagnostic streams (Problems panel, CLI diagnostics, etc.).
+    Problem,
+    /// Emit only in contextual help surfaces (hover/docs/details), not problem lists.
+    Contextual,
 }
 
 /// Evaluation scope for command-level constraints.
@@ -810,11 +848,17 @@ pub struct Constraint {
     /// Optional evaluation scope for this constraint.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scope: Option<ConstraintScope>,
+    /// Optional target surface for note diagnostics.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub audience: Option<NoteAudience>,
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{Arg, ArgPresence, ResourceKind, Signature};
+    use super::{
+        Arg, ArgPresence, ConstraintDefaults, ConstraintSeverity, ResourceKind, RoundingPolicy,
+        Signature,
+    };
 
     #[test]
     fn signature_allow_empty_trailing_defaults_true() {
@@ -839,5 +883,22 @@ mod tests {
         .expect("valid arg");
         assert_eq!(arg.presence, Some(ArgPresence::ValueOrDefault));
         assert_eq!(arg.resource, Some(ResourceKind::Font));
+    }
+
+    #[test]
+    fn rounding_policy_epsilon_defaults_to_small_tolerance() {
+        let policy: RoundingPolicy =
+            serde_json::from_str(r#"{"mode":"toMultiple","multiple":2}"#).expect("valid policy");
+        assert!(
+            (policy.epsilon - 1e-9).abs() < f64::EPSILON,
+            "rounding epsilon should default to 1e-9"
+        );
+    }
+
+    #[test]
+    fn constraint_defaults_deserialize() {
+        let defaults: ConstraintDefaults =
+            serde_json::from_str(r#"{"severity":"error"}"#).expect("valid constraint defaults");
+        assert_eq!(defaults.severity, Some(ConstraintSeverity::Error));
     }
 }

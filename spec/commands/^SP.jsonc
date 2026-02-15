@@ -16,7 +16,7 @@
           "doc": "Dot row at which to start printing. Creates a label segment that prints immediately while remaining commands continue to be processed." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Can improve throughput on complex labels by allowing printing to begin before the entire label is formatted. Precise positioning requires trial and error. Drops any field that is out of order." }
+        { "kind": "note", "message": "Can improve throughput on complex labels by allowing printing to begin before the entire label is formatted. Precise positioning requires trial and error. Drops any field that is out of order.", "audience": "contextual" }
       ],
       "docs": "Allows a label to start printing at a specified dot row before the entire label has been completely formatted, improving throughput on complex labels."
     }

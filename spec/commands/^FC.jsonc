@@ -21,7 +21,12 @@
           "doc": "Third clock indicator character. Any ASCII character. Cannot be the same as a or b." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Ignored if the Real Time Clock hardware is not present. Must be included within each label field command string each time Real-Time Clock values are required." }
+        {
+          "kind": "note",
+          "severity": "info",
+          "audience": "contextual",
+          "message": "Without Real-Time Clock hardware this command is ignored. Include it in each label field command string whenever Real-Time Clock values are needed."
+        }
       ],
       "docs": "Sets the clock indicators (delimiters) and the clock mode for use with the Real-Time Clock hardware within field data."
     }

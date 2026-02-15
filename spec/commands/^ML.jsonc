@@ -16,7 +16,11 @@
       ],
       "effects": { "sets": ["label.maxLength"] },
       "constraints": [
-        { "kind": "note", "message": "The maximum label length must be equal to or greater than the actual label length for calibration to work properly." }
+        {
+          "kind": "note",
+          "audience": "contextual",
+          "message": "The maximum label length must be equal to or greater than the actual label length for calibration to work properly."
+        }
       ],
       "docs": "Sets the maximum label length in dot rows. Required for proper calibration of non-continuous media."
     }

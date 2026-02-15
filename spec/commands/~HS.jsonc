@@ -10,7 +10,7 @@
       "placement": { "allowedInsideLabel": false, "allowedOutsideLabel": true },
       "arity": 0,
       "constraints": [
-        { "kind": "note", "message": "Returns three data strings to the host. String 1: communication settings, paper out, pause, label length, buffer status, diagnostics mode, corrupt RAM, temperature. String 2: function settings, head up, ribbon out, thermal transfer mode, print mode, label waiting, labels remaining, graphics count. String 3: password and static RAM status. Will not respond if MEDIA OUT, RIBBON OUT, HEAD OPEN, REWINDER FULL, or HEAD OVER-TEMPERATURE." }
+        { "kind": "note", "audience": "contextual", "message": "Returns three data strings to the host. String 1: communication settings, paper out, pause, label length, buffer status, diagnostics mode, corrupt RAM, temperature. String 2: function settings, head up, ribbon out, thermal transfer mode, print mode, label waiting, labels remaining, graphics count. String 3: password and static RAM status. Does not respond during MEDIA OUT, RIBBON OUT, HEAD OPEN, REWINDER FULL, or HEAD OVER-TEMPERATURE." }
       ],
       "docs": "Returns three status strings to the host containing communication settings, printer state flags, and configuration information."
     }

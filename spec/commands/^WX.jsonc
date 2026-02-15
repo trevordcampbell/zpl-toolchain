@@ -58,7 +58,7 @@
           "doc": "Pre-Shared Key (PSK) value for WPA PSK. Minimum 64 hexadecimal digits. Do not enter a pass phrase here." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Supporting parameters vary by security type. Values 2, 3 for security type and parameters b, c, d, e, f, g, h are ignored for Link-OS 6.0 or later. When using certificate files, the time on the printer must be set correctly. The ^WX command replaces individual ZPL commands for different security types." }
+        { "kind": "note", "audience": "contextual", "message": "Supporting parameters vary by security type. Values 2, 3 for security type and parameters b, c, d, e, f, g, h are ignored for Link-OS 6.0 or later. For certificate files, the time on the printer must be set correctly. The ^WX command replaces individual ZPL commands for different security types." }
       ],
       "docs": "Configures wireless security settings. The required parameters depend on the selected security type. Replaces ^WE, ^WL, and other individual security commands."
     }

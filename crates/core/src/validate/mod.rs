@@ -4,9 +4,14 @@ use crate::state::{DeviceState, LabelValueState, ResolvedLabelState, Units, conv
 use serde::Serialize;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::OnceLock;
+use zpl_toolchain_diagnostics::policy::{
+    OBJECT_BOUNDS_LOW_CONFIDENCE_MAX_OVERFLOW_DOTS,
+    OBJECT_BOUNDS_LOW_CONFIDENCE_MAX_OVERFLOW_RATIO, OBJECT_BOUNDS_LOW_CONFIDENCE_SEVERITY,
+};
+use zpl_toolchain_diagnostics::{message_template_for, severity_for_code};
 use zpl_toolchain_profile::Profile;
 use zpl_toolchain_spec_tables::{
-    CommandScope, ComparisonOp, ConstraintKind, ConstraintScope, Plane, RoundingMode,
+    CommandScope, ComparisonOp, ConstraintKind, ConstraintScope, NoteAudience, Plane, RoundingMode,
 };
 
 /// Shorthand for building a `BTreeMap<String, String>` context from key-value pairs.
@@ -31,12 +36,84 @@ pub struct ValidationResult {
     pub resolved_labels: Vec<ResolvedLabelState>,
 }
 
-fn map_sev(sev: Option<&zpl_toolchain_spec_tables::ConstraintSeverity>) -> Severity {
+fn map_constraint_sev(sev: zpl_toolchain_spec_tables::ConstraintSeverity) -> Severity {
     match sev {
-        Some(zpl_toolchain_spec_tables::ConstraintSeverity::Error) => Severity::Error,
-        Some(zpl_toolchain_spec_tables::ConstraintSeverity::Info) => Severity::Info,
-        _ => Severity::Warn,
+        zpl_toolchain_spec_tables::ConstraintSeverity::Error => Severity::Error,
+        zpl_toolchain_spec_tables::ConstraintSeverity::Info => Severity::Info,
+        zpl_toolchain_spec_tables::ConstraintSeverity::Warn => Severity::Warn,
     }
+}
+
+fn map_sev(
+    sev: Option<&zpl_toolchain_spec_tables::ConstraintSeverity>,
+    default: Option<&zpl_toolchain_spec_tables::ConstraintSeverity>,
+) -> Severity {
+    if let Some(sev) = sev {
+        return map_constraint_sev(*sev);
+    }
+    if let Some(default) = default {
+        return map_constraint_sev(*default);
+    }
+    Severity::Warn
+}
+
+fn diagnostic_with_spec_severity(
+    id: &'static str,
+    message: impl Into<String>,
+    span: Option<Span>,
+) -> Diagnostic {
+    Diagnostic::new(
+        id,
+        severity_for_code(id).unwrap_or(Severity::Warn),
+        message.into(),
+        span,
+    )
+}
+
+fn diagnostic_with_constraint_severity(
+    id: &'static str,
+    severity: zpl_toolchain_spec_tables::ConstraintSeverity,
+    message: impl Into<String>,
+    span: Option<Span>,
+) -> Diagnostic {
+    Diagnostic::new(id, map_constraint_sev(severity), message.into(), span)
+}
+
+fn render_diagnostic_message(
+    id: &'static str,
+    variant: &str,
+    substitutions: &[(&str, String)],
+    fallback: String,
+) -> String {
+    let Some(template) = message_template_for(id, variant) else {
+        return fallback;
+    };
+    let substitution_map: HashMap<&str, &str> = substitutions
+        .iter()
+        .map(|(key, value)| (*key, value.as_str()))
+        .collect();
+    let mut rendered = String::with_capacity(template.len() + 16);
+    let mut scan_from = 0usize;
+    while let Some(open_rel) = template[scan_from..].find('{') {
+        let open = scan_from + open_rel;
+        rendered.push_str(&template[scan_from..open]);
+        let after_open = open + 1;
+        if let Some(close_rel) = template[after_open..].find('}') {
+            let close = after_open + close_rel;
+            let key = &template[after_open..close];
+            if let Some(value) = substitution_map.get(key) {
+                rendered.push_str(value);
+            } else {
+                rendered.push_str(&template[open..=close]);
+            }
+            scan_from = close + 1;
+        } else {
+            rendered.push_str(&template[open..]);
+            return rendered;
+        }
+    }
+    rendered.push_str(&template[scan_from..]);
+    rendered
 }
 
 fn trim_f64(n: f64) -> String {
@@ -45,14 +122,130 @@ fn trim_f64(n: f64) -> String {
     if s.is_empty() { "0".to_string() } else { s }
 }
 
+/// Profile predicate support for note when: expressions.
+/// When profile is None, all profile predicates return false (conservative).
+#[allow(dead_code)]
+pub(crate) fn profile_predicate_matches(predicate: &str, profile: Option<&Profile>) -> bool {
+    let Some(p) = profile else {
+        return false;
+    };
+    if let Some(rest) = predicate.strip_prefix("profile:id:") {
+        let accepted: Vec<&str> = rest
+            .split('|')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect();
+        return accepted.is_empty() || accepted.iter().any(|id| *id == p.id);
+    }
+    if let Some(rest) = predicate.strip_prefix("profile:dpi:") {
+        let accepted: Vec<&str> = rest
+            .split('|')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect();
+        return accepted
+            .iter()
+            .any(|s| s.parse::<u32>().ok() == Some(p.dpi));
+    }
+    if let Some(rest) = predicate.strip_prefix("profile:feature:") {
+        let gates: Vec<&str> = rest
+            .split('|')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect();
+        if let Some(features) = &p.features {
+            return gates
+                .iter()
+                .any(|g| zpl_toolchain_profile::resolve_gate(features, g) == Some(true));
+        }
+        return false;
+    }
+    if let Some(rest) = predicate.strip_prefix("profile:featureMissing:") {
+        let gates: Vec<&str> = rest
+            .split('|')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect();
+        if let Some(features) = &p.features {
+            return gates
+                .iter()
+                .any(|g| zpl_toolchain_profile::resolve_gate(features, g) == Some(false));
+        }
+        return false;
+    }
+    if let Some(prefix) = predicate.strip_prefix("profile:firmware:") {
+        return p
+            .memory
+            .as_ref()
+            .and_then(|m| m.firmware_version.as_deref())
+            .map(|fw| fw.starts_with(prefix.trim()))
+            .unwrap_or(false);
+    }
+    if let Some(rest) = predicate.strip_prefix("profile:firmwareGte:") {
+        let min_ver = rest.trim();
+        let fw = p
+            .memory
+            .as_ref()
+            .and_then(|m| m.firmware_version.as_deref());
+        return fw
+            .map(|v| firmware_version_gte(v, min_ver))
+            .unwrap_or(false);
+    }
+    // profile:model: is an alias for profile:id: (profile id often encodes model)
+    if let Some(rest) = predicate.strip_prefix("profile:model:") {
+        let accepted: Vec<&str> = rest
+            .split('|')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect();
+        return accepted.is_empty() || accepted.iter().any(|m| p.id.contains(m) || p.id == *m);
+    }
+    false
+}
+
+/// Compare Zebra firmware version strings (e.g. V60.19.15Z, X60.14.3).
+/// Returns true if fw >= min_ver when both parse, false otherwise.
+#[allow(dead_code)]
+pub(crate) fn firmware_version_gte(fw: &str, min_ver: &str) -> bool {
+    fn parse_version(s: &str) -> Option<(u32, u32)> {
+        let s = s
+            .strip_prefix('V')
+            .or_else(|| s.strip_prefix('X'))
+            .unwrap_or(s);
+        let mut parts = s.split('.');
+        let major: u32 = parts.next()?.parse().ok()?;
+        let minor: u32 = parts
+            .next()
+            .and_then(|p| {
+                p.chars()
+                    .take_while(|c| c.is_ascii_digit())
+                    .collect::<String>()
+                    .parse::<u32>()
+                    .ok()
+            })
+            .unwrap_or(0);
+        Some((major, minor))
+    }
+    match (parse_version(fw), parse_version(min_ver)) {
+        (Some((fw_maj, fw_min)), Some((min_maj, min_min))) => {
+            (fw_maj, fw_min) >= (min_maj, min_min)
+        }
+        _ => false,
+    }
+}
+
 // Very small predicate support for conditionalRange / roundingPolicyWhen
 // MVP: support keys like "arg:keyIsValue:X" or "arg:keyPresent" or "arg:keyEmpty"
 fn predicate_matches(when: &str, args: &[crate::grammar::ast::ArgSlot]) -> bool {
     if let Some(rest) = when.strip_prefix("arg:") {
         if let Some((k, rhs)) = rest.split_once("IsValue:") {
-            return args
-                .iter()
-                .any(|a| a.key.as_deref() == Some(k) && a.value.as_deref() == Some(rhs));
+            let accepted: Vec<&str> = rhs.split('|').collect();
+            return args.iter().any(|a| {
+                a.key.as_deref() == Some(k)
+                    && a.value
+                        .as_deref()
+                        .is_some_and(|value| accepted.contains(&value))
+            });
         }
         if let Some(k) = rest.strip_suffix("Present") {
             return args.iter().any(|a| {
@@ -66,6 +259,42 @@ fn predicate_matches(when: &str, args: &[crate::grammar::ast::ArgSlot]) -> bool 
         }
     }
     false
+}
+
+fn evaluate_note_when_expression(
+    expression: &str,
+    args: &[crate::grammar::ast::ArgSlot],
+    label_codes: &HashSet<&str>,
+    profile: Option<&Profile>,
+) -> bool {
+    expression.split("||").any(|disjunction| {
+        disjunction.split("&&").all(|term| {
+            let token = term.trim();
+            if token.is_empty() {
+                return false;
+            }
+            let (negated, predicate) = if let Some(rest) = token.strip_prefix('!') {
+                (true, rest.trim())
+            } else {
+                (false, token)
+            };
+            let mut matches = if predicate.starts_with("arg:") {
+                predicate_matches(predicate, args)
+            } else if let Some(targets) = predicate.strip_prefix("label:has:") {
+                any_target_in_set(targets, label_codes)
+            } else if let Some(targets) = predicate.strip_prefix("label:missing:") {
+                !any_target_in_set(targets, label_codes)
+            } else if predicate.starts_with("profile:") {
+                profile_predicate_matches(predicate, profile)
+            } else {
+                false
+            };
+            if negated {
+                matches = !matches;
+            }
+            matches
+        })
+    })
 }
 
 /// Check if an enum value list contains a given value.
@@ -190,7 +419,10 @@ fn check_profile_op(value: f64, op: &ComparisonOp, limit: f64) -> bool {
 
 /// Check if any of the pipe-separated targets are present in a pre-built set (O(1) per target).
 fn any_target_in_set(targets: &str, seen: &HashSet<&str>) -> bool {
-    targets.split('|').any(|target| seen.contains(target))
+    targets
+        .split('|')
+        .map(str::trim)
+        .any(|target| !target.is_empty() && seen.contains(target))
 }
 
 // ─── Cross-command state tracking ───────────────────────────────────────────
@@ -305,7 +537,7 @@ impl FieldTracker {
         if cmd_ctx.cmd.opens_field {
             if self.open {
                 issues.push(
-                    Diagnostic::warn(
+                    diagnostic_with_spec_severity(
                         codes::FIELD_NOT_CLOSED,
                         format!(
                             "{} opens a new field before previous field was closed with ^FS",
@@ -327,7 +559,7 @@ impl FieldTracker {
 
         if (cmd_ctx.cmd.field_data || cmd_ctx.cmd.requires_field) && !self.open {
             issues.push(
-                Diagnostic::warn(
+                diagnostic_with_spec_severity(
                     codes::FIELD_DATA_WITHOUT_ORIGIN,
                     format!(
                         "{} without preceding field origin (no field origin)",
@@ -383,7 +615,7 @@ impl FieldTracker {
         // content validation since there's no valid field to validate.
         if !self.open {
             issues.push(
-                Diagnostic::warn(
+                diagnostic_with_spec_severity(
                     codes::ORPHANED_FIELD_SEPARATOR,
                     format!(
                         "{} without a preceding field origin (orphaned field separator)",
@@ -415,11 +647,15 @@ impl FieldTracker {
                 if let Some((content, dspan)) = content_and_span {
                     for err in crate::hex_escape::validate_hex_escapes(content, indicator) {
                         issues.push(
-                            Diagnostic::error(codes::INVALID_HEX_ESCAPE, err.message, dspan)
-                                .with_context(ctx!(
-                                    "command" => "^FH",
-                                    "indicator" => String::from(indicator as char)
-                                )),
+                            diagnostic_with_spec_severity(
+                                codes::INVALID_HEX_ESCAPE,
+                                err.message,
+                                dspan,
+                            )
+                            .with_context(ctx!(
+                                "command" => "^FH",
+                                "indicator" => String::from(indicator as char)
+                            )),
                         );
                     }
                 }
@@ -429,7 +665,7 @@ impl FieldTracker {
         // ZPL2306: Serialization without field number
         if self.has_serial && !self.has_fn {
             issues.push(
-                Diagnostic::warn(
+                diagnostic_with_spec_severity(
                     codes::SERIALIZATION_WITHOUT_FIELD_NUMBER,
                     "Serialization (^SN/^SF) in field without ^FN field number",
                     cmd_ctx.span,
@@ -582,27 +818,84 @@ fn validate_object_bounds(
     let overflows_x = fo_x + est_width > max_x;
     let overflows_y = fo_y + est_height > max_y;
     if overflows_x || overflows_y {
-        issues.push(
-            Diagnostic::warn(
+        let overflow_x = if overflows_x {
+            (fo_x + est_width - max_x).max(0.0)
+        } else {
+            0.0
+        };
+        let overflow_y = if overflows_y {
+            (fo_y + est_height - max_y).max(0.0)
+        } else {
+            0.0
+        };
+        let overflow_x_ratio = if max_x > 0.0 { overflow_x / max_x } else { 0.0 };
+        let overflow_y_ratio = if max_y > 0.0 { overflow_y / max_y } else { 0.0 };
+        let max_overflow_dots = overflow_x.max(overflow_y);
+        let max_overflow_ratio = overflow_x_ratio.max(overflow_y_ratio);
+        let low_confidence = max_overflow_dots <= OBJECT_BOUNDS_LOW_CONFIDENCE_MAX_OVERFLOW_DOTS
+            && max_overflow_ratio <= OBJECT_BOUNDS_LOW_CONFIDENCE_MAX_OVERFLOW_RATIO;
+        let severity = if low_confidence {
+            OBJECT_BOUNDS_LOW_CONFIDENCE_SEVERITY
+        } else {
+            Severity::Warn
+        };
+        let confidence = if low_confidence { "low" } else { "high" };
+        let x = trim_f64(fo_x);
+        let y = trim_f64(fo_y);
+        let label_width = trim_f64(max_x);
+        let label_height = trim_f64(max_y);
+        let message = if low_confidence {
+            render_diagnostic_message(
                 codes::OBJECT_BOUNDS_OVERFLOW,
+                "lowConfidence",
+                &[
+                    ("object_type", object_type.to_string()),
+                    ("x", x.clone()),
+                    ("y", y.clone()),
+                    ("label_width", label_width.clone()),
+                    ("label_height", label_height.clone()),
+                ],
                 format!(
-                    "{} at ({}, {}) extends beyond label bounds ({}×{} dots)",
-                    object_type,
-                    trim_f64(fo_x),
-                    trim_f64(fo_y),
-                    trim_f64(max_x),
-                    trim_f64(max_y)
+                    "{object_type} at ({x}, {y}) may extend beyond label bounds ({label_width}×{label_height} dots, estimated)"
                 ),
+            )
+        } else {
+            render_diagnostic_message(
+                codes::OBJECT_BOUNDS_OVERFLOW,
+                "highConfidence",
+                &[
+                    ("object_type", object_type.to_string()),
+                    ("x", x.clone()),
+                    ("y", y.clone()),
+                    ("label_width", label_width.clone()),
+                    ("label_height", label_height.clone()),
+                ],
+                format!(
+                    "{object_type} at ({x}, {y}) extends beyond label bounds ({label_width}×{label_height} dots)"
+                ),
+            )
+        };
+        issues.push(
+            Diagnostic::new(
+                codes::OBJECT_BOUNDS_OVERFLOW,
+                severity,
+                message,
                 cmd_ctx.span,
             )
             .with_context(ctx!(
                 "object_type" => object_type,
-                "x" => trim_f64(fo_x),
-                "y" => trim_f64(fo_y),
+                "x" => x,
+                "y" => y,
                 "estimated_width" => trim_f64(est_width),
                 "estimated_height" => trim_f64(est_height),
-                "label_width" => trim_f64(max_x),
-                "label_height" => trim_f64(max_y),
+                "label_width" => label_width,
+                "label_height" => label_height,
+                "overflow_x" => trim_f64(overflow_x),
+                "overflow_y" => trim_f64(overflow_y),
+                "overflow_x_ratio" => trim_f64(overflow_x_ratio),
+                "overflow_y_ratio" => trim_f64(overflow_y_ratio),
+                "confidence" => confidence,
+                "audience" => "problem",
             )),
         );
     }
@@ -619,23 +912,46 @@ fn validate_barcode_field_data(
     dspan: Option<Span>,
     issues: &mut Vec<Diagnostic>,
 ) {
+    let charset_severity = rules
+        .character_set_severity
+        .unwrap_or(zpl_toolchain_spec_tables::ConstraintSeverity::Error);
+    let length_severity = rules
+        .length_severity
+        .unwrap_or(zpl_toolchain_spec_tables::ConstraintSeverity::Warn);
+
     // Character set validation
     if let Some(charset) = &rules.character_set {
         for (i, ch) in fd_content.chars().enumerate() {
             if !char_in_set(ch, charset) {
-                issues.push(Diagnostic::error(
+                let position = i.to_string();
+                let message = render_diagnostic_message(
                     codes::BARCODE_INVALID_CHAR,
+                    "invalidChar",
+                    &[
+                        ("character", ch.to_string()),
+                        ("position", position.clone()),
+                        ("command", barcode_code.to_string()),
+                        ("allowedSet", charset.clone()),
+                    ],
                     format!(
                         "invalid character '{}' at position {} in {} field data (allowed: [{}])",
                         ch, i, barcode_code, charset
                     ),
-                    dspan,
-                ).with_context(ctx!(
-                    "command" => barcode_code,
-                    "character" => ch.to_string(),
-                    "position" => i.to_string(),
-                    "allowedSet" => charset.clone(),
-                )));
+                );
+                issues.push(
+                    diagnostic_with_constraint_severity(
+                        codes::BARCODE_INVALID_CHAR,
+                        charset_severity,
+                        message,
+                        dspan,
+                    )
+                    .with_context(ctx!(
+                        "command" => barcode_code,
+                        "character" => ch.to_string(),
+                        "position" => position,
+                        "allowedSet" => charset.clone(),
+                    )),
+                );
                 // Only report the first invalid character to avoid flooding
                 break;
             }
@@ -653,18 +969,30 @@ fn validate_barcode_field_data(
                 .map(|v| v.to_string())
                 .collect::<Vec<_>>()
                 .join(", ");
+            let actual = len.to_string();
+            let message = render_diagnostic_message(
+                codes::BARCODE_DATA_LENGTH,
+                "allowedLengths",
+                &[
+                    ("command", barcode_code.to_string()),
+                    ("actual", actual.clone()),
+                    ("expected", expected.clone()),
+                ],
+                format!(
+                    "{} field data length {} (expected one of [{}])",
+                    barcode_code, len, expected
+                ),
+            );
             issues.push(
-                Diagnostic::warn(
+                diagnostic_with_constraint_severity(
                     codes::BARCODE_DATA_LENGTH,
-                    format!(
-                        "{} field data length {} (expected one of [{}])",
-                        barcode_code, len, expected
-                    ),
+                    length_severity,
+                    message,
                     dspan,
                 )
                 .with_context(ctx!(
                     "command" => barcode_code,
-                    "actual" => len.to_string(),
+                    "actual" => actual,
                     "expected" => expected,
                 )),
             );
@@ -672,19 +1000,32 @@ fn validate_barcode_field_data(
     // exactLength takes precedence over min/max.
     } else if let Some(exact) = rules.exact_length {
         if len != exact {
+            let actual = len.to_string();
+            let expected = exact.to_string();
+            let message = render_diagnostic_message(
+                codes::BARCODE_DATA_LENGTH,
+                "exactLength",
+                &[
+                    ("command", barcode_code.to_string()),
+                    ("actual", actual.clone()),
+                    ("expected", expected.clone()),
+                ],
+                format!(
+                    "{} field data length {} (expected exactly {})",
+                    barcode_code, len, exact
+                ),
+            );
             issues.push(
-                Diagnostic::warn(
+                diagnostic_with_constraint_severity(
                     codes::BARCODE_DATA_LENGTH,
-                    format!(
-                        "{} field data length {} (expected exactly {})",
-                        barcode_code, len, exact
-                    ),
+                    length_severity,
+                    message,
                     dspan,
                 )
                 .with_context(ctx!(
                     "command" => barcode_code,
-                    "actual" => len.to_string(),
-                    "expected" => exact.to_string(),
+                    "actual" => actual,
+                    "expected" => expected,
                 )),
             );
         }
@@ -692,38 +1033,64 @@ fn validate_barcode_field_data(
         if let Some(min) = rules.min_length
             && len < min
         {
+            let actual = len.to_string();
+            let min = min.to_string();
+            let message = render_diagnostic_message(
+                codes::BARCODE_DATA_LENGTH,
+                "minLength",
+                &[
+                    ("command", barcode_code.to_string()),
+                    ("actual", actual.clone()),
+                    ("min", min.clone()),
+                ],
+                format!(
+                    "{} field data too short: {} chars (minimum {})",
+                    barcode_code, actual, min
+                ),
+            );
             issues.push(
-                Diagnostic::warn(
+                diagnostic_with_constraint_severity(
                     codes::BARCODE_DATA_LENGTH,
-                    format!(
-                        "{} field data too short: {} chars (minimum {})",
-                        barcode_code, len, min
-                    ),
+                    length_severity,
+                    message,
                     dspan,
                 )
                 .with_context(ctx!(
                     "command" => barcode_code,
-                    "actual" => len.to_string(),
-                    "min" => min.to_string(),
+                    "actual" => actual,
+                    "min" => min,
                 )),
             );
         }
         if let Some(max) = rules.max_length
             && len > max
         {
+            let actual = len.to_string();
+            let max = max.to_string();
+            let message = render_diagnostic_message(
+                codes::BARCODE_DATA_LENGTH,
+                "maxLength",
+                &[
+                    ("command", barcode_code.to_string()),
+                    ("actual", actual.clone()),
+                    ("max", max.clone()),
+                ],
+                format!(
+                    "{} field data too long: {} chars (maximum {})",
+                    barcode_code, actual, max
+                ),
+            );
             issues.push(
-                Diagnostic::warn(
+                diagnostic_with_constraint_severity(
                     codes::BARCODE_DATA_LENGTH,
-                    format!(
-                        "{} field data too long: {} chars (maximum {})",
-                        barcode_code, len, max
-                    ),
+                    length_severity,
+                    message,
                     dspan,
                 )
                 .with_context(ctx!(
                     "command" => barcode_code,
-                    "actual" => len.to_string(),
-                    "max" => max.to_string(),
+                    "actual" => actual,
+                    "max" => max,
                 )),
             );
         }
@@ -738,22 +1105,34 @@ fn validate_barcode_field_data(
             _ => true,
         };
         if !valid {
+            let actual = len.to_string();
+            let actual_parity = if even { "even" } else { "odd" }.to_string();
+            let message = render_diagnostic_message(
+                codes::BARCODE_DATA_LENGTH,
+                "parity",
+                &[
+                    ("command", barcode_code.to_string()),
+                    ("actual", actual.clone()),
+                    ("parity", parity.clone()),
+                    ("actualParity", actual_parity.clone()),
+                ],
+                format!(
+                    "{} field data length {} should be {} (got {})",
+                    barcode_code, len, parity, actual_parity
+                ),
+            );
             issues.push(
-                Diagnostic::warn(
+                diagnostic_with_constraint_severity(
                     codes::BARCODE_DATA_LENGTH,
-                    format!(
-                        "{} field data length {} should be {} (got {})",
-                        barcode_code,
-                        len,
-                        parity,
-                        if even { "even" } else { "odd" }
-                    ),
+                    length_severity,
+                    message,
                     dspan,
                 )
                 .with_context(ctx!(
                     "command" => barcode_code,
-                    "actual" => len.to_string(),
+                    "actual" => actual,
                     "parity" => parity.clone(),
+                    "actualParity" => actual_parity,
                 )),
             );
         }
@@ -866,7 +1245,7 @@ fn validate_arg_range(
 
         if effective_n < lo || effective_n > hi {
             issues.push(
-                Diagnostic::error(
+                diagnostic_with_spec_severity(
                     codes::OUT_OF_RANGE,
                     format!(
                         "{}.{} out of range [{},{}]",
@@ -901,7 +1280,7 @@ fn validate_arg_length(
         && (val.len() as u32) < minl
     {
         issues.push(
-            Diagnostic::error(
+            diagnostic_with_spec_severity(
                 codes::STRING_TOO_SHORT,
                 format!(
                     "{}.{} shorter than minLength {}",
@@ -922,7 +1301,7 @@ fn validate_arg_length(
         && (val.len() as u32) > maxl
     {
         issues.push(
-            Diagnostic::error(
+            diagnostic_with_spec_severity(
                 codes::STRING_TOO_LONG,
                 format!("{}.{} exceeds maxLength {}", cmd_ctx.code, lookup_key, maxl),
                 cmd_ctx.span,
@@ -948,13 +1327,16 @@ fn validate_arg_rounding(
 ) {
     let mut rp: Option<zpl_toolchain_spec_tables::RoundingPolicy> =
         spec_arg.rounding_policy.clone();
+    let mut epsilon = rp.as_ref().map(|policy| policy.epsilon).unwrap_or(1e-9);
     if let Some(rpw) = spec_arg.rounding_policy_when.as_ref() {
         for c in rpw {
             if predicate_matches(&c.when, cmd_ctx.args) {
+                epsilon = c.epsilon.unwrap_or(epsilon);
                 rp = Some(zpl_toolchain_spec_tables::RoundingPolicy {
                     unit: None,
                     mode: c.mode,
                     multiple: c.multiple,
+                    epsilon,
                 });
             }
         }
@@ -968,25 +1350,32 @@ fn validate_arg_rounding(
         // Both conditions needed: rem > ε catches non-multiples,
         // (1.0 - rem) > ε handles floating-point imprecision where
         // an exact multiple produces fract() ≈ 0.999999... instead of 0.0
-        if rem > 1e-9 && (1.0 - rem) > 1e-9 {
+        if rem > pol.epsilon && (1.0 - rem) > pol.epsilon {
+            let value = trim_f64(n);
+            let multiple = trim_f64(m);
+            let message = render_diagnostic_message(
+                codes::ROUNDING_VIOLATION,
+                "notMultiple",
+                &[
+                    ("command", cmd_ctx.code.to_string()),
+                    ("arg", lookup_key.to_string()),
+                    ("value", value.clone()),
+                    ("multiple", multiple.clone()),
+                ],
+                format!(
+                    "{}.{}={} not a multiple of {}",
+                    cmd_ctx.code, lookup_key, value, multiple
+                ),
+            );
             issues.push(
-                Diagnostic::warn(
-                    codes::ROUNDING_VIOLATION,
-                    format!(
-                        "{}.{}={} not a multiple of {}",
-                        cmd_ctx.code,
-                        lookup_key,
-                        trim_f64(n),
-                        trim_f64(m)
-                    ),
-                    cmd_ctx.span,
-                )
-                .with_context(ctx!(
-                    "command" => cmd_ctx.code,
-                    "arg" => lookup_key,
-                    "value" => val,
-                    "multiple" => trim_f64(m),
-                )),
+                diagnostic_with_spec_severity(codes::ROUNDING_VIOLATION, message, cmd_ctx.span)
+                    .with_context(ctx!(
+                        "command" => cmd_ctx.code,
+                        "arg" => lookup_key,
+                        "value" => val,
+                        "multiple" => multiple,
+                        "epsilon" => trim_f64(pol.epsilon),
+                    )),
             );
         }
     }
@@ -1030,7 +1419,7 @@ fn validate_arg_profile_constraint(
             ComparisonOp::Eq => "violates",
         };
         issues.push(
-            Diagnostic::error(
+            diagnostic_with_spec_severity(
                 codes::PROFILE_CONSTRAINT,
                 format!(
                     "{}.{} {} profile {} ({})",
@@ -1077,25 +1466,28 @@ fn validate_arg_enum_gates(
             {
                 for gate in gates {
                     if let Some(false) = zpl_toolchain_profile::resolve_gate(features, gate) {
-                        issues.push(Diagnostic::warn(
-                            codes::PRINTER_GATE,
-                            format!(
-                                "{}.{}={} requires '{}' capability not available in profile '{}'",
-                                cmd_ctx.code,
-                                lookup_key,
-                                val,
-                                gate,
-                                &p.id
-                            ),
-                            cmd_ctx.span,
-                        ).with_context(ctx!(
-                            "command" => cmd_ctx.code,
-                            "arg" => lookup_key,
-                            "value" => val,
-                            "gate" => gate.clone(),
-                            "level" => "enum",
-                            "profile" => &p.id,
-                        )));
+                        issues.push(
+                            diagnostic_with_spec_severity(
+                                codes::PRINTER_GATE,
+                                format!(
+                                    "{}.{}={} requires '{}' capability not available in profile '{}'",
+                                    cmd_ctx.code,
+                                    lookup_key,
+                                    val,
+                                    gate,
+                                    &p.id
+                                ),
+                                cmd_ctx.span,
+                            )
+                            .with_context(ctx!(
+                                "command" => cmd_ctx.code,
+                                "arg" => lookup_key,
+                                "value" => val,
+                                "gate" => gate.clone(),
+                                "level" => "enum",
+                                "profile" => &p.id,
+                            )),
+                        );
                     }
                 }
             }
@@ -1123,7 +1515,7 @@ fn validate_arg_value(
                 let ok = enum_contains(ev, val);
                 if !ok {
                     issues.push(
-                        Diagnostic::error(
+                        diagnostic_with_spec_severity(
                             codes::INVALID_ENUM,
                             format!("{}.{} invalid enum", cmd_ctx.code, lookup_key),
                             cmd_ctx.span,
@@ -1141,7 +1533,7 @@ fn validate_arg_value(
         "int" => {
             val.parse::<i64>().is_ok() || {
                 issues.push(
-                    Diagnostic::error(
+                    diagnostic_with_spec_severity(
                         codes::EXPECTED_INTEGER,
                         format!(
                             "{}.{} expected integer, got \"{}\"",
@@ -1161,7 +1553,7 @@ fn validate_arg_value(
         "float" => {
             val.parse::<f64>().is_ok() || {
                 issues.push(
-                    Diagnostic::error(
+                    diagnostic_with_spec_severity(
                         codes::EXPECTED_NUMERIC,
                         format!(
                             "{}.{} expected number, got \"{}\"",
@@ -1181,7 +1573,7 @@ fn validate_arg_value(
         "char" => {
             val.chars().count() == 1 || {
                 issues.push(
-                    Diagnostic::error(
+                    diagnostic_with_spec_severity(
                         codes::EXPECTED_CHAR,
                         format!(
                             "{}.{} expected single character, got \"{}\"",
@@ -1295,7 +1687,7 @@ fn validate_command_args(
             match slot_opt {
                 None if !has_any_default => {
                     issues.push(
-                        Diagnostic::error(
+                        diagnostic_with_spec_severity(
                             codes::REQUIRED_MISSING,
                             format!("{}.{} is required but missing", cmd_ctx.code, lookup_key),
                             cmd_ctx.span,
@@ -1309,7 +1701,7 @@ fn validate_command_args(
                 Some(slot) => {
                     if slot.presence == crate::grammar::ast::Presence::Unset && !has_any_default {
                         issues.push(
-                            Diagnostic::error(
+                            diagnostic_with_spec_severity(
                                 codes::REQUIRED_MISSING,
                                 format!("{}.{} is required but unset", cmd_ctx.code, lookup_key),
                                 cmd_ctx.span,
@@ -1323,7 +1715,7 @@ fn validate_command_args(
                         && !has_any_default
                     {
                         issues.push(
-                            Diagnostic::warn(
+                            diagnostic_with_spec_severity(
                                 codes::REQUIRED_EMPTY,
                                 format!("{}.{} is empty but required", cmd_ctx.code, lookup_key),
                                 cmd_ctx.span,
@@ -1364,6 +1756,11 @@ fn validate_command_constraints(
     let Some(constraints) = cmd_ctx.cmd.constraints.as_ref() else {
         return;
     };
+    let constraint_default_severity = cmd_ctx
+        .cmd
+        .constraint_defaults
+        .as_ref()
+        .and_then(|defaults| defaults.severity.as_ref());
 
     for c in constraints {
         match c.kind {
@@ -1390,7 +1787,7 @@ fn validate_command_constraints(
                             issues.push(
                                 Diagnostic::new(
                                     codes::ORDER_BEFORE,
-                                    map_sev(c.severity.as_ref()),
+                                    map_sev(c.severity.as_ref(), constraint_default_severity),
                                     c.message.clone(),
                                     cmd_ctx.span,
                                 )
@@ -1408,7 +1805,7 @@ fn validate_command_constraints(
                         issues.push(
                             Diagnostic::new(
                                 codes::ORDER_AFTER,
-                                map_sev(c.severity.as_ref()),
+                                map_sev(c.severity.as_ref(), constraint_default_severity),
                                 c.message.clone(),
                                 cmd_ctx.span,
                             )
@@ -1437,7 +1834,7 @@ fn validate_command_constraints(
                         issues.push(
                             Diagnostic::new(
                                 codes::REQUIRED_COMMAND,
-                                map_sev(c.severity.as_ref()),
+                                map_sev(c.severity.as_ref(), constraint_default_severity),
                                 c.message.clone(),
                                 cmd_ctx.span,
                             )
@@ -1466,7 +1863,7 @@ fn validate_command_constraints(
                         issues.push(
                             Diagnostic::new(
                                 codes::INCOMPATIBLE_COMMAND,
-                                map_sev(c.severity.as_ref()),
+                                map_sev(c.severity.as_ref(), constraint_default_severity),
                                 c.message.clone(),
                                 cmd_ctx.span,
                             )
@@ -1505,7 +1902,7 @@ fn validate_command_constraints(
                     issues.push(
                         Diagnostic::new(
                             codes::EMPTY_FIELD_DATA,
-                            map_sev(c.severity.as_ref()),
+                            map_sev(c.severity.as_ref(), constraint_default_severity),
                             c.message.clone(),
                             cmd_ctx.span,
                         )
@@ -1519,7 +1916,12 @@ fn validate_command_constraints(
                 // - before:first:<codes>
                 // - after:<codes>
                 // - before:<codes>
-                // where <codes> can be a single command or comma-separated list.
+                // - when:<predicate expression> where predicates can reference:
+                //   - arg:keyIsValue:V1|V2
+                //   - arg:keyPresent / arg:keyEmpty
+                //   - label:has:^CODE / label:missing:^CODE
+                //   Supports ! (not), &&, and ||.
+                // where <codes> can be a single command or pipe-separated list.
                 let should_emit = if let Some(expr) = c.expr.as_deref() {
                     let eval_scope = c.scope.unwrap_or_else(|| {
                         if cmd_ctx.cmd.scope == Some(CommandScope::Field) {
@@ -1542,6 +1944,13 @@ fn validate_command_constraints(
                         any_target_in_set(targets, seen_codes)
                     } else if let Some(targets) = expr.strip_prefix("before:") {
                         !any_target_in_set(targets, seen_codes)
+                    } else if let Some(condition) = expr.strip_prefix("when:") {
+                        evaluate_note_when_expression(
+                            condition.trim(),
+                            cmd_ctx.args,
+                            seen_codes,
+                            vctx.profile,
+                        )
                     } else {
                         true
                     }
@@ -1551,15 +1960,19 @@ fn validate_command_constraints(
                 if !should_emit {
                     continue;
                 }
-                issues.push(
-                    Diagnostic::new(
-                        codes::NOTE,
-                        map_sev(c.severity.as_ref()),
-                        c.message.clone(),
-                        cmd_ctx.span,
-                    )
-                    .with_context(ctx!("command" => cmd_ctx.code)),
-                );
+                let mut diagnostic = Diagnostic::new(
+                    codes::NOTE,
+                    map_sev(c.severity.as_ref(), constraint_default_severity),
+                    c.message.clone(),
+                    cmd_ctx.span,
+                )
+                .with_context(ctx!("command" => cmd_ctx.code));
+                if matches!(c.audience, Some(NoteAudience::Contextual))
+                    && let Some(context) = diagnostic.context.as_mut()
+                {
+                    context.insert("audience".to_string(), "contextual".to_string());
+                }
+                issues.push(diagnostic);
             }
             // Range constraints are a future extension point — currently, range
             // validation is handled through `args[].range` on each Arg definition.
@@ -1584,7 +1997,7 @@ fn validate_field_number(
     {
         if let Some(&first_idx) = label_state.field_numbers.get(n) {
             issues.push(
-                Diagnostic::warn(
+                diagnostic_with_spec_severity(
                     codes::DUPLICATE_FIELD_NUMBER,
                     format!(
                         "Duplicate field number {} (first used at node {})",
@@ -1677,7 +2090,7 @@ fn validate_position_bounds(
         && fo_x > w
     {
         issues.push(
-            Diagnostic::warn(
+            diagnostic_with_spec_severity(
                 codes::POSITION_OUT_OF_BOUNDS,
                 format!(
                     "{} x position {} exceeds label width {}",
@@ -1699,7 +2112,7 @@ fn validate_position_bounds(
         && fo_y > h
     {
         issues.push(
-            Diagnostic::warn(
+            diagnostic_with_spec_severity(
                 codes::POSITION_OUT_OF_BOUNDS,
                 format!(
                     "{} y position {} exceeds label height {}",
@@ -1734,11 +2147,17 @@ fn validate_font_reference(
         let is_builtin = font_char.is_ascii_uppercase() || font_char.is_ascii_digit();
         let is_loaded = label_state.loaded_fonts.contains(&font_char);
         if !is_builtin && !is_loaded {
-            issues.push(Diagnostic::warn(
-                codes::UNKNOWN_FONT,
-                format!("^A font '{}' is not a built-in font (A-Z, 0-9) and has not been loaded via ^CW", font_char),
-                cmd_ctx.span,
-            ).with_context(ctx!("command" => cmd_ctx.code, "font" => font_char.to_string())));
+            issues.push(
+                diagnostic_with_spec_severity(
+                    codes::UNKNOWN_FONT,
+                    format!(
+                        "^A font '{}' is not a built-in font (A-Z, 0-9) and has not been loaded via ^CW",
+                        font_char
+                    ),
+                    cmd_ctx.span,
+                )
+                .with_context(ctx!("command" => cmd_ctx.code, "font" => font_char.to_string())),
+            );
         }
     }
 
@@ -1769,7 +2188,7 @@ fn validate_media_modes(
         && !modes.iter().any(|m| m == val)
     {
         issues.push(
-            Diagnostic::warn(
+            diagnostic_with_spec_severity(
                 codes::MEDIA_MODE_UNSUPPORTED,
                 format!(
                     "^MM mode '{}' is not in profile's supported_modes {:?}",
@@ -1798,7 +2217,7 @@ fn validate_media_modes(
         && !tracking.iter().any(|t| t == val)
     {
         issues.push(
-            Diagnostic::warn(
+            diagnostic_with_spec_severity(
                 codes::MEDIA_MODE_UNSUPPORTED,
                 format!(
                     "^MN tracking mode '{}' is not in profile's supported_tracking {:?}",
@@ -1831,7 +2250,7 @@ fn validate_media_modes(
         };
         if !compatible {
             issues.push(
-                Diagnostic::warn(
+                diagnostic_with_spec_severity(
                     codes::MEDIA_MODE_UNSUPPORTED,
                     format!(
                         "^MT media type '{}' conflicts with profile print method '{:?}'",
@@ -1929,20 +2348,23 @@ fn validate_gf_data_length(
         };
 
         if let Some((actual_len, expected_len, fmt)) = mismatch {
-            issues.push(Diagnostic::error(
-                codes::GF_DATA_LENGTH_MISMATCH,
-                format!(
-                    "^GF data length mismatch: declared {} bytes ({}), but data is {} chars (expected {})",
-                    declared, fmt, actual_len, expected_len
-                ),
-                cmd_ctx.span,
-            ).with_context(ctx!(
-                "command" => cmd_ctx.code,
-                "format" => compression,
-                "declared" => declared.to_string(),
-                "actual" => actual_len.to_string(),
-                "expected" => expected_len.to_string(),
-            )));
+            issues.push(
+                diagnostic_with_spec_severity(
+                    codes::GF_DATA_LENGTH_MISMATCH,
+                    format!(
+                        "^GF data length mismatch: declared {} bytes ({}), but data is {} chars (expected {})",
+                        declared, fmt, actual_len, expected_len
+                    ),
+                    cmd_ctx.span,
+                )
+                .with_context(ctx!(
+                    "command" => cmd_ctx.code,
+                    "format" => compression,
+                    "declared" => declared.to_string(),
+                    "actual" => actual_len.to_string(),
+                    "expected" => expected_len.to_string(),
+                )),
+            );
         }
     }
 }
@@ -2010,7 +2432,7 @@ fn validate_gf_preflight_tracking(
                     let ew = max_x.map_or("?".to_string(), trim_f64);
                     let eh = max_y.map_or("?".to_string(), trim_f64);
                     issues.push(
-                        Diagnostic::warn(
+                        diagnostic_with_spec_severity(
                             codes::GF_BOUNDS_OVERFLOW,
                             format!(
                                 "Graphic field at ({}, {}) extends beyond label bounds ({}×{} dots)",
@@ -2099,7 +2521,7 @@ fn validate_preflight(
         let ram_bytes = ram_kb as u64 * 1024;
         if label_state.gf_total_bytes as u64 > ram_bytes {
             issues.push(
-                Diagnostic::warn(
+                diagnostic_with_spec_severity(
                     codes::GF_MEMORY_EXCEEDED,
                     format!(
                         "Total graphic data ({} bytes) exceeds available RAM ({} bytes / {} KB)",
@@ -2134,7 +2556,7 @@ fn validate_preflight(
             if !missing.is_empty() {
                 let missing_str = missing.join(", ");
                 issues.push(
-                    Diagnostic::info(
+                    diagnostic_with_spec_severity(
                         codes::MISSING_EXPLICIT_DIMENSIONS,
                         format!(
                             "Label relies on profile for dimensions but does not contain explicit {} — consider adding for portability",
@@ -2262,14 +2684,17 @@ pub fn validate_with_profile(
                         && let Some(&consumed) = label_state.producer_consumed.get(producer_key)
                         && !consumed
                     {
-                        issues.push(Diagnostic::info(
-                            codes::REDUNDANT_STATE,
-                            format!(
-                                "{} overrides a previous {} without any command consuming the earlier value",
-                                code, producer_key
-                            ),
-                            dspan,
-                        ).with_context(ctx!("command" => code, "producer" => producer_key)));
+                        issues.push(
+                            diagnostic_with_spec_severity(
+                                codes::REDUNDANT_STATE,
+                                format!(
+                                    "{} overrides a previous {} without any command consuming the earlier value",
+                                    code, producer_key
+                                ),
+                                dspan,
+                            )
+                            .with_context(ctx!("command" => code, "producer" => producer_key)),
+                        );
                     }
 
                     // Record state effects before validation so later commands can reference
@@ -2282,7 +2707,7 @@ pub fn validate_with_profile(
 
                     if !cmd.field_data && (args.len() as u32) > cmd.arity {
                         issues.push(
-                            Diagnostic::error(
+                            diagnostic_with_spec_severity(
                                 codes::ARITY,
                                 format!(
                                     "{} has too many arguments ({}>{})",
@@ -2334,17 +2759,22 @@ pub fn validate_with_profile(
                         for gate in gates {
                             if let Some(false) = zpl_toolchain_profile::resolve_gate(features, gate)
                             {
-                                issues.push(Diagnostic::error(
-                                    codes::PRINTER_GATE,
-                                    format!("{} requires '{}' capability not available in profile '{}'",
-                                        code, gate, &p.id),
-                                    dspan,
-                                ).with_context(ctx!(
-                                    "command" => code,
-                                    "gate" => gate.clone(),
-                                    "level" => "command",
-                                    "profile" => &p.id,
-                                )));
+                                issues.push(
+                                    diagnostic_with_spec_severity(
+                                        codes::PRINTER_GATE,
+                                        format!(
+                                            "{} requires '{}' capability not available in profile '{}'",
+                                            code, gate, &p.id
+                                        ),
+                                        dspan,
+                                    )
+                                    .with_context(ctx!(
+                                        "command" => code,
+                                        "gate" => gate.clone(),
+                                        "level" => "command",
+                                        "profile" => &p.id,
+                                    )),
+                                );
                             }
                         }
                     }
@@ -2366,7 +2796,7 @@ pub fn validate_with_profile(
                             None => "unknown",
                         };
                         issues.push(
-                            Diagnostic::warn(
+                            diagnostic_with_spec_severity(
                                 codes::HOST_COMMAND_IN_LABEL,
                                 format!("{} should not appear inside a label (^XA/^XZ)", code),
                                 dspan,
@@ -2389,7 +2819,7 @@ pub fn validate_with_profile(
                             None => "unknown",
                         };
                         issues.push(
-                            Diagnostic::warn(
+                            diagnostic_with_spec_severity(
                                 codes::HOST_COMMAND_IN_LABEL,
                                 format!("{} should not appear outside a label (^XA/^XZ)", code),
                                 dspan,
@@ -2439,9 +2869,9 @@ pub fn validate_with_profile(
                     None
                 }
             });
-            let mut diag = Diagnostic::warn(
+            let mut diag = diagnostic_with_spec_severity(
                 codes::FIELD_NOT_CLOSED,
-                "field opened but never closed with ^FS before end of label".to_string(),
+                "field opened but never closed with ^FS before end of label",
                 dspan,
             );
             if let Some(crate::grammar::ast::Node::Command { code, .. }) =
@@ -2485,7 +2915,7 @@ pub fn validate_with_profile(
                     None
                 }
             });
-            issues.push(Diagnostic::info(
+            issues.push(diagnostic_with_spec_severity(
                 codes::EMPTY_LABEL,
                 "Empty label (no commands between ^XA and ^XZ)",
                 dspan,
@@ -2504,4 +2934,128 @@ pub fn validate_with_profile(
 /// Validate a ZPL AST without a printer profile.
 pub fn validate(ast: &Ast, tables: &ParserTables) -> ValidationResult {
     validate_with_profile(ast, tables, None)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use zpl_toolchain_profile::{Features, Memory, Profile};
+
+    #[test]
+    fn profile_predicate_id_matches() {
+        let p = Profile {
+            id: "zebra-xi4-203".into(),
+            schema_version: "1.0".into(),
+            dpi: 203,
+            page: None,
+            speed_range: None,
+            darkness_range: None,
+            features: None,
+            media: None,
+            memory: None,
+        };
+        assert!(profile_predicate_matches(
+            "profile:id:zebra-xi4-203",
+            Some(&p)
+        ));
+        assert!(profile_predicate_matches(
+            "profile:id:zebra-xi4-203|other",
+            Some(&p)
+        ));
+        assert!(!profile_predicate_matches("profile:id:other-id", Some(&p)));
+        assert!(!profile_predicate_matches("profile:id:zebra-xi4-203", None));
+    }
+
+    #[test]
+    fn profile_predicate_dpi_matches() {
+        let p = Profile {
+            id: "test".into(),
+            schema_version: "1.0".into(),
+            dpi: 600,
+            page: None,
+            speed_range: None,
+            darkness_range: None,
+            features: None,
+            media: None,
+            memory: None,
+        };
+        assert!(profile_predicate_matches("profile:dpi:600", Some(&p)));
+        assert!(profile_predicate_matches("profile:dpi:203|600", Some(&p)));
+        assert!(!profile_predicate_matches("profile:dpi:203", Some(&p)));
+    }
+
+    #[test]
+    fn profile_predicate_feature_matches() {
+        let p = Profile {
+            id: "test".into(),
+            schema_version: "1.0".into(),
+            dpi: 203,
+            page: None,
+            speed_range: None,
+            darkness_range: None,
+            features: Some(Features {
+                cutter: Some(true),
+                rfid: Some(false),
+                ..Default::default()
+            }),
+            media: None,
+            memory: None,
+        };
+        assert!(profile_predicate_matches(
+            "profile:feature:cutter",
+            Some(&p)
+        ));
+        assert!(profile_predicate_matches(
+            "profile:featureMissing:rfid",
+            Some(&p)
+        ));
+        assert!(!profile_predicate_matches("profile:feature:rfid", Some(&p)));
+        assert!(!profile_predicate_matches(
+            "profile:featureMissing:cutter",
+            Some(&p)
+        ));
+    }
+
+    #[test]
+    fn profile_predicate_firmware_prefix() {
+        let p = Profile {
+            id: "test".into(),
+            schema_version: "1.0".into(),
+            dpi: 203,
+            page: None,
+            speed_range: None,
+            darkness_range: None,
+            features: None,
+            media: None,
+            memory: Some(Memory {
+                ram_kb: None,
+                flash_kb: None,
+                firmware_version: Some("V60.19.15Z".into()),
+            }),
+        };
+        assert!(profile_predicate_matches("profile:firmware:V60", Some(&p)));
+        assert!(profile_predicate_matches(
+            "profile:firmware:V60.19",
+            Some(&p)
+        ));
+        assert!(!profile_predicate_matches("profile:firmware:V50", Some(&p)));
+    }
+
+    #[test]
+    fn firmware_version_gte_ordering() {
+        assert!(firmware_version_gte("V60.19.15Z", "V60.14"));
+        assert!(firmware_version_gte("V60.19.15Z", "V60.19"));
+        assert!(firmware_version_gte("V60.14.0", "V60.14"));
+        assert!(!firmware_version_gte("V60.13.9", "V60.14"));
+        assert!(!firmware_version_gte("V50.20.0", "V60.14"));
+        assert!(firmware_version_gte("X60.16.0", "V60.16"));
+    }
+
+    #[test]
+    fn any_target_in_set_trims_whitespace() {
+        let seen = HashSet::from(["^FD", "^FV"]);
+        assert!(any_target_in_set("^FD | ^FO", &seen));
+        assert!(any_target_in_set(" ^FV ", &seen));
+        assert!(!any_target_in_set(" | ", &seen));
+    }
 }

@@ -18,7 +18,12 @@
       ],
       "effects": { "sets": ["rtc.displayFormat"] },
       "constraints": [
-        { "kind": "note", "message": "If Real-Time Clock hardware is not present, Display Mode is forced to 0 (Version Number). If Display Mode is 0 and RTC hardware is present, config label and control panel use format 1." }
+        {
+          "kind": "note",
+          "severity": "info",
+          "audience": "contextual",
+          "message": "Without Real-Time Clock hardware, Display Mode is forced to 0 (Version Number). With Display Mode 0 and RTC hardware present, config label and control panel use format 1."
+        }
       ],
       "docs": "Selects the format for the Real-Time Clock date and time display on configuration labels and the control panel."
     }

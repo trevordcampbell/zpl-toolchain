@@ -4,7 +4,7 @@ Thanks for your interest in contributing to zpl-toolchain! This project is dual-
 
 ## Development setup
 
-1. Install Rust (2024 edition, 1.90.0+) and `cargo-nextest`:
+1. Install Rust (2024 edition, 1.93.0+) and `cargo-nextest`:
    ```bash
    cargo install --locked cargo-nextest
    ```
@@ -32,7 +32,14 @@ Thanks for your interest in contributing to zpl-toolchain! This project is dual-
    cargo nextest run --workspace --exclude zpl_toolchain_wasm
 
    # TypeScript print package
-   (cd packages/ts/print && npm install && npm run build && npm test)
+   (cd packages/ts/print && npm ci && npm run build && npm test)
+
+   # VS Code extension package
+   (cd packages/vscode-extension && npm ci && npm run test:ci && npm run package:vsix)
+
+   # Optional bindings checks (when Go/.NET SDKs are installed locally)
+   bash scripts/test-go-local.sh
+   bash scripts/test-dotnet-local.sh
    ```
 
    > See [`docs/TESTING.md`](docs/TESTING.md) for the full testing guide, including

@@ -25,6 +25,8 @@ __pycache__/
 dist/
 *.egg-info/
 .venv-python-wheel-tests/
+.venv-tools/
+.venv/
 
 # Node / TypeScript
 node_modules/
@@ -58,3 +60,10 @@ z.plan.md
 *.tmp
 *.temp
 *.tmp-cache
+
+# local tool/cache dirs (hook/runtime refresh helpers)
+.tmp/
+.cargo-home/
+
+# VS Code extension test runtime downloads
+**/.vscode-test/

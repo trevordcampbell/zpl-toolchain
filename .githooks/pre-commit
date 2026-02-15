@@ -57,3 +57,30 @@ if [ "$rust_changes" -eq 1 ]; then
         exit 1
     fi
 fi
+
+extension_changes=0
+while IFS= read -r path; do
+    case "$path" in
+        packages/vscode-extension/*)
+            extension_changes=1
+            break
+            ;;
+    esac
+done < <(git diff --cached --name-only --diff-filter=ACMR)
+
+if [ "$extension_changes" -eq 1 ]; then
+    if ! command -v npm &>/dev/null; then
+        echo ""
+        echo "  npm is required to validate vscode-extension changes."
+        echo ""
+        exit 1
+    fi
+
+    echo "pre-commit: running vscode-extension typecheck..."
+    if ! (cd packages/vscode-extension && npm run typecheck); then
+        echo ""
+        echo "  VS Code extension type-check failed. Fix errors before committing."
+        echo ""
+        exit 1
+    fi
+fi

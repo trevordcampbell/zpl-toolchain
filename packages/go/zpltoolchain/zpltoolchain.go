@@ -11,6 +11,12 @@ extern char* zpl_parse_with_tables(const char* input, const char* tables_json);
 extern char* zpl_validate(const char* input, const char* profile_json);
 extern char* zpl_validate_with_tables(const char* input, const char* tables_json, const char* profile_json);
 extern char* zpl_format(const char* input, const char* indent);
+extern char* zpl_format_with_options(const char* input, const char* indent, const char* compaction);
+extern char* zpl_format_with_options_v2(const char* input, const char* indent, const char* compaction, const char* comment_placement);
+char* zpl_format_with_options_bridge(const char* input, const char* indent, const char* compaction, const char* comment_placement);
+char* zpl_format_with_options_bridge(const char* input, const char* indent, const char* compaction, const char* comment_placement) {
+	return zpl_format_with_options_v2(input, indent, compaction, comment_placement);
+}
 extern char* zpl_explain(const char* id);
 extern char* zpl_print_with_options(const char* zpl, const char* printer_addr, const char* profile_json, _Bool validate, unsigned long long timeout_ms, const char* config_json);
 extern char* zpl_query_status_with_options(const char* printer_addr, unsigned long long timeout_ms, const char* config_json);
@@ -153,6 +159,21 @@ func ValidateWithTables(input string, tablesJSON string, profileJSON string) (*V
 // Format formats a ZPL string with the specified indentation style.
 // indent can be "none", "label", or "field" (pass "" for default "none").
 func Format(input string, indent string) (string, error) {
+	return FormatWithOptions(input, indent, "")
+}
+
+// FormatWithOptions formats a ZPL string with indentation and compaction options.
+// indent can be "none", "label", or "field" (pass "" for default "none").
+// compaction can be "none" or "field" (pass "" for default "none").
+func FormatWithOptions(input string, indent string, compaction string) (string, error) {
+	return FormatWithOptionsEx(input, indent, compaction, "")
+}
+
+// FormatWithOptionsEx formats a ZPL string with indentation, compaction, and comment-placement options.
+// indent can be "none", "label", or "field" (pass "" for default "none").
+// compaction can be "none" or "field" (pass "" for default "none").
+// commentPlacement can be "inline" or "line" (pass "" for default "inline").
+func FormatWithOptionsEx(input string, indent string, compaction string, commentPlacement string) (string, error) {
 	cInput := C.CString(input)
 	defer C.free(unsafe.Pointer(cInput))
 
@@ -162,15 +183,27 @@ func Format(input string, indent string) (string, error) {
 		defer C.free(unsafe.Pointer(cIndent))
 	}
 
-	cResult := C.zpl_format(cInput, cIndent)
+	var cCompaction *C.char
+	if compaction != "" {
+		cCompaction = C.CString(compaction)
+		defer C.free(unsafe.Pointer(cCompaction))
+	}
+
+	var cCommentPlacement *C.char
+	if commentPlacement != "" {
+		cCommentPlacement = C.CString(commentPlacement)
+		defer C.free(unsafe.Pointer(cCommentPlacement))
+	}
+
+	cResult := C.zpl_format_with_options_bridge(cInput, cIndent, cCompaction, cCommentPlacement)
 	if cResult == nil {
-		return "", fmt.Errorf("zpl_format returned NULL")
+		return "", fmt.Errorf("zpl_format_with_options_bridge returned NULL")
 	}
 	defer C.zpl_free(cResult)
 
 	formatted := C.GoString(cResult)
 	if err := checkFFIError(formatted); err != nil {
-		return "", fmt.Errorf("zpl_format: %w", err)
+		return "", fmt.Errorf("zpl_format_with_options_bridge: %w", err)
 	}
 	return formatted, nil
 }

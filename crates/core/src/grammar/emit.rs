@@ -9,7 +9,7 @@ use std::borrow::Cow;
 
 use crate::grammar::ast::{ArgSlot, Ast, Label, Node, Presence};
 use zpl_toolchain_diagnostics::Span;
-use zpl_toolchain_spec_tables::ParserTables;
+use zpl_toolchain_spec_tables::{CommandCategory, CommandScope, ParserTables};
 
 // ── Configuration ───────────────────────────────────────────────────────
 
@@ -26,11 +26,35 @@ pub enum Indent {
     Field,
 }
 
+/// Optional formatter compaction mode.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Compaction {
+    /// No compaction; keep one command per line.
+    #[default]
+    None,
+    /// Compact printable field blocks onto one line while keeping setup/global flow expanded.
+    Field,
+}
+
+/// Placement style for semicolon comments.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum CommentPlacement {
+    /// Keep semicolon comments inline with the preceding command when safe.
+    #[default]
+    Inline,
+    /// Preserve one-comment-per-line output.
+    Line,
+}
+
 /// Configuration for the ZPL emitter.
 #[derive(Debug, Clone, Default)]
 pub struct EmitConfig {
     /// Indentation style.
     pub indent: Indent,
+    /// Optional compaction mode.
+    pub compaction: Compaction,
+    /// Semicolon comment placement mode.
+    pub comment_placement: CommentPlacement,
 }
 
 // ── Public API ──────────────────────────────────────────────────────────
@@ -45,7 +69,16 @@ pub fn emit_zpl(ast: &Ast, tables: Option<&ParserTables>, config: &EmitConfig) -
     for label in &ast.labels {
         emit_label(&mut out, label, tables, config);
     }
-    out
+    let compacted = if matches!(config.compaction, Compaction::Field) {
+        compact_printable_fields(&out, tables)
+    } else {
+        out
+    };
+    if matches!(config.comment_placement, CommentPlacement::Inline) {
+        inline_semicolon_comments(&compacted)
+    } else {
+        compacted
+    }
 }
 
 // ── Label emission ──────────────────────────────────────────────────────
@@ -299,6 +332,246 @@ fn trim_trailing_newline(out: &mut String) {
     if out.ends_with('\n') {
         out.truncate(out.len() - 1);
     }
+}
+
+fn compact_printable_fields(formatted: &str, tables: Option<&ParserTables>) -> String {
+    let mut output: Vec<String> = Vec::new();
+    let mut field_lines: Vec<String> = Vec::new();
+
+    for raw_line in formatted.lines() {
+        let trimmed = raw_line.trim();
+        if trimmed.is_empty() {
+            continue;
+        }
+        let opcode = detect_opcode(trimmed);
+        if !field_lines.is_empty() {
+            match opcode.as_deref() {
+                Some("FS") => {
+                    field_lines.push(raw_line.to_string());
+                    flush_field_block(&mut output, &mut field_lines, tables);
+                    continue;
+                }
+                Some(op) if !is_compactable_field_block_opcode(op, tables) => {
+                    // Prevent invalid compaction when a non-field command appears mid-field block.
+                    flush_field_block(&mut output, &mut field_lines, tables);
+                }
+                _ => {
+                    field_lines.push(raw_line.to_string());
+                    continue;
+                }
+            }
+        }
+
+        if matches!(opcode.as_deref(), Some("FO" | "FT" | "FM" | "FN")) {
+            field_lines.push(raw_line.to_string());
+            continue;
+        }
+        output.push(raw_line.to_string());
+    }
+
+    flush_field_block(&mut output, &mut field_lines, tables);
+
+    let mut result = output.join("\n");
+    result.push('\n');
+    result
+}
+
+fn flush_field_block(
+    output: &mut Vec<String>,
+    field_lines: &mut Vec<String>,
+    tables: Option<&ParserTables>,
+) {
+    if field_lines.is_empty() {
+        return;
+    }
+    if field_block_is_printable(field_lines, tables) {
+        output.push(compact_field_block(field_lines));
+    } else {
+        output.extend(field_lines.iter().cloned());
+    }
+    field_lines.clear();
+}
+
+fn inline_semicolon_comments(formatted: &str) -> String {
+    if formatted.is_empty() {
+        return String::new();
+    }
+
+    let has_trailing_newline = formatted.ends_with('\n');
+    let mut lines: Vec<&str> = formatted.lines().collect();
+    if lines.is_empty() {
+        return formatted.to_string();
+    }
+    if has_trailing_newline && formatted.trim().is_empty() {
+        return formatted.to_string();
+    }
+
+    let mut output: Vec<String> = Vec::with_capacity(lines.len());
+    for line in lines.drain(..) {
+        let trimmed_start = line.trim_start();
+        let is_comment_only = trimmed_start.starts_with(';');
+        if !is_comment_only {
+            output.push(line.to_string());
+            continue;
+        }
+        if output.is_empty() {
+            output.push(line.to_string());
+            continue;
+        }
+
+        let prev_index = output
+            .iter()
+            .rposition(|existing| !existing.trim().is_empty());
+        let Some(prev_index) = prev_index else {
+            output.push(line.to_string());
+            continue;
+        };
+
+        if output[prev_index].trim_start().starts_with(';') {
+            output.push(line.to_string());
+            continue;
+        }
+
+        let previous = output[prev_index].trim_end().to_string();
+        output[prev_index] = format!("{previous} {trimmed_start}");
+    }
+
+    let mut rebuilt = output.join("\n");
+    if has_trailing_newline {
+        rebuilt.push('\n');
+    }
+    rebuilt
+}
+
+fn compact_field_block(lines: &[String]) -> String {
+    let first = lines.first().map_or("", String::as_str);
+    let indent_len = first
+        .char_indices()
+        .find_map(|(idx, ch)| (!ch.is_whitespace()).then_some(idx))
+        .unwrap_or(first.len());
+    let indent = &first[..indent_len];
+    let compacted = lines
+        .iter()
+        .map(|line| line.trim())
+        .collect::<Vec<_>>()
+        .join("");
+    format!("{indent}{compacted}")
+}
+
+fn detect_opcode(line: &str) -> Option<String> {
+    let mut chars = line.chars();
+    let leader = chars.next()?;
+    if !(leader == '^' || leader == '~') {
+        return None;
+    }
+    let c1 = chars.next()?;
+    if !c1.is_ascii_alphanumeric() && c1 != '@' {
+        return None;
+    }
+    let mut opcode = String::new();
+    opcode.push(c1.to_ascii_uppercase());
+    if let Some(c2) = chars.next()
+        && (c2.is_ascii_alphanumeric() || c2 == '@')
+    {
+        opcode.push(c2.to_ascii_uppercase());
+    }
+    Some(opcode)
+}
+
+fn field_block_is_printable(lines: &[String], tables: Option<&ParserTables>) -> bool {
+    lines
+        .iter()
+        .filter_map(|line| detect_opcode(line.trim()))
+        .any(|op| {
+            if matches!(op.as_str(), "FD" | "FV" | "XG" | "TB") {
+                return true;
+            }
+            if let Some(category) = lookup_command_category(tables, &op) {
+                return matches!(
+                    category,
+                    CommandCategory::Text
+                        | CommandCategory::Barcode
+                        | CommandCategory::Graphics
+                        | CommandCategory::Rfid
+                );
+            }
+            op.starts_with('A') || op.starts_with('B') || op.starts_with('G')
+        })
+}
+
+fn is_field_scoped_opcode(opcode: &str, tables: Option<&ParserTables>) -> bool {
+    if opcode == "FS" {
+        return true;
+    }
+    if let Some(scope) = lookup_command_scope(tables, opcode) {
+        return scope == CommandScope::Field;
+    }
+    matches!(
+        opcode,
+        "FO" | "FT"
+            | "FM"
+            | "FN"
+            | "FD"
+            | "FV"
+            | "FH"
+            | "FR"
+            | "FP"
+            | "FB"
+            | "FC"
+            | "FE"
+            | "FS"
+            | "SN"
+            | "SF"
+            | "TB"
+            | "XG"
+    ) || opcode.starts_with('A')
+        || opcode.starts_with('B')
+        || opcode.starts_with('G')
+}
+
+fn is_compactable_field_block_opcode(opcode: &str, tables: Option<&ParserTables>) -> bool {
+    if is_field_scoped_opcode(opcode, tables) {
+        return true;
+    }
+    // Some printable flow commands (for example ^BY) are label-scoped in the
+    // schema but are still commonly authored inside an active field block.
+    // Keep them within the compactable block if they belong to printable categories.
+    if let Some(category) = lookup_command_category(tables, opcode) {
+        return matches!(
+            category,
+            CommandCategory::Text
+                | CommandCategory::Barcode
+                | CommandCategory::Graphics
+                | CommandCategory::Rfid
+        );
+    }
+    opcode.starts_with('A') || opcode.starts_with('B') || opcode.starts_with('G')
+}
+
+fn lookup_command_scope(tables: Option<&ParserTables>, opcode: &str) -> Option<CommandScope> {
+    let tables = tables?;
+    for leader in ['^', '~'] {
+        let code = format!("{leader}{opcode}");
+        if let Some(entry) = tables.cmd_by_code(&code)
+            && let Some(scope) = entry.scope
+        {
+            return Some(scope);
+        }
+    }
+    None
+}
+
+fn lookup_command_category(tables: Option<&ParserTables>, opcode: &str) -> Option<CommandCategory> {
+    let tables = tables?;
+    for leader in ['^', '~'] {
+        let code = format!("{leader}{opcode}");
+        if let Some(entry) = tables.cmd_by_code(&code)
+            && let Some(category) = entry.category
+        {
+            return Some(category);
+        }
+    }
+    None
 }
 
 // ── Prefix helpers ──────────────────────────────────────────────────────

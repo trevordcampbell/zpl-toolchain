@@ -1,5 +1,7 @@
 # zpl-toolchain
 
+![ZPL Toolchain logo](https://raw.githubusercontent.com/trevordcampbell/zpl-toolchain/main/docs/assets/branding/logo-square-128.png)
+
 Python bindings for the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) — a spec-first, offline, deterministic ZPL II toolchain for parsing, validating, formatting, and printing Zebra Programming Language files.
 
 Built with Rust for performance, exposed to Python via [PyO3](https://pyo3.rs/).
@@ -31,6 +33,9 @@ print(f"Valid with tables: {validation2['ok']}")
 
 # Format ZPL
 formatted = zpl_toolchain.format("^XA^FD Hello ^FS^XZ", "label")
+
+# Format with field compaction
+compact = zpl_toolchain.format("^XA^FO30,30^A0N,30,30^FDHello^FS^XZ", "none", "field", "inline")
 print(formatted)
 
 # Explain a diagnostic code
@@ -99,7 +104,7 @@ result = zpl_toolchain.print_zpl_with_options(
 | `parse_with_tables` | `(input: str, tables_json: str) -> dict` | Parse with explicit parser tables |
 | `validate` | `(input: str, profile_json: str? = None) -> dict` | Parse + validate (optional profile) |
 | `validate_with_tables` | `(input: str, tables_json: str, profile_json: str? = None) -> dict` | Parse + validate using explicit parser tables |
-| `format` | `(input: str, indent: str? = None) -> str` | Format ZPL (`"none"`, `"label"`, or `"field"`) |
+| `format` | `(input: str, indent: str? = None, compaction: str? = None, comment_placement: str? = None) -> str` | Format ZPL (`indent`: `"none"`, `"label"`, `"field"`; `compaction`: `"none"` or `"field"`; `comment_placement`: `"inline"` or `"line"`) |
 | `explain` | `(id: str) -> str?` | Explain a diagnostic code, or `None` |
 
 ### Print Functions

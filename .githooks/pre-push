@@ -13,6 +13,22 @@ if ! PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1 cargo clippy --workspace --locked -- 
     exit 1
 fi
 
+echo "pre-push: running note-audit..."
+if ! cargo run -p zpl_toolchain_spec_compiler --locked -- note-audit --spec-dir spec --format json; then
+    echo ""
+    echo "  Note audit found issues. Fix them before pushing."
+    echo ""
+    exit 1
+fi
+
+echo "pre-push: validating CI/devcontainer toolchain alignment..."
+if ! node scripts/check-devcontainer-ci-toolchains.mjs; then
+    echo ""
+    echo "  CI and devcontainer toolchain versions are out of sync."
+    echo ""
+    exit 1
+fi
+
 echo "pre-push: running tests..."
 if command -v cargo-nextest &>/dev/null; then
     cargo nextest run --workspace --locked
@@ -20,4 +36,70 @@ if command -v cargo-nextest &>/dev/null; then
 else
     cargo test --workspace --locked
     bash scripts/test-python-wheel-local.sh
+fi
+
+extension_push_changes=0
+zero_sha="0000000000000000000000000000000000000000"
+seen_ref_input=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+    seen_ref_input=1
+    if [ -z "$local_sha" ] || [ "$local_sha" = "$zero_sha" ]; then
+        continue
+    fi
+
+    if [ -z "$remote_sha" ] || [ "$remote_sha" = "$zero_sha" ]; then
+        # New branch push: inspect commits not yet present on remote refs.
+        commit_list=$(git rev-list "$local_sha" --not --remotes=origin 2>/dev/null || git rev-list "$local_sha")
+    else
+        commit_list=$(git rev-list "$remote_sha..$local_sha")
+    fi
+
+    while IFS= read -r commit; do
+        [ -z "$commit" ] && continue
+        while IFS= read -r changed; do
+            case "$changed" in
+                packages/vscode-extension/*|.github/workflows/ci.yml|.github/workflows/release-plz.yml|docs/VSCODE_EXTENSION.md|docs/TESTING.md|docs/RELEASE.md|CONTRIBUTING.md|README.md|docs/ROADMAP.md|docs/BACKLOG.md)
+                    extension_push_changes=1
+                    break 3
+                    ;;
+            esac
+        done < <(git diff-tree --no-commit-id --name-only -r "$commit")
+    done < <(printf '%s\n' "$commit_list")
+done
+
+# Some GUI/edge push flows can invoke hooks without stdin refs.
+# Fallback: inspect local branch delta from upstream branch.
+if [ "$seen_ref_input" -eq 0 ]; then
+    upstream_ref=$(git rev-parse --abbrev-ref --symbolic-full-name "@{u}" 2>/dev/null || true)
+    if [ -n "$upstream_ref" ]; then
+        fallback_changed_files=$(git diff --name-only "$upstream_ref...HEAD")
+        while IFS= read -r changed; do
+            case "$changed" in
+                packages/vscode-extension/*|.github/workflows/ci.yml|.github/workflows/release-plz.yml|docs/VSCODE_EXTENSION.md|docs/TESTING.md|docs/RELEASE.md|CONTRIBUTING.md|README.md|docs/ROADMAP.md|docs/BACKLOG.md)
+                    extension_push_changes=1
+                    break
+                    ;;
+            esac
+        done < <(printf '%s\n' "$fallback_changed_files")
+    fi
+fi
+
+if [ "$extension_push_changes" -eq 1 ]; then
+    if ! command -v npm &>/dev/null; then
+        echo ""
+        echo "  npm is required to validate vscode-extension changes before push."
+        echo ""
+        exit 1
+    fi
+
+    echo "pre-push: refreshing @zpl-toolchain/core runtime artifacts..."
+    bash scripts/refresh-core-runtime.sh
+
+    echo "pre-push: running vscode-extension checks..."
+    (
+      cd packages/vscode-extension
+      npm run test
+      echo "pre-push: skipping vscode-extension integration in hook (covered in CI)."
+      npm run package:vsix
+    )
 fi

@@ -1,5 +1,7 @@
 # @zpl-toolchain/print
 
+![ZPL Toolchain logo](https://raw.githubusercontent.com/trevordcampbell/zpl-toolchain/main/docs/assets/branding/logo-square-128.png)
+
 Send ZPL to Zebra and ZPL-compatible label printers from Node.js. Supports persistent TCP connections, batch printing, status queries, browser printing, and a built-in HTTP/WebSocket proxy for web apps.
 
 > Transport scope: this package is **TCP-focused** (`host`/`port`).

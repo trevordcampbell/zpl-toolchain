@@ -58,6 +58,10 @@ fn print_help_shows_flags() {
         "missing --no-lint flag in help"
     );
     assert!(stdout.contains("--strict"), "missing --strict flag in help");
+    assert!(
+        stdout.contains("--note-audience"),
+        "missing --note-audience flag in help"
+    );
     assert!(stdout.contains("--status"), "missing --status flag in help");
     assert!(stdout.contains("--verify"), "missing --verify flag in help");
     assert!(stdout.contains("--info"), "missing --info flag in help");
@@ -214,6 +218,78 @@ fn print_dry_run_json() {
     assert_eq!(json["transport"], "tcp");
     assert_eq!(json["resolved_address"], "127.0.0.1:9100");
     assert!(json["validation"] == "skipped");
+}
+
+#[test]
+fn print_note_audience_problem_filters_contextual_notes() {
+    let (_dir, path) = write_temp_zpl("^XA\n^BY2,3,80\n^XZ\n");
+
+    let all_output = zpl_cmd()
+        .args([
+            "print",
+            &path,
+            "--printer",
+            "127.0.0.1:9100",
+            "--dry-run",
+            "--output",
+            "json",
+            "--note-audience",
+            "all",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        all_output.status.success(),
+        "expected print dry-run with all audiences to pass: {}",
+        error_text(&all_output)
+    );
+    let all_json: serde_json::Value =
+        serde_json::from_slice(&all_output.stdout).expect("valid all-audience JSON");
+    let all_note_count = all_json["diagnostics"]
+        .as_array()
+        .map(|items| {
+            items
+                .iter()
+                .filter(|diag| diag.get("id").and_then(|value| value.as_str()) == Some("ZPL3001"))
+                .count()
+        })
+        .unwrap_or(0);
+    assert!(all_note_count >= 1, "expected contextual notes in all mode");
+
+    let problem_output = zpl_cmd()
+        .args([
+            "print",
+            &path,
+            "--printer",
+            "127.0.0.1:9100",
+            "--dry-run",
+            "--output",
+            "json",
+            "--note-audience",
+            "problem",
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        problem_output.status.success(),
+        "expected print dry-run with problem audience to pass: {}",
+        error_text(&problem_output)
+    );
+    let problem_json: serde_json::Value =
+        serde_json::from_slice(&problem_output.stdout).expect("valid problem-audience JSON");
+    let problem_note_count = problem_json["diagnostics"]
+        .as_array()
+        .map(|items| {
+            items
+                .iter()
+                .filter(|diag| diag.get("id").and_then(|value| value.as_str()) == Some("ZPL3001"))
+                .count()
+        })
+        .unwrap_or(0);
+    assert_eq!(
+        problem_note_count, 0,
+        "expected contextual notes to be filtered in problem mode"
+    );
 }
 
 #[test]

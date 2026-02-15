@@ -25,14 +25,24 @@ Before implementation work starts in `crates/renderer/`, complete these research
 
 ### Tier 2: Developer Experience & Tooling (unblocks first release)
 
+- [ ] **Investigate local vs fetched `@vscode/vsce` behavior drift** — in this environment, locally installed VSCE 3.7.1 reports `extension/dist/extension.js` missing, while freshly fetched `npx @vscode/vsce@3.7.1` packages successfully. Create a minimal repro, diff dependency trees/runtime env, and upstream a bug if reproducible.
+- [ ] **Evaluate arm64 CI lane for Extension Host integration tests** — current CI enforces extension-host integration on `ubuntu-latest` (x64). Assess adding a periodic or required `linux/arm64` run (self-hosted or hosted arm64 runner) to catch architecture-specific VS Code test-runtime regressions early.
 - [x] **`LineIndex` utility** — byte-offset → line/column conversion in `diagnostics` crate; zero external dependencies; reusable by WASM/LSP; 8 unit tests
 - [x] **CLI: pretty output formatting** — `ariadne` 0.6 for coloured source-annotated diagnostics; TTY detection via `std::io::IsTerminal`; `--output pretty|json` flag with auto-detection; severity-coloured summary; render module in `crates/cli/src/render.rs`
 - [x] **CLI: embed tables via `build.rs`** — `build.rs` copies `generated/parser_tables.json` into binary at compile time; `--tables` flag retained as override; resolves ADR 0005; no more mandatory `--tables` for parse/lint/syntax-check
-- [x] **`zpl format` command** — spec-driven ZPL auto-formatter in `crates/core/src/grammar/emit.rs`; one command per line, trailing-arg trimming, split-rule merging, spec-driven joiners (`,`, `:`, `.`, `""`), command prefix tracking (`^CC`); `--write` for in-place formatting, `--check` for CI (exit 1 if not formatted), `--indent none|label|field` for configurable indentation; field data and raw payloads preserved byte-for-byte; graceful degradation without tables (comma fallback); 23 round-trip tests including idempotency, USPS sample, prefix change, and all indent modes
+- [x] **`zpl format` command** — spec-driven ZPL auto-formatter in `crates/core/src/grammar/emit.rs`; one command per line, trailing-arg trimming, split-rule merging, spec-driven joiners (`,`, `:`, `.`, `""`), command prefix tracking (`^CC`); `--write` for in-place formatting, `--check` for CI (exit 1 if not formatted), `--indent none|label|field`, `--compaction none|field`, and `--comment-placement inline|line`; field data and raw payloads preserved byte-for-byte; graceful degradation without tables (comma fallback); 30+ round-trip tests including idempotency, USPS sample, compaction/comment-placement, prefix change, and all indent modes
 - [x] **WASM bindings** — `crates/wasm/` with `wasm-bindgen` + `serde-wasm-bindgen`; 5 exported functions (parse, parseWithTables, validate, format, explain); embedded parser tables via `build.rs`; TypeScript wrapper at `packages/ts/core/` with full type definitions
+- [x] **VS Code extension MVP** — `packages/vscode-extension/` with ZPL language registration/TextMate grammar, live diagnostics + format-on-save + hover docs + diagnostic explain action, renderer bridge stub, and VSIX packaging
+- [x] **linux/arm64 Extension Host test-runner hardening** — integration runner now auto-detects local VS Code-family executables (`code`, `code-insiders`, `cursor`, `codium`) and uses them on arm64 when available; preserves explicit `VSCODE_EXECUTABLE_PATH` override and safe skip behavior when no suitable executable is present.
 - [x] **CI: expand matrix** — Linux/macOS/Windows build matrix for core tests and C FFI; `Swatinem/rust-cache@v2` for Cargo caching; `taiki-e/install-action@nextest` for nextest; `rustfmt --check` and `clippy -D warnings` gates; WASM size report via `$GITHUB_STEP_SUMMARY`
 - [x] **CI: add spec-compiler check step** — dedicated `spec-check` job runs `zpl-spec-compiler check`; builds tables; runs CLI `coverage` command to report spec coverage in CI
 - [x] **Draft release notes template** — `docs/RELEASE.md` with version scheme, crate publishing order, release checklist, release notes template with checksums; `CHANGELOG.md` (Keep a Changelog format); `.github/workflows/release.yml` with cross-platform CLI and FFI builds, artifact upload, and GitHub Release creation (manual `workflow_dispatch` fallback)
+
+#### VS Code Extension follow-up hardening
+
+- [x] **Add Extension Host integration tests** — validates diagnostics race/convergence, explain code action wiring, hover metadata resolution, and formatter idempotency against sample labels (`packages/vscode-extension/src/test/suite/extension.integration.test.ts`).
+- [x] **Add large-document perf benchmark fixture** — integration suite now includes a multi-label large-document diagnostics latency guard with configurable budget (`ZPL_VSCODE_PERF_BUDGET_MS`, default `8000`) in `packages/vscode-extension/src/test/suite/extension.integration.test.ts`.
+- [ ] **Data-driven completion ranking pass (later)** — capture real-world completion usage patterns and tune command ranking/grouping order from observed behavior, rather than static heuristics.
 
 ### Tier 3: Quality & Polish
 

@@ -20,7 +20,12 @@
           "doc": "Y = print leading zeros, N = suppress leading zeros." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Incrementing/decrementing occurs when all replicates for each serial number have been printed (per ^PQ r parameter). If media runs out, the first label reprinted has the same serial number as the partial label (controlled by ^JZ)." }
+        {
+          "kind": "note",
+          "severity": "info",
+          "audience": "contextual",
+          "message": "Incrementing/decrementing occurs after all replicates for each serial number are printed (per ^PQ r parameter). On media-out recovery, the first reprinted label keeps the serial number from the partial label (controlled by ^JZ)."
+        }
       ],
       "docs": "Allows the printer to index data fields by a selected increment or decrement value. Can be performed on 100-150 fields per format, on both alphanumeric and barcode fields. A maximum of 12 right-most integers are subject to indexing."
     }

@@ -655,6 +655,14 @@ function resolveCommandDoc(docsBundle: DocsBundle, code: string): CommandDoc | u
     return direct;
   }
 
+  // ^A0-^A9 are compact aliases of ^A with font-selection first argument in-line.
+  if (!direct && /^\^A[0-9]$/.test(code)) {
+    const baseA = docsBundle.by_code["^A"];
+    if (baseA && baseA.hasSpec !== false) {
+      return baseA;
+    }
+  }
+
   if (direct?.aliasOf) {
     const aliasTarget = docsBundle.by_code[direct.aliasOf];
     if (aliasTarget && aliasTarget.hasSpec !== false) {

@@ -168,6 +168,10 @@ export interface ValidationResult {
 
 /** Indentation style for the formatter. */
 export type IndentStyle = "none" | "label" | "field";
+/** Optional compaction mode for the formatter. */
+export type CompactionStyle = "none" | "field";
+/** Semicolon comment placement mode for the formatter. */
+export type CommentPlacementStyle = "inline" | "line";
 
 // ── WASM Module ─────────────────────────────────────────────────────────
 
@@ -178,7 +182,7 @@ export type IndentStyle = "none" | "label" | "field";
 // We use dynamic import so the WASM binary is only fetched when init() is
 // called, keeping the initial bundle lightweight.
 
-let wasmModule: typeof import("../wasm/pkg/zpl_toolchain_wasm") | null = null;
+let wasmModule: typeof import("../wasm/pkg/zpl_toolchain_wasm.js") | null = null;
 
 /**
  * Initialize the WASM module. Must be called once before using any other
@@ -194,7 +198,7 @@ export async function init(): Promise<void> {
 
   // Dynamic import — bundlers will resolve the WASM package
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  wasmModule = await import("../wasm/pkg/zpl_toolchain_wasm");
+  wasmModule = await import("../wasm/pkg/zpl_toolchain_wasm.js");
 }
 
 function ensureInit(): NonNullable<typeof wasmModule> {
@@ -287,10 +291,19 @@ export function validateWithTables(
  *
  * @param input ZPL source code.
  * @param indent Indentation style: "none" (default), "label", or "field".
+ * @param compaction Optional compaction style: "none" (default) or "field".
+ * @param commentPlacement Semicolon comment placement: "inline" (default) or "line".
  */
-export function format(input: string, indent?: IndentStyle): string {
+export function format(
+  input: string,
+  indent?: IndentStyle,
+  compaction?: CompactionStyle,
+  commentPlacement?: CommentPlacementStyle
+): string {
   const wasm = ensureInit();
-  return invokeWasm("format", () => wasm.format(input, indent));
+  return invokeWasm("format", () =>
+    wasm.format(input, indent, compaction, commentPlacement)
+  );
 }
 
 /**

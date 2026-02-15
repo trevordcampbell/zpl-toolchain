@@ -75,11 +75,23 @@ fn validate_with_tables(
 /// Format a ZPL string (normalize whitespace, one command per line).
 ///
 /// `indent` controls indentation: `"none"` (default), `"label"`, or `"field"`.
+/// `compaction` controls optional compaction: `"none"` (default) or `"field"`.
+/// `comment_placement` controls semicolon comments: `"inline"` (default) or `"line"`.
 /// Returns the formatted ZPL string.
 #[pyfunction]
-#[pyo3(signature = (input, indent=None))]
-fn format(input: &str, indent: Option<&str>) -> PyResult<String> {
-    Ok(common::format_zpl(input, indent))
+#[pyo3(signature = (input, indent=None, compaction=None, comment_placement=None))]
+fn format(
+    input: &str,
+    indent: Option<&str>,
+    compaction: Option<&str>,
+    comment_placement: Option<&str>,
+) -> PyResult<String> {
+    Ok(common::format_zpl_with_options(
+        input,
+        indent,
+        compaction,
+        comment_placement,
+    ))
 }
 
 /// Explain a diagnostic code (e.g., "ZPL1201").

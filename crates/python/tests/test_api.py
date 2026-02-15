@@ -67,6 +67,16 @@ class PythonBindingApiTests(unittest.TestCase):
         self.assertIsInstance(formatted, str)
         self.assertIn("^XA", formatted)
 
+    def test_format_with_compaction_compacts_field_block_with_label_indent(self) -> None:
+        input_zpl = "^XA\n^PW609\n^LL406\n^FO30,30\n^A0N,35,35\n^FDWIDGET-3000\n^FS\n^XZ\n"
+        formatted = zpl_toolchain.format(input_zpl, "label", "field")
+        self.assertIn("  ^FO30,30^A0N,35,35^FDWIDGET-3000^FS", formatted)
+
+    def test_format_comment_placement_line_keeps_comment_on_new_line(self) -> None:
+        input_zpl = "^XA\n^PW812\n; set print width\n^XZ\n"
+        formatted = zpl_toolchain.format(input_zpl, "none", "none", "line")
+        self.assertIn("^PW812\n; set print width", formatted)
+
     def test_explain_unknown_returns_none(self) -> None:
         self.assertIsNone(zpl_toolchain.explain("ZPL9999"))
 

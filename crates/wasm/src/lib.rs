@@ -57,10 +57,22 @@ pub fn validate_with_tables_js(
 /// Format a ZPL string (normalize whitespace, one command per line).
 ///
 /// `indent` controls indentation: `"none"` (default), `"label"`, or `"field"`.
+/// `compaction` controls optional compaction: `"none"` (default) or `"field"`.
+/// `comment_placement` controls semicolon comments: `"inline"` (default) or `"line"`.
 /// Returns the formatted ZPL string.
 #[wasm_bindgen]
-pub fn format(input: &str, indent: Option<String>) -> Result<String, JsError> {
-    Ok(common::format_zpl(input, indent.as_deref()))
+pub fn format(
+    input: &str,
+    indent: Option<String>,
+    compaction: Option<String>,
+    comment_placement: Option<String>,
+) -> Result<String, JsError> {
+    Ok(common::format_zpl_with_options(
+        input,
+        indent.as_deref(),
+        compaction.as_deref(),
+        comment_placement.as_deref(),
+    ))
 }
 
 /// Explain a diagnostic code (e.g., "ZPL1201").

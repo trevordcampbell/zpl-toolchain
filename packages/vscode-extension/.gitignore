@@ -1,0 +1,5 @@
+dist/
+node_modules/
+resources/docs_bundle.json
+vendor/
+*.vsix

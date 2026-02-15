@@ -1,0 +1,90 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "ZPL",
+  "scopeName": "source.zpl",
+  "patterns": [
+    {
+      "include": "#comment"
+    },
+    {
+      "include": "#fieldData"
+    },
+    {
+      "include": "#command"
+    },
+    {
+      "include": "#comma"
+    },
+    {
+      "include": "#enumValues"
+    },
+    {
+      "include": "#numbers"
+    }
+  ],
+  "repository": {
+    "fieldData": {
+      "patterns": [
+        {
+          "begin": "(\\^FD|\\^FV)",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.control.command.zpl"
+            }
+          },
+          "end": "(?=(\\^FS|\\^XZ|\\^[A-Z0-9@]{1,2}|~[A-Z0-9@]{1,2}|$))",
+          "patterns": [
+            {
+              "name": "string.unquoted.field-data.zpl",
+              "match": "[^^~]+"
+            }
+          ]
+        }
+      ]
+    },
+    "comment": {
+      "patterns": [
+        {
+          "name": "comment.line.semicolon.zpl",
+          "match": ";.*$"
+        }
+      ]
+    },
+    "command": {
+      "patterns": [
+        {
+          "name": "keyword.control.command.zpl",
+          "match": "\\^A(?=[A-Z0-9])|(?:\\^|~)[A-Z0-9@]{1,2}"
+        }
+      ]
+    },
+    "comma": {
+      "patterns": [
+        {
+          "name": "punctuation.separator.parameter.zpl",
+          "match": ","
+        }
+      ]
+    },
+    "enumValues": {
+      "patterns": [
+        {
+          "name": "variable.parameter.enum.zpl",
+          "match": "(?<=(?:\\^A[A-Z0-9]|[\\^~][A-Z0-9@]{1,2}|,))[A-Z](?=,|\\^|~|$)"
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.zpl",
+          "match": "(?<=(?:\\^A|[\\^~][A-Z0-9@]{1,2}|,))-?\\d+(?:\\.\\d+)?(?![A-Za-z0-9_])"
+        },
+        {
+          "name": "constant.numeric.zpl",
+          "match": "(?<![A-Za-z0-9_])-?\\d+(?:\\.\\d+)?(?=,)"
+        }
+      ]
+    }
+  }
+}

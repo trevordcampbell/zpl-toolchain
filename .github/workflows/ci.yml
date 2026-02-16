@@ -131,6 +131,7 @@ jobs:
     name: TypeScript Core Tests
     needs: [fast-gate]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -148,6 +149,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24.13.1"
+          cache: npm
+          cache-dependency-path: packages/ts/core/package-lock.json
 
       - name: Install dependencies
         working-directory: packages/ts/core
@@ -169,12 +172,15 @@ jobs:
     name: TypeScript Print Tests
     needs: [fast-gate]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
           node-version: "24.13.1"
+          cache: npm
+          cache-dependency-path: packages/ts/print/package-lock.json
 
       - name: Install dependencies
         working-directory: packages/ts/print
@@ -208,6 +214,7 @@ jobs:
     name: TypeScript CLI Wrapper Tests
     needs: [fast-gate]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -223,6 +230,7 @@ jobs:
     name: VS Code Extension Build & Test
     needs: [fast-gate]
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -237,13 +245,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24.13.1"
+          cache: npm
+          cache-dependency-path: |
+            packages/vscode-extension/package-lock.json
+            packages/ts/core/package-lock.json
 
-      - name: Build WASM package for @zpl-toolchain/core
-        run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
-
-      - name: Install dependencies and build @zpl-toolchain/core
-        working-directory: packages/ts/core
-        run: npm ci && npm run build
+      - uses: ./.github/actions/prepare-vscode-core-runtime
 
       - name: Install Extension Host test runtime
         run: sudo apt-get update && sudo apt-get install -y xvfb xauth

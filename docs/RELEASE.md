@@ -112,7 +112,7 @@ the automated upload failed), trigger the manual workflow from the GitHub Action
 
 For targeted republish/recovery of an existing release tag (npm/PyPI/VS Code/Homebrew/Go tag,
 or rebuilding release assets), use:
-**Actions → Release Recovery (manual) → Run workflow → select tag + toggles**.
+**Actions → Release Recovery (Manual Publish/Repair) → Run workflow → select tag + toggles**.
 
 Recommended recovery defaults:
 
@@ -125,6 +125,8 @@ Notes:
 
 - If `publish_npm_cli` is selected, the workflow verifies required CLI release assets exist first.
 - If `rebuild_release_assets` is selected together with `publish_npm_cli` or `publish_homebrew_tap`, recovery waits for asset upload before those jobs proceed.
+- Recovery verifies required release assets before npm CLI/Homebrew steps (Linux/macOS archives + checksums for Homebrew; adds Windows zip + checksum for npm CLI) so reruns fail early with clear asset-missing errors.
+- Recovery input validation fails fast on missing selected-channel prerequisites (for example `NPM_TOKEN`, `PYPI_TOKEN`, `VSCE_TOKEN`/`OVSX_TOKEN`, `RELEASE_PLZ_TOKEN`, and Homebrew tap config), so misconfigured runs fail early with explicit errors.
 
 > **Why not a tag trigger?** The automated `release-plz.yml` workflow uses a PAT
 > (needed so CI runs on release PRs), which means tags it creates bypass GitHub's
@@ -140,6 +142,7 @@ To avoid repeat regressions and CI surprises, keep these guardrails in mind:
 - **Clippy/build policy:** run full-workspace clippy (`cargo clippy --workspace -- -D warnings`) and keep CI/devcontainer PyO3-compatible with `PYO3_USE_ABI3_FORWARD_COMPATIBILITY=1` (needed when host Python is newer than PyO3's max tested version).
 - **Hook enforcement:** pre-commit runs clippy for staged Rust changes and VS Code extension type-checks for staged extension changes; pre-push runs full-workspace clippy, spec note-audit, CI/devcontainer toolchain alignment checks, full-workspace nextest, Python wheel runtime tests (`scripts/test-python-wheel-local.sh`), and extension checks (`npm run test` + `npm run package:vsix`) when extension-related files are in the push range. The hook auto-refreshes core runtime artifacts first via `scripts/refresh-core-runtime.sh` to avoid stale WASM/TS runtime failures; Extension Host integration remains CI-enforced (`test:ci`) for stable cross-host behavior.
 - **TypeScript core CI dependency:** `packages/ts/core` type-check/build depends on generated `wasm/pkg` artifacts, so CI must build WASM before TS core checks.
+- **Shared extension runtime prep:** CI, automated release, and release-recovery all use `.github/actions/prepare-vscode-core-runtime` to build and verify `@zpl-toolchain/core` runtime artifacts before extension tests/packaging, reducing prerequisite drift.
 - **Python runtime confidence:** runtime checks should validate the installed wheel behavior (build wheel, install wheel, run tests), not only `cargo test` for the PyO3 crate.
 - **release-plz scope:** release-plz PR package lists only crates with `publish = true` (Cargo ecosystem). npm/PyPI versions are synchronized in workflow steps and published by downstream jobs.
 - **Local binding verification:** use `scripts/test-python-wheel-local.sh`, `scripts/test-dotnet-local.sh`, and `scripts/test-go-local.sh` for reproducible local confidence before push/release.
@@ -267,6 +270,7 @@ Skip any hook when needed: `git commit --no-verify` or `git push --no-verify`.
 | File | Purpose |
 |------|---------|
 | `release-plz.toml` | release-plz workspace config (single-tag mode, changelog) |
+| `.github/actions/prepare-vscode-core-runtime/action.yml` | Reusable extension prerequisite action (builds `wasm/pkg` + `packages/ts/core/dist`, verifies required artifacts) |
 | `scripts/update-homebrew-tap.sh` | Regenerates and pushes tap formula from release checksums |
 | `packages/vscode-extension/` | VS Code extension source, packaging, and publish scripts |
 | `scripts/publish.sh` | Manual publishing script (dry-run by default) |

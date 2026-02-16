@@ -445,12 +445,18 @@ suite("VS Code extension integration", () => {
 
     editor.selection = new vscode.Selection(1, 0, 1, 0);
     await vscode.commands.executeCommand("zplToolchain.toggleFxComment");
-    const commented = editor.document.getText();
+    const commented = await waitFor(
+      () => editor.document.getText(),
+      (text) => /\^FX \^PW812\^FS/.test(text)
+    );
     assert.match(commented, /\^FX \^PW812\^FS/);
 
     editor.selection = new vscode.Selection(1, 0, 1, 0);
     await vscode.commands.executeCommand("zplToolchain.toggleFxComment");
-    const uncommented = editor.document.getText();
+    const uncommented = await waitFor(
+      () => editor.document.getText(),
+      (text) => /\^PW812/.test(text) && !text.includes("^FX ^PW812^FS")
+    );
     assert.match(uncommented, /\^PW812/);
     assert.ok(!uncommented.includes("^FX ^PW812^FS"));
   });
@@ -463,10 +469,18 @@ suite("VS Code extension integration", () => {
     editor.selection = new vscode.Selection(1, 0, 1, 0);
     await vscode.commands.executeCommand("zplToolchain.toggleFxComment");
 
-    const lineText = editor.document.lineAt(1).text;
+    const lineText = await waitFor(
+      () => editor.document.lineAt(1).text,
+      (text) => text === "^FX comment^FS"
+    );
     assert.equal(lineText, "^FX comment^FS");
+    const selectedText = await waitFor(
+      () =>
+        editor.selections.length === 1 ? editor.document.getText(editor.selections[0]) : "",
+      (text) => text === "comment"
+    );
     assert.equal(editor.selections.length, 1);
-    assert.equal(editor.document.getText(editor.selections[0]), "comment");
+    assert.equal(selectedText, "comment");
   });
 
   test("large-document diagnostics stay within latency budget", async () => {

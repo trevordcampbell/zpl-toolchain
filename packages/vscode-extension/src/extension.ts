@@ -443,7 +443,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 
   context.subscriptions.push(
-    vscode.commands.registerTextEditorCommand(TOGGLE_FX_COMMENT_COMMAND_ID, async (editor) => {
+    vscode.commands.registerCommand(TOGGLE_FX_COMMENT_COMMAND_ID, async () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        return;
+      }
       await toggleFxComment(editor);
     })
   );

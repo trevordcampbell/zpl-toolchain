@@ -1,4 +1,4 @@
-name: Release Recovery (manual)
+name: Release Recovery (Manual Publish/Repair)
 
 # Targeted, idempotent-friendly republish/recovery workflow for an existing tag.
 # Use this when one or more publish channels failed after the main automated release.

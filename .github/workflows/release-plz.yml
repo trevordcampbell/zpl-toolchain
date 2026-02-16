@@ -52,9 +52,11 @@ jobs:
 
           if [[ -z "${PR_JSON:-}" ]]; then
             echo "release-plz did not provide a PR payload; skipping release PR sync."
-            echo "has_pr=false" >> "$GITHUB_OUTPUT"
-            echo "pr_number=" >> "$GITHUB_OUTPUT"
-            echo "cli_version=" >> "$GITHUB_OUTPUT"
+            {
+              echo "has_pr=false"
+              echo "pr_number="
+              echo "cli_version="
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -80,18 +82,22 @@ jobs:
           PR_NUMBER=$(echo "$PR_JSON" | jq -r '(.number // .prs[0].number // empty)')
           if [[ -z "$PR_NUMBER" ]]; then
             echo "release-plz reported no release PR to create/update in this run; skipping external sync."
-            echo "has_pr=false" >> "$GITHUB_OUTPUT"
-            echo "pr_number=" >> "$GITHUB_OUTPUT"
-            echo "cli_version=" >> "$GITHUB_OUTPUT"
+            {
+              echo "has_pr=false"
+              echo "pr_number="
+              echo "cli_version="
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           VERSION=$(echo "$PR_JSON" | jq -r \
             '((.releases // .prs[0].releases // []) | map(select(.package_name == "zpl_toolchain_cli") | .version) | first // empty)')
 
-          echo "has_pr=true" >> "$GITHUB_OUTPUT"
-          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
-          echo "cli_version=$VERSION" >> "$GITHUB_OUTPUT"
+          {
+            echo "has_pr=true"
+            echo "pr_number=$PR_NUMBER"
+            echo "cli_version=$VERSION"
+          } >> "$GITHUB_OUTPUT"
           echo "release_pr_number=$PR_NUMBER cli_version=${VERSION:-<none>}"
 
       # Sync non-Cargo package versions (npm, PyPI, VS Code extension) into the release PR
@@ -363,7 +369,7 @@ jobs:
 
       - name: Clean old VSIX artifacts
         working-directory: packages/vscode-extension
-        run: rm -f *.vsix
+        run: rm -f ./*.vsix
 
       - name: Package VSIX
         working-directory: packages/vscode-extension
@@ -372,7 +378,7 @@ jobs:
       - name: Validate VSIX artifact
         working-directory: packages/vscode-extension
         run: |
-          VSIX_FILE=$(ls -1 *.vsix 2>/dev/null | head -1)
+          VSIX_FILE=$(find . -maxdepth 1 -type f -name '*.vsix' -print -quit)
           if [[ -z "$VSIX_FILE" ]]; then
             echo "::error::VSIX file not created"
             exit 1
@@ -425,7 +431,7 @@ jobs:
       - name: Validate downloaded VSIX before publish
         working-directory: packages/vscode-extension
         run: |
-          VSIX_FILE=$(ls -1 *.vsix 2>/dev/null | head -1)
+          VSIX_FILE=$(find . -maxdepth 1 -type f -name '*.vsix' -print -quit)
           if [[ -z "$VSIX_FILE" ]]; then
             echo "::error::VSIX file not found after download"
             exit 1

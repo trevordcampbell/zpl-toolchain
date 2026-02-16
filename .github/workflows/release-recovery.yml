@@ -364,19 +364,19 @@ jobs:
           VERSION=$(grep '^version = ' pyproject.toml | sed -E 's/^version = "([^"]+)"$/\1/')
           export VERSION
           EXISTS=$(python - <<'PY'
-import json
-import os
-import urllib.request
+          import json
+          import os
+          import urllib.request
 
-version = os.environ["VERSION"]
-try:
-    with urllib.request.urlopen("https://pypi.org/pypi/zpl-toolchain/json", timeout=15) as resp:
-        data = json.load(resp)
-    print("true" if version in data.get("releases", {}) else "false")
-except Exception:
-    print("false")
-PY
-)
+          version = os.environ["VERSION"]
+          try:
+              with urllib.request.urlopen("https://pypi.org/pypi/zpl-toolchain/json", timeout=15) as resp:
+                  data = json.load(resp)
+              print("true" if version in data.get("releases", {}) else "false")
+          except Exception:
+              print("false")
+          PY
+          )
           if [[ "$EXISTS" == "true" ]]; then
             echo "zpl-toolchain==$VERSION already published; skipping."
             exit 0

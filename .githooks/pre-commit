@@ -84,3 +84,23 @@ if [ "$extension_changes" -eq 1 ]; then
         exit 1
     fi
 fi
+
+workflow_changes=0
+while IFS= read -r path; do
+    case "$path" in
+        .github/workflows/*.yml|.github/workflows/*.yaml)
+            workflow_changes=1
+            break
+            ;;
+    esac
+done < <(git diff --cached --name-only --diff-filter=ACMR)
+
+if [ "$workflow_changes" -eq 1 ]; then
+    echo "pre-commit: linting GitHub workflow files..."
+    if ! scripts/run-actionlint.sh .github/workflows; then
+        echo ""
+        echo "  actionlint failed. Fix workflow issues before committing."
+        echo ""
+        exit 1
+    fi
+fi

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.15](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.14...v0.1.15) - 2026-02-16
+
+### Added
+
+- *(zpl)* finalize spec-driven comment and spacing architecture
+
 ### Fixed
 
 - *(core/spec)* align `^FX` comment structural semantics with official `^FX ... ^FS` usage via spec metadata (`opens_field`) so `^FS` after `^FX` no longer reports as orphaned

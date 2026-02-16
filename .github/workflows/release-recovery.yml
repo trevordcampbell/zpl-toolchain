@@ -1,0 +1,563 @@
+name: Release Recovery (manual)
+
+# Targeted, idempotent-friendly republish/recovery workflow for an existing tag.
+# Use this when one or more publish channels failed after the main automated release.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing release tag to recover/publish (e.g. v0.1.14)"
+        required: true
+        type: string
+      rebuild_release_assets:
+        description: "Rebuild CLI/FFI artifacts and upload to GitHub Release"
+        required: true
+        default: false
+        type: boolean
+      publish_npm_core_print:
+        description: "Publish @zpl-toolchain/core and @zpl-toolchain/print"
+        required: true
+        default: false
+        type: boolean
+      publish_npm_cli:
+        description: "Publish @zpl-toolchain/cli (requires release assets to exist)"
+        required: true
+        default: false
+        type: boolean
+      publish_pypi:
+        description: "Publish Python package to PyPI"
+        required: true
+        default: false
+        type: boolean
+      publish_vscode:
+        description: "Build VSIX and publish to VS Marketplace + Open VSX"
+        required: true
+        default: false
+        type: boolean
+      upload_vscode_release_asset:
+        description: "Upload VSIX to existing GitHub Release assets"
+        required: true
+        default: false
+        type: boolean
+      publish_homebrew_tap:
+        description: "Update Homebrew tap formula from release artifacts"
+        required: true
+        default: false
+        type: boolean
+      tag_go_module:
+        description: "Create/push Go module tag for this release (idempotent)"
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: release-recovery-${{ inputs.tag }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  validate:
+    name: Validate Recovery Inputs
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.validate.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate tag exists and release is present
+        id: validate
+        env:
+          TAG: ${{ inputs.tag }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Invalid tag format: $TAG (expected vX.Y.Z)"
+            exit 1
+          fi
+
+          git fetch --tags --force
+          git rev-parse "$TAG" >/dev/null
+
+          gh release view "$TAG" >/dev/null
+
+          if [[ "${{ inputs.rebuild_release_assets }}" != "true" \
+             && "${{ inputs.publish_npm_core_print }}" != "true" \
+             && "${{ inputs.publish_npm_cli }}" != "true" \
+             && "${{ inputs.publish_pypi }}" != "true" \
+             && "${{ inputs.publish_vscode }}" != "true" \
+             && "${{ inputs.upload_vscode_release_asset }}" != "true" \
+             && "${{ inputs.publish_homebrew_tap }}" != "true" \
+             && "${{ inputs.tag_go_module }}" != "true" ]]; then
+            echo "::error::No recovery action selected. Enable at least one workflow input toggle."
+            exit 1
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Validated recovery target: $TAG"
+
+  build-cli:
+    name: Build CLI (${{ matrix.target }})
+    needs: [validate]
+    if: inputs.rebuild_release_assets == true
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            archive: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            archive: tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive: zip
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libudev-dev
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          targets: ${{ matrix.target }}
+          cache-key: release-recovery-cli-${{ matrix.target }}
+
+      - name: Build CLI (release)
+        run: cargo build -p zpl_toolchain_cli --release --locked --target ${{ matrix.target }}
+
+      - name: Package (Unix)
+        if: matrix.archive == 'tar.gz'
+        run: |
+          BINARY=target/${{ matrix.target }}/release/zpl
+          ARCHIVE=zpl-${{ matrix.target }}.tar.gz
+          tar czf "$ARCHIVE" -C "$(dirname "$BINARY")" "$(basename "$BINARY")"
+          sha256sum "$ARCHIVE" > "$ARCHIVE.sha256"
+
+      - name: Package (Windows)
+        if: matrix.archive == 'zip'
+        shell: pwsh
+        run: |
+          $binary = "target/${{ matrix.target }}/release/zpl.exe"
+          $archive = "zpl-${{ matrix.target }}.zip"
+          Compress-Archive -Path $binary -DestinationPath $archive
+          $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower()
+          "$hash  $archive" | Out-File -FilePath "$archive.sha256" -Encoding utf8
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ matrix.target }}
+          path: |
+            zpl-${{ matrix.target }}.*
+
+  build-ffi:
+    name: Build FFI (${{ matrix.target }})
+    needs: [validate]
+    if: inputs.rebuild_release_assets == true
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            lib_glob: libzpl_toolchain_ffi.so
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            lib_glob: libzpl_toolchain_ffi.dylib
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            lib_glob: zpl_toolchain_ffi.dll
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          targets: ${{ matrix.target }}
+          cache-key: release-recovery-ffi-${{ matrix.target }}
+
+      - name: Build FFI (release)
+        run: cargo build -p zpl_toolchain_ffi --release --locked --target ${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ffi-${{ matrix.target }}
+          path: |
+            target/${{ matrix.target }}/release/${{ matrix.lib_glob }}
+
+  upload-release-assets:
+    name: Upload Release Artifacts
+    needs: [validate, build-cli, build-ffi]
+    if: inputs.rebuild_release_assets == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Upload to existing GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.validate.outputs.tag }}
+          overwrite_files: true
+          files: |
+            artifacts/**/*
+
+  assets-ready:
+    name: Ensure Release Assets Ready
+    needs: [validate, upload-release-assets]
+    if: ${{ always() && inputs.publish_npm_cli == true && needs.validate.result == 'success' && (inputs.rebuild_release_assets == false || needs.upload-release-assets.result == 'success') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify CLI release assets are available
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.validate.outputs.tag }}
+        run: |
+          set -euo pipefail
+          ASSETS_JSON=$(gh release view "$TAG" --json assets)
+          REQUIRED=("zpl-x86_64-unknown-linux-gnu.tar.gz" "zpl-aarch64-apple-darwin.tar.gz" "zpl-x86_64-pc-windows-msvc.zip")
+          for asset in "${REQUIRED[@]}"; do
+            if ! echo "$ASSETS_JSON" | jq -e --arg name "$asset" '.assets[] | select(.name == $name)' >/dev/null; then
+              echo "::error::Required release asset missing for npm CLI package: $asset"
+              exit 1
+            fi
+          done
+
+  publish-npm-core-print:
+    name: Publish npm (core + print)
+    needs: [validate]
+    if: inputs.publish_npm_core_print == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          targets: wasm32-unknown-unknown
+          cache-key: release-recovery-npm
+
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@wasm-pack
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.13.1"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Build WASM
+        run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
+
+      - name: Install dependencies & build @zpl-toolchain/core
+        working-directory: packages/ts/core
+        run: npm ci && npm run build
+
+      - name: Publish @zpl-toolchain/core if needed
+        working-directory: packages/ts/core
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@zpl-toolchain/core@${VERSION}" version >/dev/null 2>&1; then
+            echo "@zpl-toolchain/core@${VERSION} already published; skipping."
+            exit 0
+          fi
+          npm publish --access public
+
+      - name: Install dependencies & build @zpl-toolchain/print
+        working-directory: packages/ts/print
+        run: npm ci && npm run build
+
+      - name: Publish @zpl-toolchain/print if needed
+        working-directory: packages/ts/print
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@zpl-toolchain/print@${VERSION}" version >/dev/null 2>&1; then
+            echo "@zpl-toolchain/print@${VERSION} already published; skipping."
+            exit 0
+          fi
+          npm publish --access public
+
+  publish-npm-cli:
+    name: Publish npm (@zpl-toolchain/cli)
+    needs: [validate, assets-ready]
+    if: inputs.publish_npm_cli == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.13.1"
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Test @zpl-toolchain/cli
+        working-directory: packages/ts/cli
+        run: npm test
+
+      - name: Publish @zpl-toolchain/cli if needed
+        working-directory: packages/ts/cli
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@zpl-toolchain/cli@${VERSION}" version >/dev/null 2>&1; then
+            echo "@zpl-toolchain/cli@${VERSION} already published; skipping."
+            exit 0
+          fi
+          npm publish --access public
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: [validate]
+    if: inputs.publish_pypi == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: release-recovery-pypi
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install maturin
+        run: pip install "maturin>=1,<2"
+
+      - name: Publish to PyPI if needed
+        working-directory: crates/python
+        env:
+          MATURIN_PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          set -euo pipefail
+          VERSION=$(grep '^version = ' pyproject.toml | sed -E 's/^version = "([^"]+)"$/\1/')
+          export VERSION
+          EXISTS=$(python - <<'PY'
+import json
+import os
+import urllib.request
+
+version = os.environ["VERSION"]
+try:
+    with urllib.request.urlopen("https://pypi.org/pypi/zpl-toolchain/json", timeout=15) as resp:
+        data = json.load(resp)
+    print("true" if version in data.get("releases", {}) else "false")
+except Exception:
+    print("false")
+PY
+)
+          if [[ "$EXISTS" == "true" ]]; then
+            echo "zpl-toolchain==$VERSION already published; skipping."
+            exit 0
+          fi
+          maturin publish --no-sdist
+
+  build-vscode-extension:
+    name: Build VS Code Extension VSIX
+    needs: [validate]
+    if: inputs.publish_vscode == true || inputs.upload_vscode_release_asset == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          targets: wasm32-unknown-unknown
+          cache-key: release-recovery-vscode
+
+      - name: Install wasm-pack
+        uses: taiki-e/install-action@wasm-pack
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.13.1"
+
+      - name: Verify extension version matches tag
+        working-directory: packages/vscode-extension
+        env:
+          TAG: ${{ needs.validate.outputs.tag }}
+        run: |
+          TAG_VERSION="${TAG#v}"
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if [[ "$TAG_VERSION" != "$PKG_VERSION" ]]; then
+            echo "::error::Version mismatch: tag=$TAG_VERSION package=$PKG_VERSION"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        working-directory: packages/vscode-extension
+        run: npm ci
+
+      - name: Build WASM runtime for extension bundling
+        run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
+
+      - name: Install Extension Host test runtime
+        run: sudo apt-get update && sudo apt-get install -y xvfb xauth
+
+      - name: Type-check, build, and extension-host integration tests
+        working-directory: packages/vscode-extension
+        env:
+          FORCE_VSCODE_INTEGRATION: "1"
+        run: npm run test:ci
+
+      - name: Package VSIX
+        working-directory: packages/vscode-extension
+        run: |
+          rm -f ./*.vsix
+          npx @vscode/vsce@3.7.1 package
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vscode-extension-vsix
+          path: packages/vscode-extension/*.vsix
+          if-no-files-found: error
+
+  publish-vscode:
+    name: Publish VS Code Extension
+    needs: [validate, build-vscode-extension]
+    if: inputs.publish_vscode == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: vscode-extension-vsix
+          path: packages/vscode-extension
+
+      - name: Publish to Visual Studio Marketplace
+        env:
+          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+        run: |
+          set -euo pipefail
+          OUTPUT=$(npx @vscode/vsce@3.7.1 publish --packagePath packages/vscode-extension/*.vsix -p "${VSCE_TOKEN}" 2>&1) || {
+            if echo "$OUTPUT" | grep -Eiq "already exists|cannot publish over the previously published versions|version .* already exists"; then
+              echo "VS Marketplace already has this version; skipping."
+              exit 0
+            fi
+            echo "$OUTPUT"
+            exit 1
+          }
+          echo "$OUTPUT"
+
+      - name: Publish to Open VSX
+        env:
+          OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
+        run: |
+          set -euo pipefail
+          OUTPUT=$(npx ovsx publish packages/vscode-extension/*.vsix -p "${OVSX_TOKEN}" 2>&1) || {
+            if echo "$OUTPUT" | grep -Eiq "already exists|already published"; then
+              echo "Open VSX already has this version; skipping."
+              exit 0
+            fi
+            echo "$OUTPUT"
+            exit 1
+          }
+          echo "$OUTPUT"
+
+  upload-vscode-release-asset:
+    name: Upload VS Code VSIX to Release
+    needs: [validate, build-vscode-extension]
+    if: inputs.upload_vscode_release_asset == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: vscode-extension-vsix
+          path: artifacts/vscode-extension-vsix
+
+      - name: Upload VSIX to existing GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.validate.outputs.tag }}
+          overwrite_files: true
+          files: artifacts/vscode-extension-vsix/*.vsix
+
+  tag-go-module:
+    name: Tag Go module
+    needs: [validate]
+    if: inputs.tag_go_module == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+          token: ${{ secrets.RELEASE_PLZ_TOKEN }}
+
+      - name: Create Go module tag (idempotent)
+        env:
+          TAG: ${{ needs.validate.outputs.tag }}
+        run: |
+          set -euo pipefail
+          VERSION="${TAG#v}"
+          GO_TAG="packages/go/zpltoolchain/v${VERSION}"
+          if git ls-remote --tags origin "refs/tags/$GO_TAG" | grep -q "$GO_TAG"; then
+            echo "Go module tag $GO_TAG already exists — skipping"
+            exit 0
+          fi
+          git tag "$GO_TAG"
+          git push origin "$GO_TAG"
+
+  publish-homebrew-tap:
+    name: Publish Homebrew Formula
+    needs: [validate, upload-release-assets]
+    if: ${{ always() && inputs.publish_homebrew_tap == true && needs.validate.result == 'success' && (inputs.rebuild_release_assets == false || needs.upload-release-assets.result == 'success') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      TAG: ${{ needs.validate.outputs.tag }}
+      HOMEBREW_TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}
+      HOMEBREW_TAP_FORMULA_PATH: ${{ vars.HOMEBREW_TAP_FORMULA_PATH }}
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.validate.outputs.tag }}
+
+      - name: Validate Homebrew configuration
+        run: |
+          set -euo pipefail
+          if [[ -z "${HOMEBREW_TAP_REPO}" ]]; then
+            echo "Missing required repository variable: HOMEBREW_TAP_REPO" >&2
+            exit 1
+          fi
+          if [[ -z "${HOMEBREW_TAP_TOKEN}" ]]; then
+            echo "Missing required repository secret: HOMEBREW_TAP_TOKEN" >&2
+            exit 1
+          fi
+
+      - name: Update tap formula
+        run: bash scripts/update-homebrew-tap.sh

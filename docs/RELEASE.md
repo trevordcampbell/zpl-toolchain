@@ -110,6 +110,22 @@ To rebuild CLI/FFI binaries and upload them to an existing GitHub Release (e.g. 
 the automated upload failed), trigger the manual workflow from the GitHub Actions UI:
 **Actions → Release (manual) → Run workflow → enter the tag (e.g. `v0.3.0`)**.
 
+For targeted republish/recovery of an existing release tag (npm/PyPI/VS Code/Homebrew/Go tag,
+or rebuilding release assets), use:
+**Actions → Release Recovery (manual) → Run workflow → select tag + toggles**.
+
+Recommended recovery defaults:
+
+- Missing VS Code marketplace publish only: enable `publish_vscode` (and optionally `upload_vscode_release_asset`)
+- Missing npm only: enable `publish_npm_core_print` and/or `publish_npm_cli`
+- Missing PyPI only: enable `publish_pypi`
+- Missing binary/FFI assets on GitHub Release: enable `rebuild_release_assets`
+
+Notes:
+
+- If `publish_npm_cli` is selected, the workflow verifies required CLI release assets exist first.
+- If `rebuild_release_assets` is selected together with `publish_npm_cli` or `publish_homebrew_tap`, recovery waits for asset upload before those jobs proceed.
+
 > **Why not a tag trigger?** The automated `release-plz.yml` workflow uses a PAT
 > (needed so CI runs on release PRs), which means tags it creates bypass GitHub's
 > anti-recursion protection and trigger other workflows. A tag-triggered manual
@@ -241,6 +257,7 @@ Skip any hook when needed: `git commit --no-verify` or `git push --no-verify`.
 | `ci.yml` | Push / PR | Build, test, clippy, fmt |
 | `release-plz.yml` | Push to main | Release PR + automated publish (crates.io, npm, PyPI, VS Code extension marketplaces, binaries, Go tag, Homebrew tap) |
 | `release.yml` | `workflow_dispatch` (manual) | Emergency fallback: rebuild binaries + upload to GitHub Release |
+| `release-recovery.yml` | `workflow_dispatch` (manual) | Targeted republish/recovery for existing tag (npm/PyPI/VS Code/Homebrew/Go tag/assets) |
 | `homebrew-tap-validate.yml` | `workflow_dispatch` (manual) | Dry-run Homebrew tap sync for a specific tag (no commit/push) |
 
 ## Configuration files

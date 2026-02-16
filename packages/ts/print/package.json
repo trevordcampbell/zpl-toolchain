@@ -1,6 +1,6 @@
 {
   "name": "@zpl-toolchain/print",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "Print client for sending ZPL to Zebra and ZPL-compatible printers (part of the zpl-toolchain project)",
   "type": "module",
   "engines": {

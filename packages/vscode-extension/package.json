@@ -2,7 +2,7 @@
   "name": "zpl-toolchain",
   "displayName": "ZPL Toolchain",
   "description": "Parse, validate, format, explain, and complete ZPL directly in VS Code-family editors.",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "publisher": "trevordcampbell",
   "license": "MIT OR Apache-2.0",
   "type": "commonjs",

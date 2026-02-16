@@ -278,24 +278,41 @@ jobs:
           files: |
             artifacts/**/*
 
-  assets-ready:
+  release-assets-ready:
     name: Ensure Release Assets Ready
     needs: [validate, upload-release-assets]
-    if: ${{ always() && inputs.publish_npm_cli == true && needs.validate.result == 'success' && (inputs.rebuild_release_assets == false || needs.upload-release-assets.result == 'success') }}
+    if: ${{ always() && (inputs.publish_npm_cli == true || inputs.publish_homebrew_tap == true) && needs.validate.result == 'success' && (inputs.rebuild_release_assets == false || needs.upload-release-assets.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Verify CLI release assets are available
+      - name: Verify required release assets are available
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.validate.outputs.tag }}
+          PUBLISH_NPM_CLI: ${{ inputs.publish_npm_cli }}
         run: |
           set -euo pipefail
           ASSETS_JSON=$(gh release view "$TAG" --json assets)
-          REQUIRED=("zpl-x86_64-unknown-linux-gnu.tar.gz" "zpl-aarch64-apple-darwin.tar.gz" "zpl-x86_64-pc-windows-msvc.zip")
+
+          # Homebrew formula generation needs Linux/macOS archives + checksums.
+          REQUIRED=(
+            "zpl-x86_64-unknown-linux-gnu.tar.gz"
+            "zpl-x86_64-unknown-linux-gnu.tar.gz.sha256"
+            "zpl-aarch64-apple-darwin.tar.gz"
+            "zpl-aarch64-apple-darwin.tar.gz.sha256"
+          )
+
+          # npm CLI runtime expects all release-platform artifacts, including Windows.
+          if [[ "${PUBLISH_NPM_CLI}" == "true" ]]; then
+            REQUIRED+=(
+              "zpl-x86_64-pc-windows-msvc.zip"
+              "zpl-x86_64-pc-windows-msvc.zip.sha256"
+            )
+          fi
+
           for asset in "${REQUIRED[@]}"; do
             if ! echo "$ASSETS_JSON" | jq -e --arg name "$asset" '.assets[] | select(.name == $name)' >/dev/null; then
-              echo "::error::Required release asset missing for npm CLI package: $asset"
+              echo "::error::Required release asset missing for recovery workflows: $asset"
               exit 1
             fi
           done
@@ -367,7 +384,7 @@ jobs:
 
   publish-npm-cli:
     name: Publish npm (@zpl-toolchain/cli)
-    needs: [validate, assets-ready]
+    needs: [validate, release-assets-ready]
     if: inputs.publish_npm_cli == true
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -380,12 +397,6 @@ jobs:
         with:
           node-version: "24.13.1"
           registry-url: "https://registry.npmjs.org"
-          cache: npm
-          cache-dependency-path: packages/ts/cli/package-lock.json
-
-      - name: Install dependencies
-        working-directory: packages/ts/cli
-        run: npm ci
 
       - name: Test @zpl-toolchain/cli
         working-directory: packages/ts/cli
@@ -629,8 +640,8 @@ jobs:
 
   publish-homebrew-tap:
     name: Publish Homebrew Formula
-    needs: [validate, upload-release-assets]
-    if: ${{ always() && inputs.publish_homebrew_tap == true && needs.validate.result == 'success' && (inputs.rebuild_release_assets == false || needs.upload-release-assets.result == 'success') }}
+    needs: [validate, release-assets-ready]
+    if: inputs.publish_homebrew_tap == true
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

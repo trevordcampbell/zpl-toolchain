@@ -305,12 +305,6 @@ jobs:
         with:
           node-version: "24.13.1"
           registry-url: "https://registry.npmjs.org"
-          cache: npm
-          cache-dependency-path: packages/ts/cli/package-lock.json
-
-      - name: Install dependencies
-        working-directory: packages/ts/cli
-        run: npm ci
 
       - name: Test @zpl-toolchain/cli
         working-directory: packages/ts/cli

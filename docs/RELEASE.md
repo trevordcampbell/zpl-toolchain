@@ -112,7 +112,7 @@ the automated upload failed), trigger the manual workflow from the GitHub Action
 
 For targeted republish/recovery of an existing release tag (npm/PyPI/VS Code/Homebrew/Go tag,
 or rebuilding release assets), use:
-**Actions → Release Recovery (manual) → Run workflow → select tag + toggles**.
+**Actions → Release Recovery (Manual Publish/Repair) → Run workflow → select tag + toggles**.
 
 Recommended recovery defaults:
 
@@ -125,6 +125,7 @@ Notes:
 
 - If `publish_npm_cli` is selected, the workflow verifies required CLI release assets exist first.
 - If `rebuild_release_assets` is selected together with `publish_npm_cli` or `publish_homebrew_tap`, recovery waits for asset upload before those jobs proceed.
+- Recovery verifies required release assets before npm CLI/Homebrew steps (Linux/macOS archives + checksums for Homebrew; adds Windows zip + checksum for npm CLI) so reruns fail early with clear asset-missing errors.
 - Recovery input validation fails fast on missing selected-channel prerequisites (for example `NPM_TOKEN`, `PYPI_TOKEN`, `VSCE_TOKEN`/`OVSX_TOKEN`, `RELEASE_PLZ_TOKEN`, and Homebrew tap config), so misconfigured runs fail early with explicit errors.
 
 > **Why not a tag trigger?** The automated `release-plz.yml` workflow uses a PAT

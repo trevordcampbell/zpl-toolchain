@@ -508,7 +508,21 @@ jobs:
         working-directory: packages/vscode-extension
         run: npm ci
 
-      - uses: ./.github/actions/prepare-vscode-core-runtime
+      # Use inline prep here so recovery works for older tags that predate
+      # `.github/actions/prepare-vscode-core-runtime`.
+      - name: Build WASM package for @zpl-toolchain/core
+        run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
+
+      - name: Install dependencies and build @zpl-toolchain/core
+        working-directory: packages/ts/core
+        run: |
+          npm ci
+          npm run build
+
+      - name: Verify core runtime artifacts exist
+        run: |
+          test -f packages/ts/core/wasm/pkg/zpl_toolchain_wasm_bg.wasm
+          test -f packages/ts/core/dist/index.js
 
       - name: Install Extension Host test runtime
         run: sudo apt-get update && sudo apt-get install -y xvfb xauth

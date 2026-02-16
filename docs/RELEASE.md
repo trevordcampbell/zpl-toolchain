@@ -127,6 +127,7 @@ Notes:
 - If `rebuild_release_assets` is selected together with `publish_npm_cli` or `publish_homebrew_tap`, recovery waits for asset upload before those jobs proceed.
 - Recovery verifies required release assets before npm CLI/Homebrew steps (Linux/macOS archives + checksums for Homebrew; adds Windows zip + checksum for npm CLI) so reruns fail early with clear asset-missing errors.
 - Recovery input validation fails fast on missing selected-channel prerequisites (for example `NPM_TOKEN`, `PYPI_TOKEN`, `VSCE_TOKEN`/`OVSX_TOKEN`, `RELEASE_PLZ_TOKEN`, and Homebrew tap config), so misconfigured runs fail early with explicit errors.
+- VS Code recovery runtime prep is inlined in `release-recovery.yml` (instead of a local composite action reference) so reruns also work for historical tags created before `.github/actions/prepare-vscode-core-runtime` existed.
 
 > **Why not a tag trigger?** The automated `release-plz.yml` workflow uses a PAT
 > (needed so CI runs on release PRs), which means tags it creates bypass GitHub's

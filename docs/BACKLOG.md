@@ -2,7 +2,7 @@
 
 > Single source of truth for tactical work items. For the strategic roadmap (phases, priorities, and architectural decisions), see [ROADMAP.md](ROADMAP.md). Original plans archived at `docs/research/archive/`.
 >
-> Last updated: 2026-02-15
+> Last updated: 2026-02-16
 
 ---
 
@@ -28,6 +28,8 @@ Before implementation work starts in `crates/renderer/`, complete these research
 - [ ] **Finalize VS Code extension publisher namespace strategy before first public publish** — current extension identity is `trevordcampbell.zpl-toolchain`; decide whether to keep this long-term or migrate publisher namespace to `zpl-toolchain` across VS Marketplace + Open VSX. Include token/namespace ownership setup, install/defaultFormatter ID migration plan, and docs/release workflow alignment.
 - [ ] **Investigate local vs fetched `@vscode/vsce` behavior drift** — in this environment, locally installed VSCE 3.7.1 reports `extension/dist/extension.js` missing, while freshly fetched `npx @vscode/vsce@3.7.1` packages successfully. Create a minimal repro, diff dependency trees/runtime env, and upstream a bug if reproducible.
 - [ ] **Evaluate arm64 CI lane for Extension Host integration tests** — current CI enforces extension-host integration on `ubuntu-latest` (x64). Assess adding a periodic or required `linux/arm64` run (self-hosted or hosted arm64 runner) to catch architecture-specific VS Code test-runtime regressions early.
+- [ ] **GitHub Actions supply-chain hardening pass (pin all third-party actions to commit SHAs)** — current workflows intentionally use tag refs (for readability and maintainability), and advisory `zizmor` reports `unpinned-uses`. Plan a controlled hardening pass that pins `uses:` entries to immutable SHAs, documents an update cadence/process, and validates no behavior regressions in `ci.yml`, `release-plz.yml`, `release-recovery.yml`, and workflow lint/security workflows.
+- [ ] **Optimize workflow security lint runtime (zizmor install strategy + policy ramp)** — `workflow-security-lint.yml` currently installs `zizmor` via `cargo install --locked --version 1.22.0` in advisory mode (`continue-on-error: true`). Evaluate faster deterministic install options (prebuilt release binary/action), baseline runtime/cost impact, and define a staged policy to move from advisory to required once findings are triaged.
 - [x] **`LineIndex` utility** — byte-offset → line/column conversion in `diagnostics` crate; zero external dependencies; reusable by WASM/LSP; 8 unit tests
 - [x] **CLI: pretty output formatting** — `ariadne` 0.6 for coloured source-annotated diagnostics; TTY detection via `std::io::IsTerminal`; `--output pretty|json` flag with auto-detection; severity-coloured summary; render module in `crates/cli/src/render.rs`
 - [x] **CLI: embed tables via `build.rs`** — `build.rs` copies `generated/parser_tables.json` into binary at compile time; `--tables` flag retained as override; resolves ADR 0005; no more mandatory `--tables` for parse/lint/syntax-check

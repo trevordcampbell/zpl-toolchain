@@ -245,7 +245,7 @@ The `.githooks/` directory contains three hooks, activated via `git config core.
 | Hook | Trigger | Checks |
 |------|---------|--------|
 | `commit-msg` | Every commit | Conventional Commits format |
-| `pre-commit` | Every commit | Parser tables sync + `cargo fmt --check` + clippy on staged Rust changes |
+| `pre-commit` | Every commit | Parser tables sync + `cargo fmt --check` + clippy on staged Rust changes + `actionlint` when workflow files are staged |
 | `pre-push` | Every push | `cargo clippy -D warnings` + `note-audit` + CI/devcontainer toolchain alignment + full workspace test suite + conditional VS Code extension checks when extension-related files are being pushed |
 
 Skip any hook when needed: `git commit --no-verify` or `git push --no-verify`.
@@ -255,6 +255,8 @@ Skip any hook when needed: `git commit --no-verify` or `git push --no-verify`.
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `ci.yml` | Push / PR | Build, test, clippy, fmt |
+| `workflow-lint.yml` | Push / PR (workflow file changes) + manual | Lint GitHub Actions workflows with `actionlint` |
+| `workflow-security-lint.yml` | Push / PR (workflow file changes) + manual | Advisory security lint for workflows via `zizmor` (non-blocking) |
 | `release-plz.yml` | Push to main | Release PR + automated publish (crates.io, npm, PyPI, VS Code extension marketplaces, binaries, Go tag, Homebrew tap) |
 | `release.yml` | `workflow_dispatch` (manual) | Emergency fallback: rebuild binaries + upload to GitHub Release |
 | `release-recovery.yml` | `workflow_dispatch` (manual) | Targeted republish/recovery for existing tag (npm/PyPI/VS Code/Homebrew/Go tag/assets) |

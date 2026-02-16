@@ -443,8 +443,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 
   context.subscriptions.push(
-    vscode.commands.registerTextEditorCommand(TOGGLE_FX_COMMENT_COMMAND_ID, (editor) => {
-      toggleFxComment(editor);
+    vscode.commands.registerTextEditorCommand(TOGGLE_FX_COMMENT_COMMAND_ID, async (editor) => {
+      await toggleFxComment(editor);
     })
   );
 
@@ -1129,7 +1129,7 @@ function getThemePresetRules(
   ];
 }
 
-function toggleFxComment(editor: vscode.TextEditor): void {
+async function toggleFxComment(editor: vscode.TextEditor): Promise<void> {
   if (!isZplDocument(editor.document)) {
     return;
   }
@@ -1147,7 +1147,7 @@ function toggleFxComment(editor: vscode.TextEditor): void {
     ranges.push({ startLine, endLine });
   }
 
-  void editor.edit((editBuilder) => {
+  const applied = await editor.edit((editBuilder) => {
     for (const { startLine, endLine } of ranges) {
       const lines = Array.from({ length: endLine - startLine + 1 }, (_, idx) => startLine + idx);
       const allFxComment = lines.every((line) =>
@@ -1177,11 +1177,10 @@ function toggleFxComment(editor: vscode.TextEditor): void {
         placeholderSelections.push(new vscode.Selection(start, end));
       }
     }
-  }).then((applied) => {
-    if (applied && placeholderSelections.length > 0) {
-      editor.selections = placeholderSelections;
-    }
   });
+  if (applied && placeholderSelections.length > 0) {
+    editor.selections = placeholderSelections;
+  }
 }
 
 async function promptThemePresetSelection(): Promise<ThemePreset | undefined> {

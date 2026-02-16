@@ -20,7 +20,6 @@ jobs:
   zizmor:
     name: zizmor (advisory)
     runs-on: ubuntu-latest
-    continue-on-error: true
     permissions:
       contents: read
     steps:
@@ -34,7 +33,18 @@ jobs:
           build-tables: "false"
 
       - name: Install zizmor
+        continue-on-error: true
         run: cargo install --locked --version 1.22.0 zizmor
 
       - name: Run zizmor (advisory)
-        run: zizmor .github/workflows
+        continue-on-error: true
+        run: |
+          if command -v zizmor >/dev/null 2>&1; then
+            zizmor .github/workflows
+          else
+            echo "::warning::zizmor is unavailable; skipping advisory scan."
+          fi
+
+      - name: Advisory mode summary
+        if: always()
+        run: echo "zizmor is advisory in this workflow; findings do not block merges."

@@ -56,7 +56,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
@@ -66,6 +66,7 @@ jobs:
   validate:
     name: Validate Recovery Inputs
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       tag: ${{ steps.validate.outputs.tag }}
     steps:
@@ -106,11 +107,63 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Validated recovery target: $TAG"
 
+      - name: Validate selected channel prerequisites
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PYPI_TOKEN: ${{ secrets.PYPI_TOKEN }}
+          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+          OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
+          RELEASE_PLZ_TOKEN: ${{ secrets.RELEASE_PLZ_TOKEN }}
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          HOMEBREW_TAP_REPO: ${{ vars.HOMEBREW_TAP_REPO }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${{ inputs.publish_npm_core_print }}" == "true" || "${{ inputs.publish_npm_cli }}" == "true" ]]; then
+            if [[ -z "${NPM_TOKEN}" ]]; then
+              echo "::error::NPM_TOKEN is required for selected npm publish actions."
+              exit 1
+            fi
+          fi
+
+          if [[ "${{ inputs.publish_pypi }}" == "true" && -z "${PYPI_TOKEN}" ]]; then
+            echo "::error::PYPI_TOKEN is required for publish_pypi."
+            exit 1
+          fi
+
+          if [[ "${{ inputs.publish_vscode }}" == "true" ]]; then
+            if [[ -z "${VSCE_TOKEN}" ]]; then
+              echo "::error::VSCE_TOKEN is required for publish_vscode."
+              exit 1
+            fi
+            if [[ -z "${OVSX_TOKEN}" ]]; then
+              echo "::error::OVSX_TOKEN is required for publish_vscode."
+              exit 1
+            fi
+          fi
+
+          if [[ "${{ inputs.tag_go_module }}" == "true" && -z "${RELEASE_PLZ_TOKEN}" ]]; then
+            echo "::error::RELEASE_PLZ_TOKEN is required for tag_go_module."
+            exit 1
+          fi
+
+          if [[ "${{ inputs.publish_homebrew_tap }}" == "true" ]]; then
+            if [[ -z "${HOMEBREW_TAP_TOKEN}" ]]; then
+              echo "::error::HOMEBREW_TAP_TOKEN is required for publish_homebrew_tap."
+              exit 1
+            fi
+            if [[ -z "${HOMEBREW_TAP_REPO}" ]]; then
+              echo "::error::HOMEBREW_TAP_REPO is required for publish_homebrew_tap."
+              exit 1
+            fi
+          fi
+
   build-cli:
     name: Build CLI (${{ matrix.target }})
     needs: [validate]
     if: inputs.rebuild_release_assets == true
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
     strategy:
       matrix:
         include:
@@ -170,6 +223,7 @@ jobs:
     needs: [validate]
     if: inputs.rebuild_release_assets == true
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
     strategy:
       matrix:
         include:
@@ -207,6 +261,9 @@ jobs:
     needs: [validate, build-cli, build-ffi]
     if: inputs.rebuild_release_assets == true
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
@@ -226,6 +283,7 @@ jobs:
     needs: [validate, upload-release-assets]
     if: ${{ always() && inputs.publish_npm_cli == true && needs.validate.result == 'success' && (inputs.rebuild_release_assets == false || needs.upload-release-assets.result == 'success') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Verify CLI release assets are available
         env:
@@ -247,6 +305,7 @@ jobs:
     needs: [validate]
     if: inputs.publish_npm_core_print == true
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -264,6 +323,10 @@ jobs:
         with:
           node-version: "24.13.1"
           registry-url: "https://registry.npmjs.org"
+          cache: npm
+          cache-dependency-path: |
+            packages/ts/core/package-lock.json
+            packages/ts/print/package-lock.json
 
       - name: Build WASM
         run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
@@ -307,6 +370,7 @@ jobs:
     needs: [validate, assets-ready]
     if: inputs.publish_npm_cli == true
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -316,6 +380,12 @@ jobs:
         with:
           node-version: "24.13.1"
           registry-url: "https://registry.npmjs.org"
+          cache: npm
+          cache-dependency-path: packages/ts/cli/package-lock.json
+
+      - name: Install dependencies
+        working-directory: packages/ts/cli
+        run: npm ci
 
       - name: Test @zpl-toolchain/cli
         working-directory: packages/ts/cli
@@ -339,6 +409,7 @@ jobs:
     needs: [validate]
     if: inputs.publish_pypi == true
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -388,6 +459,7 @@ jobs:
     needs: [validate]
     if: inputs.publish_vscode == true || inputs.upload_vscode_release_asset == true
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -404,6 +476,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24.13.1"
+          cache: npm
+          cache-dependency-path: |
+            packages/vscode-extension/package-lock.json
+            packages/ts/core/package-lock.json
 
       - name: Verify extension version matches tag
         working-directory: packages/vscode-extension
@@ -421,8 +497,7 @@ jobs:
         working-directory: packages/vscode-extension
         run: npm ci
 
-      - name: Build WASM runtime for extension bundling
-        run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
+      - uses: ./.github/actions/prepare-vscode-core-runtime
 
       - name: Install Extension Host test runtime
         run: sudo apt-get update && sudo apt-get install -y xvfb xauth
@@ -451,7 +526,23 @@ jobs:
     needs: [validate, build-vscode-extension]
     if: inputs.publish_vscode == true
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
+      - name: Validate VS Code extension publish secrets
+        env:
+          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
+          OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${VSCE_TOKEN}" ]]; then
+            echo "Missing required repository secret: VSCE_TOKEN" >&2
+            exit 1
+          fi
+          if [[ -z "${OVSX_TOKEN}" ]]; then
+            echo "Missing required repository secret: OVSX_TOKEN" >&2
+            exit 1
+          fi
+
       - uses: actions/download-artifact@v4
         with:
           name: vscode-extension-vsix
@@ -477,7 +568,7 @@ jobs:
           OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
         run: |
           set -euo pipefail
-          OUTPUT=$(npx ovsx publish packages/vscode-extension/*.vsix -p "${OVSX_TOKEN}" 2>&1) || {
+          OUTPUT=$(npx ovsx@0.10.6 publish packages/vscode-extension/*.vsix -p "${OVSX_TOKEN}" 2>&1) || {
             if echo "$OUTPUT" | grep -Eiq "already exists|already published"; then
               echo "Open VSX already has this version; skipping."
               exit 0
@@ -492,6 +583,9 @@ jobs:
     needs: [validate, build-vscode-extension]
     if: inputs.upload_vscode_release_asset == true
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -510,6 +604,9 @@ jobs:
     needs: [validate]
     if: inputs.tag_go_module == true
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -535,6 +632,7 @@ jobs:
     needs: [validate, upload-release-assets]
     if: ${{ always() && inputs.publish_homebrew_tap == true && needs.validate.result == 'success' && (inputs.rebuild_release_assets == false || needs.upload-release-assets.result == 'success') }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: read
     env:

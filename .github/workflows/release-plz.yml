@@ -241,6 +241,7 @@ jobs:
     needs: [release]
     if: needs.release.outputs.releases_created == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
         with:
@@ -258,6 +259,10 @@ jobs:
         with:
           node-version: "24.13.1"
           registry-url: "https://registry.npmjs.org"
+          cache: npm
+          cache-dependency-path: |
+            packages/ts/core/package-lock.json
+            packages/ts/print/package-lock.json
 
       # ── @zpl-toolchain/core (WASM) ──────────────────────────────────
       - name: Build WASM
@@ -290,6 +295,7 @@ jobs:
     needs: [release, upload-artifacts]
     if: needs.release.outputs.releases_created == 'true' && needs.upload-artifacts.result == 'success'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -299,6 +305,12 @@ jobs:
         with:
           node-version: "24.13.1"
           registry-url: "https://registry.npmjs.org"
+          cache: npm
+          cache-dependency-path: packages/ts/cli/package-lock.json
+
+      - name: Install dependencies
+        working-directory: packages/ts/cli
+        run: npm ci
 
       - name: Test @zpl-toolchain/cli
         working-directory: packages/ts/cli
@@ -316,6 +328,7 @@ jobs:
     needs: [release]
     if: needs.release.outputs.releases_created == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -332,6 +345,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24.13.1"
+          cache: npm
+          cache-dependency-path: |
+            packages/vscode-extension/package-lock.json
+            packages/ts/core/package-lock.json
 
       - name: Verify extension version matches release tag
         working-directory: packages/vscode-extension
@@ -349,8 +366,7 @@ jobs:
         working-directory: packages/vscode-extension
         run: npm ci
 
-      - name: Build WASM runtime for extension bundling
-        run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
+      - uses: ./.github/actions/prepare-vscode-core-runtime
 
       - name: Install Extension Host test runtime
         run: sudo apt-get update && sudo apt-get install -y xvfb xauth
@@ -399,6 +415,7 @@ jobs:
     needs: [release, build-vscode-extension]
     if: needs.release.outputs.releases_created == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
       OVSX_TOKEN: ${{ secrets.OVSX_TOKEN }}
@@ -443,7 +460,7 @@ jobs:
         run: npx @vscode/vsce@3.7.1 publish --packagePath packages/vscode-extension/*.vsix -p "${VSCE_TOKEN}"
 
       - name: Publish to Open VSX
-        run: npx ovsx publish packages/vscode-extension/*.vsix -p "${OVSX_TOKEN}"
+        run: npx ovsx@0.10.6 publish packages/vscode-extension/*.vsix -p "${OVSX_TOKEN}"
 
   # ── Publish Python wheel to PyPI ──────────────────────────────────────
   publish-pypi:
@@ -451,6 +468,7 @@ jobs:
     needs: [release]
     if: needs.release.outputs.releases_created == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
@@ -579,6 +597,7 @@ jobs:
     needs: [release, build-cli, build-ffi]
     if: needs.release.outputs.releases_created == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
     steps:
@@ -601,6 +620,7 @@ jobs:
     needs: [release, build-vscode-extension]
     if: needs.release.outputs.releases_created == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
     steps:

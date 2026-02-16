@@ -90,6 +90,11 @@ fn field_data_with_special_chars_roundtrip() {
 }
 
 #[test]
+fn field_data_with_leading_space_roundtrip() {
+    assert_roundtrip("^XA^FO10,10^FD Leading^FS^XZ", &common::TABLES);
+}
+
+#[test]
 fn field_value_fv_roundtrip() {
     assert_roundtrip(
         "^XA^FO10,10^A0N,30,30^FVDynamic Data^FS^XZ",
@@ -100,56 +105,19 @@ fn field_value_fv_roundtrip() {
 // ── Comments ────────────────────────────────────────────────────────────
 
 #[test]
-fn semicolon_comment_roundtrip() {
-    assert_roundtrip("^XA\n^PW812   ; set print width\n^XZ", &common::TABLES);
-}
-
-#[test]
-fn semicolon_comment_defaults_to_inline_on_format() {
-    let tables = &common::TABLES;
-    let input = "^XA\n^PW812\n; set print width\n^XZ\n";
-    let res = parse_with_tables(input, Some(tables));
-    let formatted = emit_zpl(&res.ast, Some(tables), &EmitConfig::default());
-    assert!(
-        formatted.contains("^PW812 ; set print width"),
-        "Expected default formatter output to keep semicolon comments inline, got:\n{}",
-        formatted
-    );
-}
-
-#[test]
-fn semicolon_comment_line_mode_keeps_comment_on_its_own_line() {
-    let tables = &common::TABLES;
-    let input = "^XA\n^PW812\n; set print width\n^XZ\n";
-    let res = parse_with_tables(input, Some(tables));
-    let formatted = emit_zpl(
-        &res.ast,
-        Some(tables),
-        &EmitConfig {
-            comment_placement: zpl_toolchain_core::CommentPlacement::Line,
-            ..EmitConfig::default()
-        },
-    );
-    assert!(
-        formatted.contains("^PW812\n; set print width"),
-        "Expected line mode to preserve standalone comments, got:\n{}",
-        formatted
-    );
+fn semicolon_is_treated_as_plain_data() {
+    assert_roundtrip("^XA\n^FO10,10^FDPart;A^FS\n^XZ", &common::TABLES);
 }
 
 #[test]
 fn fx_comment_preserved_in_output() {
-    // Note: ^FX has an empty joiner, so the parser splits content
-    // character-by-character and loses spaces (a parser-level limitation).
-    // We test that ^FX content is emitted (not dropped), even if spaces
-    // are not perfectly preserved.
     let tables = &common::TABLES;
-    let input = "^XA^FXComment^FS^XZ";
+    let input = "^XA^FX This is a comment^FS^XZ";
     let res = parse_with_tables(input, Some(tables));
     let formatted = emit_zpl(&res.ast, Some(tables), &EmitConfig::default());
     assert!(
-        formatted.contains("^FXComment"),
-        "Expected ^FX comment to be preserved, got:\n{}",
+        formatted.contains("^FX This is a comment"),
+        "Expected ^FX comment text to be preserved, got:\n{}",
         formatted
     );
 }
@@ -350,6 +318,44 @@ fn compaction_field_keeps_barcode_default_flow_inside_field_block() {
     assert!(
         formatted.contains("^FO30,190^BY2,2,80^BEN,80,Y,N^FD012345678901^FS"),
         "Expected barcode default/print sequence to stay compacted in field block, got:\n{}",
+        formatted
+    );
+}
+
+#[test]
+fn compaction_field_keeps_fx_comment_terminator_inline() {
+    let tables = &common::TABLES;
+    let input = "^XA\n^PW812\n^FXThis is an example with comments\n^FS\n^XZ\n";
+    let config = EmitConfig {
+        indent: Indent::None,
+        compaction: zpl_toolchain_core::Compaction::Field,
+        ..EmitConfig::default()
+    };
+    let res = parse_with_tables(input, Some(tables));
+    let formatted = emit_zpl(&res.ast, Some(tables), &config);
+
+    assert!(
+        formatted.contains("^FXThis is an example with comments^FS"),
+        "Expected ^FX comment terminator to stay inline under field compaction, got:\n{}",
+        formatted
+    );
+}
+
+#[test]
+fn compaction_field_keeps_field_data_terminator_inline() {
+    let tables = &common::TABLES;
+    let input = "^XA\n^FO20,221\n^FH_\n^FDABC123\n^FS\n^XZ\n";
+    let config = EmitConfig {
+        indent: Indent::None,
+        compaction: zpl_toolchain_core::Compaction::Field,
+        ..EmitConfig::default()
+    };
+    let res = parse_with_tables(input, Some(tables));
+    let formatted = emit_zpl(&res.ast, Some(tables), &config);
+
+    assert!(
+        formatted.contains("^FDABC123^FS"),
+        "Expected field-data terminator to stay inline under field compaction, got:\n{}",
         formatted
     );
 }

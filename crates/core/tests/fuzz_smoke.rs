@@ -10,6 +10,7 @@
 mod common;
 
 use zpl_toolchain_core::grammar::ast::Node;
+use zpl_toolchain_core::grammar::emit::{EmitConfig, emit_zpl};
 use zpl_toolchain_core::grammar::lexer::tokenize;
 use zpl_toolchain_core::grammar::parser::{ParseResult, parse_str, parse_with_tables};
 use zpl_toolchain_core::validate::validate;
@@ -179,6 +180,34 @@ fn parser_no_panic_random_zpl_like() {
             fuzz_parse(&s, tables);
         }
     }
+}
+
+#[test]
+fn parser_no_panic_crlf_and_fx_comment_mix() {
+    let tables = &*common::TABLES;
+    let mut rng = SimpleRng::new(0xA11C_E5E5);
+    let alpha: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -_";
+    for _ in 0..100 {
+        let mut fx_payload = String::new();
+        let len = 10 + rng.gen_range(60);
+        for _ in 0..len {
+            fx_payload.push(alpha[rng.gen_range(alpha.len())] as char);
+        }
+        let input = format!("^XA\r\n^FX {fx_payload}^FS\r\n^FO10,10\r\n^FDHELLO^FS\r\n^XZ\r\n");
+        fuzz_parse(&input, tables);
+    }
+}
+
+#[test]
+fn fx_comment_roundtrip_retains_payload_shape() {
+    let tables = &*common::TABLES;
+    let input = "^XA\r\n^FX Comment payload 123-ABC^FS\r\n^XZ\r\n";
+    let parsed = parse_with_tables(input, Some(tables));
+    let formatted = emit_zpl(&parsed.ast, Some(tables), &EmitConfig::default());
+    assert!(
+        formatted.contains("^FX Comment payload 123-ABC"),
+        "expected ^FX payload to survive parse/emit roundtrip, got:\n{formatted}"
+    );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

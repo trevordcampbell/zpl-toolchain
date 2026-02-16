@@ -16,6 +16,7 @@ import { Utf8LineIndex } from "./utf8LineIndex";
 const DIAGNOSTIC_SOURCE = "zpl-toolchain";
 const EXPLAIN_COMMAND_ID = "zplToolchain.explainDiagnostic";
 const APPLY_THEME_PRESET_COMMAND_ID = "zplToolchain.applyThemePreset";
+const TOGGLE_FX_COMMENT_COMMAND_ID = "zplToolchain.toggleFxComment";
 const COMMAND_PREFIX_REGEX = /[\^~][A-Za-z0-9@]*$/;
 const COMMAND_TOKEN_REGEX_SOURCE = "\\^A[0-9]|\\^A(?=[A-Za-z])|[\\^~][A-Za-z0-9@]{1,2}";
 const COMMAND_COMPLETION_TRIGGER_CHARACTERS = [
@@ -31,7 +32,6 @@ const FIELD_OPENING_COMMANDS = new Set(["^FO", "^FT", "^FM", "^FN"]);
 
 type ThemePreset = "custom" | "default" | "high-contrast" | "minimal";
 type FormatCompaction = "none" | "field";
-type CommentPlacement = "inline" | "line";
 
 type CommandContext = {
   code: string;
@@ -224,8 +224,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         const finalText = core.format(
           document.getText(),
           indentStyle,
-          getFormatCompaction(),
-          getCommentPlacement()
+          getFormatCompaction()
         );
         const fullRange = new vscode.Range(
           document.positionAt(0),
@@ -441,6 +440,12 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         await applyThemePreset(preset, "manual");
       }
     )
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerTextEditorCommand(TOGGLE_FX_COMMENT_COMMAND_ID, (editor) => {
+      toggleFxComment(editor);
+    })
   );
 
   if (getThemePreset() !== "custom") {
@@ -1028,11 +1033,6 @@ function getFormatCompaction(): FormatCompaction {
   return compaction === "field" ? "field" : "none";
 }
 
-function getCommentPlacement(): CommentPlacement {
-  const placement = getConfig().get<string>("format.commentPlacement", "inline");
-  return placement === "line" ? "line" : "inline";
-}
-
 function isHoverEnabled(): boolean {
   return getConfig().get<boolean>("hover.enabled", true);
 }
@@ -1076,7 +1076,7 @@ function getThemePresetRules(
       },
       {
         name: "zpl-toolchain:comments",
-        scope: "comment.line.semicolon.zpl",
+        scope: "comment.line.fx.zpl",
         settings: { foreground: "#8B949E", fontStyle: "italic" },
       },
     ];
@@ -1123,10 +1123,65 @@ function getThemePresetRules(
     },
     {
       name: "zpl-toolchain:comments",
-      scope: "comment.line.semicolon.zpl",
+      scope: "comment.line.fx.zpl",
       settings: { foreground: "#6A9955", fontStyle: "italic" },
     },
   ];
+}
+
+function toggleFxComment(editor: vscode.TextEditor): void {
+  if (!isZplDocument(editor.document)) {
+    return;
+  }
+  const placeholderSelections: vscode.Selection[] = [];
+  const ranges: Array<{ startLine: number; endLine: number }> = [];
+  for (const selection of editor.selections) {
+    const startLine = selection.start.line;
+    let endLine = selection.end.line;
+    if (!selection.isEmpty && selection.end.character === 0) {
+      endLine -= 1;
+    }
+    if (endLine < startLine) {
+      endLine = startLine;
+    }
+    ranges.push({ startLine, endLine });
+  }
+
+  void editor.edit((editBuilder) => {
+    for (const { startLine, endLine } of ranges) {
+      const lines = Array.from({ length: endLine - startLine + 1 }, (_, idx) => startLine + idx);
+      const allFxComment = lines.every((line) =>
+        /^\s*\^FX(?:\s.*)?\^FS\s*$/i.test(editor.document.lineAt(line).text)
+      );
+
+      for (const line of lines) {
+        const lineText = editor.document.lineAt(line).text;
+        const indent = lineText.match(/^\s*/)?.[0] ?? "";
+        if (allFxComment) {
+          const uncommented = lineText.replace(/^\s*\^FX\s?(.*?)\^FS\s*$/i, `$1`);
+          editBuilder.replace(editor.document.lineAt(line).range, `${indent}${uncommented}`.trimEnd());
+          continue;
+        }
+
+        const body = lineText.trim();
+        if (body.length > 0) {
+          editBuilder.replace(editor.document.lineAt(line).range, `${indent}^FX ${body}^FS`);
+          continue;
+        }
+
+        const placeholder = "comment";
+        const replacement = `${indent}^FX ${placeholder}^FS`;
+        editBuilder.replace(editor.document.lineAt(line).range, replacement);
+        const start = new vscode.Position(line, indent.length + 4);
+        const end = new vscode.Position(line, indent.length + 4 + placeholder.length);
+        placeholderSelections.push(new vscode.Selection(start, end));
+      }
+    }
+  }).then((applied) => {
+    if (applied && placeholderSelections.length > 0) {
+      editor.selections = placeholderSelections;
+    }
+  });
 }
 
 async function promptThemePresetSelection(): Promise<ThemePreset | undefined> {

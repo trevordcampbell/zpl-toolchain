@@ -87,8 +87,13 @@ pub unsafe extern "C" fn zpl_parse(input: *const c_char) -> *mut c_char {
             return ptr::null_mut();
         };
 
-        let result = common::parse_zpl(input);
-        to_json_c(&result)
+        match common::parse_zpl(input) {
+            Ok(result) => to_json_c(&result),
+            Err(e) => {
+                let out = serde_json::json!({"error": e});
+                to_json_c(&out)
+            }
+        }
     })
 }
 
@@ -221,27 +226,24 @@ pub unsafe extern "C" fn zpl_format_with_options(
     indent: *const c_char,
     compaction: *const c_char,
 ) -> *mut c_char {
-    unsafe { zpl_format_with_options_v2(input, indent, compaction, ptr::null()) }
+    unsafe { zpl_format_with_options_v2(input, indent, compaction) }
 }
 
-/// Format a ZPL string with indent, compaction, and comment placement controls.
+/// Format a ZPL string with indent and compaction controls.
 ///
 /// `indent`: "none" (default), "label", or "field".
 /// `compaction`: "none" (default) or "field".
-/// `comment_placement`: "inline" (default) or "line".
 ///
 /// The caller MUST free the returned pointer with `zpl_free()`.
 ///
 /// # Safety
 ///
-/// `input`, `indent`, `compaction`, and `comment_placement` must be valid,
-/// null-terminated C string pointers (or NULL).
+/// `input`, `indent`, and `compaction` must be valid, null-terminated C string pointers (or NULL).
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn zpl_format_with_options_v2(
     input: *const c_char,
     indent: *const c_char,
     compaction: *const c_char,
-    comment_placement: *const c_char,
 ) -> *mut c_char {
     guard_ffi_json(|| {
         let Some(input) = (unsafe { cstr_to_str(input) }) else {
@@ -250,14 +252,13 @@ pub unsafe extern "C" fn zpl_format_with_options_v2(
 
         let indent_str = unsafe { cstr_to_str(indent) };
         let compaction_str = unsafe { cstr_to_str(compaction) };
-        let comment_placement_str = unsafe { cstr_to_str(comment_placement) };
-        let formatted = common::format_zpl_with_options(
-            input,
-            indent_str,
-            compaction_str,
-            comment_placement_str,
-        );
-        to_c_string(&formatted)
+        match common::format_zpl_with_options(input, indent_str, compaction_str) {
+            Ok(formatted) => to_c_string(&formatted),
+            Err(e) => {
+                let out = serde_json::json!({"error": e});
+                to_json_c(&out)
+            }
+        }
     })
 }
 

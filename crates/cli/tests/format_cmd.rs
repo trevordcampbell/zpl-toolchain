@@ -39,10 +39,6 @@ fn format_help_shows_compaction_flag() {
         stdout.contains("--compaction"),
         "missing --compaction in format help output: {stdout}"
     );
-    assert!(
-        stdout.contains("--comment-placement"),
-        "missing --comment-placement in format help output: {stdout}"
-    );
 }
 
 #[test]
@@ -210,8 +206,8 @@ fn format_compaction_applies_with_label_indent_and_preserves_indent() {
 }
 
 #[test]
-fn format_defaults_to_inline_semicolon_comments() {
-    let input = "^XA\n^PW812\n; set print width\n^XZ\n";
+fn format_semicolon_is_treated_as_plain_data() {
+    let input = "^XA\n^FO10,10^FDPart;A^FS\n^XZ\n";
     let (_dir, path) = write_temp_zpl(input);
 
     let output = zpl_cmd()
@@ -227,42 +223,7 @@ fn format_defaults_to_inline_semicolon_comments() {
 
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(
-        stdout.contains("^PW812 ; set print width"),
-        "expected default formatter to keep comments inline, got:\n{stdout}"
-    );
-}
-
-#[test]
-fn format_comment_placement_line_preserves_standalone_comment_lines() {
-    let input = "^XA\n^PW812\n; set print width\n^XZ\n";
-    let (_dir, path) = write_temp_zpl(input);
-    let output = zpl_cmd()
-        .args([
-            "format",
-            &path,
-            "--tables",
-            &tables_path(),
-            "--comment-placement",
-            "line",
-        ])
-        .output()
-        .expect("run format with comment placement line");
-    assert!(
-        output.status.success(),
-        "expected format to succeed, stderr={}",
-        String::from_utf8_lossy(&output.stderr)
-    );
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let formatted = if stdout.trim_start().starts_with('{') {
-        serde_json::from_str::<serde_json::Value>(&stdout).expect("valid format json")["formatted"]
-            .as_str()
-            .unwrap_or("")
-            .to_string()
-    } else {
-        stdout.to_string()
-    };
-    assert!(
-        formatted.contains("^PW812\n; set print width"),
-        "expected line comment placement to preserve standalone line, got:\n{formatted}"
+        stdout.contains("^FDPart;A"),
+        "expected semicolon to remain part of field data, got:\n{stdout}"
     );
 }

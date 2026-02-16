@@ -65,8 +65,7 @@ export interface ZplCoreApi {
   format(
     input: string,
     indent?: "none" | "label" | "field",
-    compaction?: "none" | "field",
-    commentPlacement?: "inline" | "line"
+    compaction?: "none" | "field"
   ): string;
   explain(id: string): string | null;
 }

@@ -63,6 +63,19 @@
         "command": "zplToolchain.applyThemePreset",
         "title": "ZPL Toolchain: Apply Theme Preset",
         "category": "ZPL Toolchain"
+      },
+      {
+        "command": "zplToolchain.toggleFxComment",
+        "title": "ZPL Toolchain: Toggle ^FX Comment",
+        "category": "ZPL Toolchain"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "zplToolchain.toggleFxComment",
+        "key": "ctrl+/",
+        "mac": "cmd+/",
+        "when": "editorTextFocus && editorLangId == zpl"
       }
     ],
     "configuration": {
@@ -98,15 +111,6 @@
           ],
           "default": "field",
           "description": "Optional formatter compaction. 'field' keeps printable field blocks (^FO/^FT/^FM/^FN ... ^FS) on one line while preserving setup/global flow."
-        },
-        "zplToolchain.format.commentPlacement": {
-          "type": "string",
-          "enum": [
-            "inline",
-            "line"
-          ],
-          "default": "inline",
-          "description": "Comment formatting style for semicolon comments. 'inline' keeps standalone comment lines attached to the preceding command where safe; 'line' preserves fully line-oriented formatter output."
         },
         "zplToolchain.hover.enabled": {
           "type": "boolean",

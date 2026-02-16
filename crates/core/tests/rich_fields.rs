@@ -27,7 +27,7 @@ fn rounding_policy_to_multiple_warns() {
     // Build a small tables struct programmatically with a synthetic command ^TR
     let tables = zpl_toolchain_spec_tables::ParserTables::new(
         "1.0.0".into(),
-        "0.3.0".into(),
+        zpl_toolchain_spec_tables::TABLE_FORMAT_VERSION.into(),
         vec![zpl_toolchain_spec_tables::CommandEntry {
             codes: vec!["^ZZR".to_string()],
             arity: 1,
@@ -42,7 +42,7 @@ fn rounding_policy_to_multiple_warns() {
             signature: Some(zpl_toolchain_spec_tables::Signature {
                 params: vec!["n".to_string()],
                 joiner: ",".to_string(),
-                no_space_after_opcode: true,
+                spacing_policy: zpl_toolchain_spec_tables::SpacingPolicy::Forbid,
                 allow_empty_trailing: true,
                 split_rule: None,
             }),
@@ -113,7 +113,7 @@ fn conditional_range_enforced() {
     // and a conditional range on a when b == X
     let tables = zpl_toolchain_spec_tables::ParserTables::new(
         "1.0.0".into(),
-        "0.3.0".into(),
+        zpl_toolchain_spec_tables::TABLE_FORMAT_VERSION.into(),
         vec![zpl_toolchain_spec_tables::CommandEntry {
             codes: vec!["^ZZC".to_string()],
             arity: 2,
@@ -128,7 +128,7 @@ fn conditional_range_enforced() {
             signature: Some(zpl_toolchain_spec_tables::Signature {
                 params: vec!["a".to_string(), "b".to_string()],
                 joiner: ",".to_string(),
-                no_space_after_opcode: true,
+                spacing_policy: zpl_toolchain_spec_tables::SpacingPolicy::Forbid,
                 allow_empty_trailing: true,
                 split_rule: None,
             }),

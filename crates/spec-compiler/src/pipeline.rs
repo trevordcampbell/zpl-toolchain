@@ -1649,7 +1649,7 @@ mod tests {
         let sig = zpl_toolchain_spec_tables::Signature {
             params: vec!["f".into(), "o".into(), "h".into(), "w".into()],
             joiner: ",".into(),
-            no_space_after_opcode: true,
+            spacing_policy: zpl_toolchain_spec_tables::SpacingPolicy::Forbid,
             allow_empty_trailing: true,
             split_rule: Some(zpl_toolchain_spec_tables::SplitRule {
                 param_index: 0,

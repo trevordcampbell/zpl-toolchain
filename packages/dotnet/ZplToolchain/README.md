@@ -36,7 +36,7 @@ Console.WriteLine($"Labels: {result.Ast.Labels.Count}");
 
 // Format ZPL
 var formatted = Zpl.Format("^XA^FD Hello ^FS^XZ", "label");
-var compact = Zpl.FormatWithOptions("^XA^FO30,30^A0N,30,30^FDHello^FS^XZ", "label", "field", "inline");
+var compact = Zpl.FormatWithOptions("^XA^FO30,30^A0N,30,30^FDHello^FS^XZ", "label", "field");
 
 // Validate ZPL
 var validation = Zpl.Validate("^XA^FDHello^FS^XZ");
@@ -75,7 +75,7 @@ Console.WriteLine($"{info.Model} ({info.Firmware})");
 | `Zpl.Validate` | `(string input, string? profileJson) → ValidationResult` | Parse + validate |
 | `Zpl.ValidateWithTables` | `(string input, string tablesJson, string? profileJson) → ValidationResult` | Parse + validate with explicit tables |
 | `Zpl.Format` | `(string input, string? indent) → string` | Format ZPL |
-| `Zpl.FormatWithOptions` | `(string input, string? indent, string? compaction, string? commentPlacement) → string` | Format ZPL with optional compaction (`none`/`field`) and comment placement (`inline`/`line`) |
+| `Zpl.FormatWithOptions` | `(string input, string? indent, string? compaction) → string` | Format ZPL with optional compaction (`none`/`field`) |
 | `Zpl.Explain` | `(string id) → string?` | Explain a diagnostic code |
 | `Zpl.Print` | `(string zpl, string printerAddr, string? profileJson, bool validate) → PrintResult` | Send ZPL to a network printer |
 | `Zpl.PrintWithOptions` | `(string zpl, string printerAddr, string? profileJson, bool validate, ulong? timeoutMs, string? configJson) → PrintResult` | Print with timeout/config overrides |

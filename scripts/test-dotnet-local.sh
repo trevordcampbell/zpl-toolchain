@@ -18,9 +18,13 @@ echo "Building native FFI library..."
 cargo build -p zpl_toolchain_ffi --release --locked --manifest-path "$ROOT_DIR/Cargo.toml"
 
 echo "Running .NET wrapper tests..."
+NUGET_CACHE_ROOT="${NUGET_CACHE_ROOT:-$ROOT_DIR/.cache/nuget}"
+mkdir -p "$NUGET_CACHE_ROOT/packages" "$NUGET_CACHE_ROOT/http-cache"
 (
   cd "$ROOT_DIR/packages/dotnet"
   LD_LIBRARY_PATH="$ROOT_DIR/target/release${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+  NUGET_PACKAGES="$NUGET_CACHE_ROOT/packages" \
+  NUGET_HTTP_CACHE_PATH="$NUGET_CACHE_ROOT/http-cache" \
     dotnet test ZplToolchain.Tests/ZplToolchain.Tests.csproj -v minimal
 )
 

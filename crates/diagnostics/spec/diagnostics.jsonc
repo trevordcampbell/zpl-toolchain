@@ -396,7 +396,7 @@
       "severity": "error",
       "category": "parser",
       "summary": "Invalid or missing command code",
-      "description": "Invalid or missing command code after leader (^ or ~), or a spacing violation between opcode and arguments based on noSpaceAfterOpcode semantics.",
+      "description": "Invalid or missing command code after leader (^ or ~), spacing violation between opcode and arguments based on signature spacing policy semantics, or reserved raw command leaders encountered in free-form command text (e.g., ^FX comments).",
       "contextKeys": ["command", "spacing"]
     },
     {

@@ -193,8 +193,8 @@ cmd_npm() {
     # ── @zpl-toolchain/core (WASM) ────────────────────────────────────────────
 
     step "Building WASM package"
-    info "wasm-pack build crates/wasm --target bundler ..."
-    (cd "$ROOT_DIR" && wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg)
+    info "npm --prefix packages/ts/core run build:wasm"
+    (cd "$ROOT_DIR" && npm --prefix packages/ts/core run build:wasm)
     success "WASM build complete"
 
     step "Installing dependencies & building @zpl-toolchain/core"

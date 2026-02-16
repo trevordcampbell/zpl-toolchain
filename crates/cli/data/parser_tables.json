@@ -131,13 +131,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "f",
           "o",
           "h",
           "w"
         ],
+        "spacingPolicy": "forbid",
         "splitRule": {
           "charCounts": [
             1,
@@ -272,13 +272,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
           "w",
           "n"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -487,7 +487,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -496,7 +495,8 @@
           "e",
           "f",
           "g"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -661,14 +661,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "e",
           "h",
           "f",
           "g"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -858,7 +858,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -866,7 +865,8 @@
           "g",
           "e",
           "j"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -1031,14 +1031,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "e",
           "h",
           "f",
           "g"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -1184,13 +1184,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
           "f",
           "m"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -1331,13 +1331,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
           "f",
           "g"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -1526,7 +1526,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -1534,7 +1533,8 @@
           "c",
           "r",
           "t"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -1676,13 +1676,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
           "f",
           "g"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -1848,14 +1848,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
           "f",
           "g",
           "e"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -2019,14 +2019,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
           "f",
           "g",
           "e"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -2215,7 +2215,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -2223,7 +2222,8 @@
           "c",
           "r",
           "m"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -2413,7 +2413,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -2421,7 +2420,8 @@
           "g",
           "e",
           "m"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -2530,12 +2530,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "m",
           "n",
           "t"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -2677,13 +2677,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
           "f",
           "g"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -2800,12 +2800,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
           "m"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -2946,13 +2946,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
           "f",
           "g"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -3093,13 +3093,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
           "f",
           "g"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -3315,7 +3315,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "e",
@@ -3324,7 +3323,8 @@
           "g",
           "k",
           "l"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -3441,12 +3441,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
           "g"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -3639,7 +3639,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "e",
@@ -3647,7 +3646,8 @@
           "f",
           "g",
           "e2"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -3850,7 +3850,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -3859,7 +3858,8 @@
           "e",
           "f",
           "g"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -4024,14 +4024,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "e",
           "h",
           "f",
           "g"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -4194,14 +4194,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
           "c",
           "d",
           "e"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -4389,7 +4389,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -4397,7 +4396,8 @@
           "d",
           "e",
           "f"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -4542,13 +4542,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
           "f",
           "g"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -4737,7 +4737,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "w1",
@@ -4745,7 +4744,8 @@
           "h1",
           "w2",
           "h2"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -4911,14 +4911,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
           "f",
           "g",
           "e"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -5150,7 +5150,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
@@ -5160,7 +5159,8 @@
           "f",
           "g",
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -5272,12 +5272,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "w",
           "r",
           "h"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -5445,14 +5445,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
           "f",
           "g",
           "t"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -5511,10 +5511,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "x"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -5573,10 +5573,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -5677,12 +5677,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "f",
           "h",
           "w"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -5810,12 +5810,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "s1",
           "d1"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -5916,12 +5916,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
           "c"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -5982,10 +5982,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -6097,12 +6097,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
           "c"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -6161,10 +6161,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -6223,10 +6223,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -6284,10 +6284,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -6413,13 +6413,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "d",
           "o",
           "x"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -6513,12 +6513,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -6680,14 +6680,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
           "c",
           "d",
           "e"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -6784,16 +6784,38 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
           "c"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
-      "args": null,
+      "args": [
+        {
+          "default": null,
+          "defaultByDpi": null,
+          "defaultFrom": null,
+          "defaultFromStateKey": null,
+          "enum": null,
+          "key": "data",
+          "maxLength": null,
+          "minLength": null,
+          "name": "field data",
+          "optional": true,
+          "presence": null,
+          "profileConstraint": null,
+          "range": null,
+          "rangeWhen": null,
+          "resource": null,
+          "roundingPolicy": null,
+          "roundingPolicyWhen": null,
+          "type": "string",
+          "unit": null
+        }
+      ],
       "arity": 1,
       "closesField": false,
       "codes": [
@@ -6819,7 +6841,14 @@
       "requiresField": false,
       "scope": "field",
       "serialization": false,
-      "signature": null
+      "signature": {
+        "allowEmptyTrailing": true,
+        "joiner": "",
+        "params": [
+          "data"
+        ],
+        "spacingPolicy": "allow"
+      }
     },
     {
       "args": [
@@ -6879,10 +6908,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -6936,10 +6965,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "i"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -7042,12 +7071,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "ext",
           "base",
           "link"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -7128,11 +7157,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "x1",
           "y1"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -7203,11 +7232,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "n",
           "p"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -7313,12 +7342,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "x",
           "y",
           "z"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -7393,11 +7422,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "g"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -7549,12 +7578,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "x",
           "y",
           "z"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -7636,11 +7665,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "r",
           "z"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -7678,7 +7707,7 @@
       "fieldNumber": false,
       "hexEscapeModifier": false,
       "name": "Comment",
-      "opensField": false,
+      "opensField": true,
       "plane": "format",
       "rawPayload": false,
       "requiresField": false,
@@ -7687,10 +7716,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": "",
-        "noSpaceAfterOpcode": true,
         "params": [
           "c"
-        ]
+        ],
+        "spacingPolicy": "allow"
       }
     },
     {
@@ -7843,14 +7872,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "w",
           "h",
           "t",
           "c",
           "r"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -7955,12 +7984,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "t",
           "c"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -8113,14 +8142,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "w",
           "h",
           "t",
           "c",
           "o"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -8249,13 +8278,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "w",
           "h",
           "t",
           "c"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -8406,14 +8435,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
           "c",
           "d",
           "data"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -8520,12 +8549,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "h",
           "w"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -8623,12 +8652,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -8726,12 +8755,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -9028,7 +9057,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -9039,7 +9067,8 @@
           "g",
           "h",
           "i"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -9216,14 +9245,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "num",
           "n",
           "h",
           "t",
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -9330,12 +9359,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -9444,12 +9473,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -9563,12 +9592,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "b",
           "obj",
           "l"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -9662,12 +9691,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -9764,12 +9793,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -9873,12 +9902,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -9999,13 +10028,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x",
           "p"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -10056,10 +10085,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -10329,7 +10358,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -10341,7 +10369,8 @@
           "h",
           "i",
           "j"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -10510,7 +10539,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -10518,7 +10546,8 @@
           "b",
           "c",
           "m"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -10704,7 +10733,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -10712,7 +10740,8 @@
           "d",
           "e",
           "f"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -10773,10 +10802,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "n"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -10831,10 +10860,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -10963,13 +10992,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "n",
           "a",
           "b",
           "c"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -11022,10 +11051,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -11080,10 +11109,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "t"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -11137,10 +11166,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -11272,13 +11301,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
           "c",
           "d"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -11346,10 +11375,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -11424,10 +11453,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -11508,11 +11537,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -11601,11 +11630,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -11771,14 +11800,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
           "c",
           "d",
           "e"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -11882,11 +11911,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "x",
           "y"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -11967,11 +11996,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ".",
-        "noSpaceAfterOpcode": true,
         "params": [
           "h",
           "x"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -12029,10 +12058,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "m"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -12093,10 +12122,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -12157,10 +12186,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "x"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -12323,14 +12352,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "type",
           "print",
           "printlabel_threshold",
           "frequency",
           "units"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -12392,10 +12421,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "c"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -12457,10 +12486,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -12556,11 +12585,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "p",
           "h"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -12643,11 +12672,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "type",
           "message"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -12709,10 +12738,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -12848,11 +12877,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -12942,11 +12971,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "mode",
           "b"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -13021,10 +13050,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -13078,10 +13107,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -13203,12 +13232,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
           "c"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -13269,10 +13298,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -13330,10 +13359,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -13390,10 +13419,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -13653,7 +13682,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -13665,7 +13693,8 @@
           "h",
           "i",
           "j"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -13719,10 +13748,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -13874,7 +13903,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -13882,7 +13910,8 @@
           "d",
           "e",
           "f"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -13940,10 +13969,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -14185,7 +14214,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -14196,7 +14224,8 @@
           "g",
           "h",
           "i"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -14264,11 +14293,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -14318,10 +14347,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -14458,13 +14487,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
           "c",
           "d"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -14514,10 +14543,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "n"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -14601,10 +14630,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -14662,10 +14691,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -14723,10 +14752,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -14901,14 +14930,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "q",
           "p",
           "r",
           "o",
           "e"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -15010,12 +15039,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "p",
           "s",
           "b"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -15072,10 +15101,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "w"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -15531,7 +15560,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "n",
           "p0",
@@ -15550,7 +15578,8 @@
           "p13",
           "p14",
           "p15"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -15719,14 +15748,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "o",
           "f",
           "b",
           "n",
           "m"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -15871,14 +15900,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "mode",
           "b",
           "c",
           "d",
           "e"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -16102,7 +16131,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "t",
           "p",
@@ -16112,7 +16140,8 @@
           "a",
           "c",
           "s"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -16183,11 +16212,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -16292,12 +16321,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "r",
           "w",
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -16499,7 +16528,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -16507,7 +16535,8 @@
           "d",
           "e",
           "f"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -16605,12 +16634,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -16678,11 +16707,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -16768,11 +16797,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -16874,11 +16903,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -16978,12 +17007,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "v",
           "n",
           "z"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -17190,7 +17219,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -17199,7 +17227,8 @@
           "e",
           "f",
           "g"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -17257,10 +17286,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -17388,12 +17417,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
           "c"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -17454,10 +17483,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -17718,7 +17747,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "w",
           "m",
@@ -17729,7 +17757,8 @@
           "a",
           "b",
           "c"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -17931,7 +17960,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -17940,7 +17968,8 @@
           "e",
           "f",
           "g"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -18144,7 +18173,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -18152,7 +18180,8 @@
           "d",
           "e",
           "f"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -18214,10 +18243,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -18331,12 +18360,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
           "c"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -18412,11 +18441,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "source",
           "destination"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -18492,11 +18521,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -18591,12 +18620,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -18813,7 +18842,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -18823,7 +18851,8 @@
           "f",
           "g",
           "h"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -18923,12 +18952,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
           "c"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -19004,11 +19033,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -19165,14 +19194,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
           "c",
           "d",
           "e"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -19360,7 +19389,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "e",
           "o",
@@ -19369,7 +19397,8 @@
           "i",
           "j",
           "k"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -19724,7 +19753,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b",
@@ -19740,7 +19768,8 @@
           "l",
           "m",
           "n"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -19887,12 +19916,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ":",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -19994,12 +20023,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "path",
           "mx",
           "my"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -20103,12 +20132,12 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "length",
           "threshold",
           "gain"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -20187,10 +20216,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -20425,7 +20454,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
@@ -20436,7 +20464,8 @@
           "b",
           "s",
           "n"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -20551,13 +20580,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x",
           "s"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -20693,14 +20722,14 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x",
           "t",
           "w"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -20836,13 +20865,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x",
           "s"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -20957,13 +20986,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x",
           "s"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -21078,13 +21107,13 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "o",
           "x",
           "s"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -21279,7 +21308,6 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "d",
           "f",
@@ -21288,7 +21316,8 @@
           "t",
           "w",
           "data"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -21486,10 +21515,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "qt"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -21725,10 +21754,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "p"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -21961,10 +21990,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "b"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -22076,10 +22105,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -22183,10 +22212,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -22265,11 +22294,11 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a",
           "b"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -22380,10 +22409,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "c"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -22455,10 +22484,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -22527,10 +22556,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -22630,10 +22659,10 @@
       "signature": {
         "allowEmptyTrailing": true,
         "joiner": ",",
-        "noSpaceAfterOpcode": true,
         "params": [
           "a"
-        ]
+        ],
+        "spacingPolicy": "forbid"
       }
     },
     {
@@ -22658,7 +22687,7 @@
       "signature": null
     }
   ],
-  "formatVersion": "0.3.0",
+  "formatVersion": "0.4.0",
   "opcodeTrie": {
     "children": {
       "^": {

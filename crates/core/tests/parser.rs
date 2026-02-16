@@ -19,11 +19,11 @@ use zpl_toolchain_diagnostics::{Severity, codes};
 
 fn tables_with_spacing_command(
     code: &str,
-    no_space_after_opcode: bool,
+    spacing_policy: zpl_toolchain_spec_tables::SpacingPolicy,
 ) -> zpl_toolchain_spec_tables::ParserTables {
     zpl_toolchain_spec_tables::ParserTables::new(
         "1.0.0".into(),
-        "0.3.0".into(),
+        zpl_toolchain_spec_tables::TABLE_FORMAT_VERSION.into(),
         vec![zpl_toolchain_spec_tables::CommandEntry {
             codes: vec![code.to_string()],
             arity: 1,
@@ -38,7 +38,7 @@ fn tables_with_spacing_command(
             signature: Some(zpl_toolchain_spec_tables::Signature {
                 params: vec!["n".to_string()],
                 joiner: ",".to_string(),
-                no_space_after_opcode,
+                spacing_policy,
                 allow_empty_trailing: true,
                 split_rule: None,
             }),
@@ -314,7 +314,8 @@ fn mixed_present_empty_args() {
 
 #[test]
 fn signature_no_space_after_opcode_rejects_space() {
-    let tables = tables_with_spacing_command("^ZZN", true);
+    let tables =
+        tables_with_spacing_command("^ZZN", zpl_toolchain_spec_tables::SpacingPolicy::Forbid);
     let result = parse_with_tables("^XA^ZZN 5^XZ", Some(&tables));
     assert!(
         result
@@ -322,35 +323,70 @@ fn signature_no_space_after_opcode_rejects_space() {
             .iter()
             .any(|d| d.id == codes::PARSER_INVALID_COMMAND
                 && d.message.contains("should not include a space")),
-        "expected parser spacing diagnostic when noSpaceAfterOpcode=true: {:?}",
+        "expected parser spacing diagnostic when spacingPolicy=forbid: {:?}",
         result.diagnostics
     );
 }
 
 #[test]
 fn signature_space_after_opcode_required() {
-    let tables = tables_with_spacing_command("^ZZS", false);
+    let tables =
+        tables_with_spacing_command("^ZZS", zpl_toolchain_spec_tables::SpacingPolicy::Require);
     let result = parse_with_tables("^XA^ZZS5^XZ", Some(&tables));
     assert!(
         result
             .diagnostics
             .iter()
             .any(|d| d.id == codes::PARSER_INVALID_COMMAND && d.message.contains("expects a space")),
-        "expected parser spacing diagnostic when noSpaceAfterOpcode=false: {:?}",
+        "expected parser spacing diagnostic when spacingPolicy=require: {:?}",
         result.diagnostics
     );
 }
 
 #[test]
-fn signature_space_after_opcode_allows_space() {
-    let tables = tables_with_spacing_command("^ZZS", false);
+fn signature_space_after_opcode_require_accepts_space() {
+    let tables =
+        tables_with_spacing_command("^ZZS", zpl_toolchain_spec_tables::SpacingPolicy::Require);
     let result = parse_with_tables("^XA^ZZS 5^XZ", Some(&tables));
     assert!(
         !result
             .diagnostics
             .iter()
             .any(|d| d.id == codes::PARSER_INVALID_COMMAND && d.message.contains("expects a space")),
-        "space should be accepted when noSpaceAfterOpcode=false: {:?}",
+        "space should be accepted when spacingPolicy=require: {:?}",
+        result.diagnostics
+    );
+}
+
+#[test]
+fn signature_space_after_opcode_allow_accepts_both_forms() {
+    let tables =
+        tables_with_spacing_command("^ZZA", zpl_toolchain_spec_tables::SpacingPolicy::Allow);
+    let no_space = parse_with_tables("^XA^ZZA5^XZ", Some(&tables));
+    let with_space = parse_with_tables("^XA^ZZA 5^XZ", Some(&tables));
+    for result in [&no_space, &with_space] {
+        assert!(
+            !result
+                .diagnostics
+                .iter()
+                .any(|d| d.id == codes::PARSER_INVALID_COMMAND && d.message.contains("space")),
+            "spacingPolicy=allow should accept both forms: {:?}",
+            result.diagnostics
+        );
+    }
+}
+
+#[test]
+fn barcode_opcode_spacing_forbid_rejects_space() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^FO10,10^BY3^BC N,100,Y,N,N^FD12345^FS^XZ", Some(tables));
+    assert!(
+        result.diagnostics.iter().any(|d| {
+            d.id == codes::PARSER_INVALID_COMMAND
+                && d.message
+                    .contains("^BC should not include a space between opcode and arguments")
+        }),
+        "expected barcode spacing diagnostic for ^BC with opcode-space form: {:?}",
         result.diagnostics
     );
 }
@@ -455,7 +491,33 @@ fn field_data_fv_also_works() {
 }
 
 #[test]
-fn field_data_gs1_semicolon_does_not_swallow_fs() {
+fn field_data_inline_preserves_leading_and_trailing_spaces() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^FO10,10^FD Hello World  ^FS^XZ", Some(tables));
+    let fd_args = find_args(&result, "^FD");
+    assert!(
+        !fd_args.is_empty(),
+        "expected ^FD to have inline field-data arg, diagnostics: {:?}",
+        result.diagnostics
+    );
+    assert_eq!(
+        fd_args[0].value.as_deref(),
+        Some(" Hello World  "),
+        "^FD inline field-data should preserve leading/trailing spaces exactly: {:?}",
+        fd_args
+    );
+    assert!(
+        !result
+            .diagnostics
+            .iter()
+            .any(|d| d.id == codes::PARSER_INVALID_COMMAND && d.message.contains("space")),
+        "spacing diagnostics should not fire for ^FD with optional spacing: {:?}",
+        result.diagnostics
+    );
+}
+
+#[test]
+fn field_data_gs1_semicolon_is_plain_data_and_does_not_swallow_fs() {
     let tables = &*common::TABLES;
     let result = parse_with_tables(
         "^XA^FO10,10^BCN,100,Y,N,N^FD>;>800093012345678901234^FS^XZ",
@@ -474,6 +536,37 @@ fn field_data_gs1_semicolon_does_not_swallow_fs() {
             .iter()
             .any(|d| d.id == codes::PARSER_FIELD_DATA_INTERRUPTED),
         "semicolon in field data should not trigger field-data interruption: {:?}",
+        result.diagnostics
+    );
+}
+
+#[test]
+fn parses_crlf_line_endings_without_stray_content() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables(
+        "^XA\r\n^FO10,10\r\n^FDHello\r\n^FS\r\n^XZ\r\n",
+        Some(tables),
+    );
+    assert!(
+        !result
+            .diagnostics
+            .iter()
+            .any(|d| d.id == codes::PARSER_STRAY_CONTENT),
+        "CRLF input should not generate stray-content diagnostics: {:?}",
+        result.diagnostics
+    );
+}
+
+#[test]
+fn parses_cr_only_line_endings_without_stray_content() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA\r^FO10,10\r^FDHello\r^FS\r^XZ\r", Some(tables));
+    assert!(
+        !result
+            .diagnostics
+            .iter()
+            .any(|d| d.id == codes::PARSER_STRAY_CONTENT),
+        "CR-only input should not generate stray-content diagnostics: {:?}",
         result.diagnostics
     );
 }
@@ -533,22 +626,22 @@ fn span_positions_correct() {
 // ─── 7. Trivia Preservation ────────────────────────────────────────────────
 
 #[test]
-fn comments_preserved_as_trivia() {
-    let result = parse_str("^XA;this is a comment\n^FO10,20^XZ");
-    let trivia_texts: Vec<String> = result
+fn semicolon_comments_are_not_parsed_as_trivia() {
+    let result = parse_str("^XA;this is not a comment\n^FO10,20^XZ");
+    let has_trivia = result
         .ast
         .labels
         .iter()
         .flat_map(|l| l.nodes.iter())
-        .filter_map(|n| match n {
-            Node::Trivia { text, .. } => Some(text.clone()),
-            _ => None,
-        })
-        .collect();
+        .any(|n| matches!(n, Node::Trivia { .. }));
+    assert!(!has_trivia, "semicolon should not produce trivia nodes");
+
     assert!(
-        trivia_texts.iter().any(|t| t.contains("this is a comment")),
-        "comment should be preserved as Trivia: {:?}",
-        trivia_texts,
+        !result
+            .diagnostics
+            .iter()
+            .any(|d| d.id == codes::PARSER_FIELD_DATA_INTERRUPTED),
+        "semicolon handling should not trigger comment-specific parser behavior"
     );
 }
 
@@ -718,6 +811,36 @@ fn field_data_interrupted_emits_1203() {
             .any(|d| d.id == codes::PARSER_FIELD_DATA_INTERRUPTED),
         "non-^FS command interrupting field data should emit ZPL.PARSER.1203: {:?}",
         extract_diag_codes(&result),
+    );
+}
+
+#[test]
+fn fx_comment_with_reserved_leaders_emits_targeted_parser_errors() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^FXComment with ^ and ~ chars^FS^XZ", Some(tables));
+    let targeted_errors: Vec<_> = result
+        .diagnostics
+        .iter()
+        .filter(|d| {
+            d.id == codes::PARSER_INVALID_COMMAND
+                && d.message.contains("reserved command leader")
+                && d.message.contains("inside ^FX free-form text")
+        })
+        .collect();
+    assert_eq!(
+        targeted_errors.len(),
+        2,
+        "expected one targeted parser error for each raw '^'/'~' in ^FX text: {:?}",
+        result.diagnostics
+    );
+    assert!(
+        result
+            .diagnostics
+            .iter()
+            .all(|d| !(d.id == codes::PARSER_INVALID_COMMAND
+                && d.message.contains("expected command code after leader"))),
+        "should avoid generic expected-code parser errors for raw leaders in field data/comment: {:?}",
+        result.diagnostics
     );
 }
 

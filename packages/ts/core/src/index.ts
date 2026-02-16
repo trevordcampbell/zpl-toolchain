@@ -170,9 +170,6 @@ export interface ValidationResult {
 export type IndentStyle = "none" | "label" | "field";
 /** Optional compaction mode for the formatter. */
 export type CompactionStyle = "none" | "field";
-/** Semicolon comment placement mode for the formatter. */
-export type CommentPlacementStyle = "inline" | "line";
-
 // ── WASM Module ─────────────────────────────────────────────────────────
 
 // The WASM module is loaded lazily. In a bundler environment (webpack, vite,
@@ -292,18 +289,14 @@ export function validateWithTables(
  * @param input ZPL source code.
  * @param indent Indentation style: "none" (default), "label", or "field".
  * @param compaction Optional compaction style: "none" (default) or "field".
- * @param commentPlacement Semicolon comment placement: "inline" (default) or "line".
  */
 export function format(
   input: string,
   indent?: IndentStyle,
-  compaction?: CompactionStyle,
-  commentPlacement?: CommentPlacementStyle
+  compaction?: CompactionStyle
 ): string {
   const wasm = ensureInit();
-  return invokeWasm("format", () =>
-    wasm.format(input, indent, compaction, commentPlacement)
-  );
+  return invokeWasm("format", () => wasm.format(input, indent, compaction));
 }
 
 /**

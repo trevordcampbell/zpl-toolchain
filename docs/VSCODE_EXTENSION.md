@@ -45,9 +45,6 @@ Extension identity:
 - `zplToolchain.format.indent` — formatter indent mode (`none`, `label`, `field`)
 - `zplToolchain.format.compaction` — optional formatter compaction (`none`, `field`, default: `field`)
   - `field` keeps printable field blocks (`^FO/^FT/^FM/^FN ... ^FS`) on one line while preserving setup/global flow
-- `zplToolchain.format.commentPlacement` — semicolon comment placement (`inline`, `line`, default: `inline`)
-  - `inline` keeps standalone semicolon comments attached to the preceding command where safe.
-  - `line` preserves fully line-oriented formatter output.
 - `zplToolchain.hover.enabled` — enable/disable opcode hover docs
 - `zplToolchain.themePreset` — optional highlight preset (`custom`, `default`, `high-contrast`, `minimal`)
 - contributed defaults for `[zpl]`:
@@ -101,7 +98,7 @@ Useful ZPL scopes:
 - `string.unquoted.field-data.zpl`
 - `punctuation.separator.parameter.zpl`
 - `constant.numeric.zpl`
-- `comment.line.semicolon.zpl`
+- `comment.line.fx.zpl`
 
 ### `zplToolchain.profileJson` format
 
@@ -198,8 +195,8 @@ Core runtime freshness is now validated during extension builds/packaging:
 - rebuild command when stale:
 
 ```bash
-wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
 cd packages/ts/core
+npm run build:wasm
 npm run build
 ```
 

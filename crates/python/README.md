@@ -35,7 +35,7 @@ print(f"Valid with tables: {validation2['ok']}")
 formatted = zpl_toolchain.format("^XA^FD Hello ^FS^XZ", "label")
 
 # Format with field compaction
-compact = zpl_toolchain.format("^XA^FO30,30^A0N,30,30^FDHello^FS^XZ", "none", "field", "inline")
+compact = zpl_toolchain.format("^XA^FO30,30^A0N,30,30^FDHello^FS^XZ", "none", "field")
 print(formatted)
 
 # Explain a diagnostic code
@@ -104,7 +104,7 @@ result = zpl_toolchain.print_zpl_with_options(
 | `parse_with_tables` | `(input: str, tables_json: str) -> dict` | Parse with explicit parser tables |
 | `validate` | `(input: str, profile_json: str? = None) -> dict` | Parse + validate (optional profile) |
 | `validate_with_tables` | `(input: str, tables_json: str, profile_json: str? = None) -> dict` | Parse + validate using explicit parser tables |
-| `format` | `(input: str, indent: str? = None, compaction: str? = None, comment_placement: str? = None) -> str` | Format ZPL (`indent`: `"none"`, `"label"`, `"field"`; `compaction`: `"none"` or `"field"`; `comment_placement`: `"inline"` or `"line"`) |
+| `format` | `(input: str, indent: str? = None, compaction: str? = None) -> str` | Format ZPL (`indent`: `"none"`, `"label"`, `"field"`; `compaction`: `"none"` or `"field"`) |
 | `explain` | `(id: str) -> str?` | Explain a diagnostic code, or `None` |
 
 ### Print Functions

@@ -205,7 +205,7 @@ function tcpSend(
 
 /**
  * Open a TCP socket, write `command`, read the response until the socket is
- * idle for a short period, then close and return the response.
+ * complete, then close and return the response.
  *
  * Exported so that `proxy.ts` can re-use it instead of duplicating the logic.
  */
@@ -219,6 +219,10 @@ export function tcpQuery(
   return new Promise<string>((resolve, reject) => {
     let socket: net.Socket | null = null;
     const chunks: Uint8Array[] = [];
+    const trimmedCommand = command.trim().toUpperCase();
+    const expectedFrames =
+      trimmedCommand === "~HS" ? 3 : trimmedCommand === "~HI" ? 1 : 0;
+    let etxCount = 0;
     let idleTimer: ReturnType<typeof setTimeout> | undefined;
     let settled = false;
     let onAbort: (() => void) | undefined;
@@ -262,7 +266,20 @@ export function tcpQuery(
 
     sock.on("data", (chunk: Buffer) => {
       chunks.push(chunk);
-      // Reset idle timer — wait 250ms after last data before closing.
+      for (const byte of chunk) {
+        if (byte === 0x03) {
+          etxCount += 1;
+        }
+      }
+
+      // Known framed status/info responses: complete as soon as expected ETX
+      // frame boundaries are observed.
+      if (expectedFrames > 0 && etxCount >= expectedFrames) {
+        sock.end();
+        return;
+      }
+
+      // Fallback for unframed/unknown responses: wait briefly for stream idle.
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = setTimeout(() => {
         sock.end();
@@ -274,7 +291,19 @@ export function tcpQuery(
     });
 
     sock.on("timeout", () => {
-      // If we have partial data, return it rather than failing.
+      // For known framed responses, timeout before expected frames means
+      // response truncation.
+      if (expectedFrames > 0 && etxCount < expectedFrames) {
+        fail(
+          new PrintError(
+            `Query to ${host}:${port} timed out before receiving complete ${trimmedCommand} response`,
+            "TIMEOUT"
+          )
+        );
+        return;
+      }
+
+      // Fallback behavior for generic commands: return partial data if any.
       if (chunks.length > 0) {
         finish(Buffer.concat(chunks).toString("utf-8"));
       } else {
@@ -525,9 +554,8 @@ export class TcpPrinter {
    * {@link PrinterStatus} object.
    *
    * **Note:** This opens a separate short-lived TCP connection for the query
-   * rather than using the persistent connection, because the ~HS response
-   * needs an idle-timeout-based read strategy that would interfere with the
-   * persistent socket's event handlers.
+   * rather than using the persistent connection, because framed response
+   * handling uses dedicated per-query readers.
    */
   async getStatus(opts?: { signal?: AbortSignal }): Promise<PrinterStatus> {
     const raw = await tcpQuery(
@@ -546,9 +574,8 @@ export class TcpPrinter {
    * Useful for querying ~HI (Host Identification), ~HM (Host Memory), etc.
    *
    * **Note:** This opens a separate short-lived TCP connection for each query
-   * rather than using the persistent connection, because reading a response
-   * requires an idle-timeout strategy that would interfere with the
-   * persistent socket's event handlers.
+   * rather than using the persistent connection, because response handling uses
+   * dedicated per-query readers.
    */
   async query(command: string, opts?: { signal?: AbortSignal }): Promise<string> {
     return tcpQuery(

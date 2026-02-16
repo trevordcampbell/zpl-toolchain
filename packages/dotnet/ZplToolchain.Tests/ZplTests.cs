@@ -34,11 +34,11 @@ public class ZplTests
     }
 
     [Fact]
-    public void Format_WithCommentPlacementLine_PreservesStandaloneCommentLine()
+    public void Format_SemicolonRemainsPlainData()
     {
-        var input = "^XA\n^PW812\n; set print width\n^XZ\n";
-        var formatted = Zpl.FormatWithOptions(input, "none", "none", "line");
-        Assert.Contains("^PW812\n; set print width", formatted);
+        var input = "^XA\n^FO10,10^FDPart;A^FS\n^XZ\n";
+        var formatted = Zpl.FormatWithOptions(input, "none", "none");
+        Assert.Contains("Part;A", formatted);
     }
 
     [Fact]

@@ -26,11 +26,10 @@ fn json_result_to_python(
 
 /// Parse a ZPL string and return `{ ast, diagnostics }` as a Python dict by default.
 ///
-/// Uses embedded parser tables when available, falls back to table-less
-/// parsing otherwise.
+/// Uses embedded parser tables and raises when unavailable.
 #[pyfunction]
 fn parse(py: Python<'_>, input: &str) -> PyResult<Py<PyAny>> {
-    let result = common::parse_zpl(input);
+    let result = common::parse_zpl(input).map_err(pyo3::exceptions::PyRuntimeError::new_err)?;
     json_result_to_python(py, serde_json::to_string(&result))
 }
 
@@ -76,22 +75,12 @@ fn validate_with_tables(
 ///
 /// `indent` controls indentation: `"none"` (default), `"label"`, or `"field"`.
 /// `compaction` controls optional compaction: `"none"` (default) or `"field"`.
-/// `comment_placement` controls semicolon comments: `"inline"` (default) or `"line"`.
 /// Returns the formatted ZPL string.
 #[pyfunction]
-#[pyo3(signature = (input, indent=None, compaction=None, comment_placement=None))]
-fn format(
-    input: &str,
-    indent: Option<&str>,
-    compaction: Option<&str>,
-    comment_placement: Option<&str>,
-) -> PyResult<String> {
-    Ok(common::format_zpl_with_options(
-        input,
-        indent,
-        compaction,
-        comment_placement,
-    ))
+#[pyo3(signature = (input, indent=None, compaction=None))]
+fn format(input: &str, indent: Option<&str>, compaction: Option<&str>) -> PyResult<String> {
+    common::format_zpl_with_options(input, indent, compaction)
+        .map_err(pyo3::exceptions::PyRuntimeError::new_err)
 }
 
 /// Explain a diagnostic code (e.g., "ZPL1201").

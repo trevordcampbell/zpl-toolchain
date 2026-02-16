@@ -49,8 +49,7 @@ declare module "../vendor/core/dist/index.js" {
   export function format(
     input: string,
     indent?: "none" | "label" | "field",
-    compaction?: "none" | "field",
-    commentPlacement?: "inline" | "line"
+    compaction?: "none" | "field"
   ): string;
   export function explain(id: string): string | null;
 }

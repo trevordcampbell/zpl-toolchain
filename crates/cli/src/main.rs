@@ -10,8 +10,8 @@ use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use zpl_toolchain_core::grammar::{
     dump::to_pretty_json,
-    emit::{CommentPlacement, Compaction, EmitConfig, Indent, emit_zpl},
-    parser::{parse_str, parse_with_tables},
+    emit::{Compaction, EmitConfig, Indent, emit_zpl},
+    parser::parse_with_tables,
     tables::ParserTables,
 };
 use zpl_toolchain_core::validate;
@@ -119,9 +119,6 @@ enum Cmd {
         /// Optional compaction mode.
         #[arg(long, value_enum, default_value_t = CompactionStyle::None)]
         compaction: CompactionStyle,
-        /// Semicolon comment placement mode.
-        #[arg(long, value_enum, default_value_t = CommentPlacementStyle::Inline)]
-        comment_placement: CommentPlacementStyle,
     },
 
     // ── Printing ─────────────────────────────────────────────────────
@@ -335,15 +332,6 @@ enum CompactionStyle {
     Field,
 }
 
-/// Semicolon comment placement for the `format` command.
-#[derive(Debug, Clone, Copy, ValueEnum)]
-enum CommentPlacementStyle {
-    /// Keep semicolon comments inline with the preceding command where safe.
-    Inline,
-    /// Preserve semicolon comments on their own lines.
-    Line,
-}
-
 /// Controls which note audiences are surfaced by CLI diagnostics.
 #[derive(Debug, Clone, Copy, ValueEnum)]
 enum NoteAudienceMode {
@@ -417,15 +405,6 @@ impl From<CompactionStyle> for Compaction {
     }
 }
 
-impl From<CommentPlacementStyle> for CommentPlacement {
-    fn from(s: CommentPlacementStyle) -> Self {
-        match s {
-            CommentPlacementStyle::Inline => CommentPlacement::Inline,
-            CommentPlacementStyle::Line => CommentPlacement::Line,
-        }
-    }
-}
-
 // ── Main ────────────────────────────────────────────────────────────────
 
 fn main() -> Result<()> {
@@ -454,7 +433,6 @@ fn main() -> Result<()> {
             check,
             indent,
             compaction,
-            comment_placement,
         } => cmd_format(
             &file,
             tables.as_deref(),
@@ -462,7 +440,6 @@ fn main() -> Result<()> {
             check,
             indent,
             compaction,
-            comment_placement,
             format,
         ),
         Cmd::Print {
@@ -739,18 +716,16 @@ fn cmd_format(
     check: bool,
     indent: IndentStyle,
     compaction: CompactionStyle,
-    comment_placement: CommentPlacementStyle,
     format: Format,
 ) -> Result<()> {
     let input = read_input(file)?;
     if file == "-" && (write || check) {
         anyhow::bail!("--write/--check cannot be used when reading from stdin ('-')");
     }
-    let tables = resolve_tables(tables_path)?;
-    let res = match tables.as_ref() {
-        Some(t) => parse_with_tables(&input, Some(t)),
-        None => parse_str(&input),
-    };
+    let tables = resolve_tables(tables_path)?.context(
+        "no parser tables available for format — pass --tables <PATH> or use a build with embedded tables",
+    )?;
+    let res = parse_with_tables(&input, Some(&tables));
 
     // Surface parse diagnostics so the user knows if the input has issues.
     if format == Format::Pretty && !res.diagnostics.is_empty() {
@@ -761,9 +736,8 @@ fn cmd_format(
     let config = EmitConfig {
         indent: indent.into(),
         compaction: compaction.into(),
-        comment_placement: comment_placement.into(),
     };
-    let formatted = emit_zpl(&res.ast, tables.as_ref(), &config);
+    let formatted = emit_zpl(&res.ast, Some(&tables), &config);
 
     let already_formatted = formatted == input;
 
@@ -2954,17 +2928,15 @@ fn embedded_tables() -> Option<ParserTables> {
     None
 }
 
-/// Parse input with the best available tables. Falls back to table-less
-/// parsing when no tables can be resolved.
+/// Parse input with resolved tables.
 fn parse_with_resolved_tables(
     tables_path: Option<&str>,
     input: &str,
 ) -> Result<zpl_toolchain_core::grammar::parser::ParseResult> {
-    let tables = resolve_tables(tables_path)?;
-    Ok(match tables.as_ref() {
-        Some(t) => parse_with_tables(input, Some(t)),
-        None => parse_str(input),
-    })
+    let tables = resolve_tables(tables_path)?.context(
+        "no parser tables available — pass --tables <PATH> or use a build with embedded tables",
+    )?;
+    Ok(parse_with_tables(input, Some(&tables)))
 }
 
 /// Detect printer address strings that look like serial port paths.

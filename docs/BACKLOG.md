@@ -33,7 +33,11 @@ Before implementation work starts in `crates/renderer/`, complete these research
 - [x] **`LineIndex` utility** — byte-offset → line/column conversion in `diagnostics` crate; zero external dependencies; reusable by WASM/LSP; 8 unit tests
 - [x] **CLI: pretty output formatting** — `ariadne` 0.6 for coloured source-annotated diagnostics; TTY detection via `std::io::IsTerminal`; `--output pretty|json` flag with auto-detection; severity-coloured summary; render module in `crates/cli/src/render.rs`
 - [x] **CLI: embed tables via `build.rs`** — `build.rs` copies `generated/parser_tables.json` into binary at compile time; `--tables` flag retained as override; resolves ADR 0005; no more mandatory `--tables` for parse/lint/syntax-check
-- [x] **`zpl format` command** — spec-driven ZPL auto-formatter in `crates/core/src/grammar/emit.rs`; one command per line, trailing-arg trimming, split-rule merging, spec-driven joiners (`,`, `:`, `.`, `""`), command prefix tracking (`^CC`); `--write` for in-place formatting, `--check` for CI (exit 1 if not formatted), `--indent none|label|field`, `--compaction none|field`, and `--comment-placement inline|line`; field data and raw payloads preserved byte-for-byte; graceful degradation without tables (comma fallback); 30+ round-trip tests including idempotency, USPS sample, compaction/comment-placement, prefix change, and all indent modes
+- [x] **`zpl format` command** — spec-driven ZPL auto-formatter in `crates/core/src/grammar/emit.rs`; one command per line, trailing-arg trimming, split-rule merging, spec-driven joiners (`,`, `:`, `.`, `""`), command prefix tracking (`^CC`); `--write` for in-place formatting, `--check` for CI (exit 1 if not formatted), `--indent none|label|field`, `--compaction none|field`; field data and raw payloads preserved byte-for-byte; strict table requirement when formatting; 30+ round-trip tests including idempotency, USPS sample, compaction, prefix change, and all indent modes
+- [x] **Official-only comment semantics (`^FX`)** — removed semicolon parser comment behavior and semicolon formatter special-casing; semicolons are treated as ordinary command/spec data; samples and VS Code grammar/keybinds aligned to `^FX ... ^FS`.
+- [x] **Validator phase-2 modular split (behavior-preserving)** — extracted focused internal validator modules: `diagnostics_util`, `predicates`, and `profile_constraints`; kept public behavior and diagnostics stable with full core test-suite parity.
+- [x] **Strict table policy unification (CLI + bindings-common)** — parse/format now require explicit or embedded parser tables and fail fast with actionable errors when unavailable (no table-less fallback path).
+- [x] **Phase-4 confidence upgrades (targeted)** — added CRLF + `^FX` reliability fuzz coverage and a reusable parse/validate/format benchmark harness (`crates/core/examples/pipeline_benchmark.rs`) for baseline measurements.
 - [x] **WASM bindings** — `crates/wasm/` with `wasm-bindgen` + `serde-wasm-bindgen`; 5 exported functions (parse, parseWithTables, validate, format, explain); embedded parser tables via `build.rs`; TypeScript wrapper at `packages/ts/core/` with full type definitions
 - [x] **VS Code extension MVP** — `packages/vscode-extension/` with ZPL language registration/TextMate grammar, live diagnostics + format-on-save + hover docs + diagnostic explain action, renderer bridge stub, and VSIX packaging
 - [x] **linux/arm64 Extension Host test-runner hardening** — integration runner now auto-detects local VS Code-family executables (`code`, `code-insiders`, `cursor`, `codium`) and uses them on arm64 when available; preserves explicit `VSCODE_EXECUTABLE_PATH` override and safe skip behavior when no suitable executable is present.
@@ -377,7 +381,7 @@ Before implementation work starts in `crates/renderer/`, complete these research
 - [x] Write ADR for raw/field data handling (`^GF` payloads, `^FD` escapes, trivia preservation)
 - [x] Implement `RawData` node creation in parser for `^GF`/`~DG`/`~DY`/`~DB`
 - [x] Implement field data mode in parser for `^FD`/`^FV` (content until `^FS`, `^FH` hex escapes)
-- [x] Implement `Trivia` node creation for comments and whitespace (round-tripping support)
+- [x] Implement `Trivia` node creation for non-command trivia and whitespace (round-tripping support)
 
 ### Command Coverage Expansion
 
@@ -409,11 +413,11 @@ Before implementation work starts in `crates/renderer/`, complete these research
 - [x] Fix `^FV` field tracking bug (parser only checked `^FD`, not `^FV`)
 - [x] Implement field data mode for `^FD`/`^FV` — content until `^FS` preserved as single arg, commas not split
 - [x] Add byte offset/span tracking to all AST nodes (`Span { start, end }`) for precise diagnostics
-- [x] Implement `Trivia` node creation — comments (`;`) preserved as Trivia nodes
+- [x] Implement `Trivia` node creation — parser preserves non-command trivia without introducing non-standard semicolon comment semantics
 - [x] Refactor parser from boolean flags to explicit state machine (`Mode::Normal`, `Mode::FieldData`)
 - [x] Extract mode-specific parsing into separate methods (`parse_normal`, `parse_command`, `parse_field_data`, etc.)
 - [x] Add `Span` to `SyntaxDiag` for location-aware diagnostics
-- [x] Lexer now emits `TokKind::Comment` tokens instead of silently stripping them
+- [x] Lexer newline/tokenization behavior supports CRLF/CR/LF consistently with parser span invariants
 - [x] **Implement raw payload mode** — `Mode::RawData` state machine variant for `^GF`/`~DG`/`~DY`/`~DB`; collects multi-line data until next command leader; emits `Node::RawData` with data and spans; no spurious empty nodes for inline-only data; EOF diagnostic for unterminated raw data; refactored EOF cleanup to `match` for mutual exclusivity; 9 tests
 
 ### Testing

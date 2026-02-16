@@ -55,10 +55,6 @@ func main() {
     compact, _ := zpltoolchain.FormatWithOptions("^XA^FO30,30^A0N,30,30^FDHello^FS^XZ", "label", "field")
     fmt.Println(compact)
 
-    // Format with explicit comment placement
-    compactLineComments, _ := zpltoolchain.FormatWithOptionsEx("^XA\n^PW812\n; note\n^XZ\n", "none", "none", "line")
-    fmt.Println(compactLineComments)
-
     // Validate ZPL
     validation, _ := zpltoolchain.Validate("^XA^FDHello^FS^XZ", "")
     fmt.Printf("OK: %v\n", validation.OK)
@@ -105,7 +101,6 @@ func main() {
 | `ValidateWithTables` | `(input, tablesJSON, profileJSON string) (*ValidationResult, error)` | Parse + validate with explicit tables |
 | `Format` | `(input, indent string) (string, error)` | Format ZPL |
 | `FormatWithOptions` | `(input, indent, compaction string) (string, error)` | Format ZPL with optional compaction (`none`/`field`) |
-| `FormatWithOptionsEx` | `(input, indent, compaction, commentPlacement string) (string, error)` | Format ZPL with compaction (`none`/`field`) and comment placement (`inline`/`line`) |
 | `Explain` | `(id string) string` | Explain a diagnostic code |
 | `Print` | `(zpl, printerAddr, profileJSON string, validate bool) (*PrintResult, error)` | Send ZPL to a network printer |
 | `PrintWithOptions` | `(zpl, printerAddr, profileJSON string, validate bool, opts *PrintOptions) (*PrintResult, error)` | Print with timeout/config overrides |

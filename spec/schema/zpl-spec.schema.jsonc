@@ -47,7 +47,16 @@
         },
         // How params are joined (ZPL default is ",")
         "joiner": { "type": "string", "default": "," },
-        // ZPL format has no space after opcode (keep true for correctness)
+        // Spacing policy between opcode and first argument:
+        // - "forbid": no space allowed (default, classic ZPL style)
+        // - "require": a space is required
+        // - "allow": both forms are accepted
+        "spacingPolicy": {
+          "type": "string",
+          "enum": ["forbid", "require", "allow"],
+          "default": "forbid"
+        },
+        // Legacy compatibility field. Prefer spacingPolicy for new specs.
         "noSpaceAfterOpcode": { "type": "boolean", "default": true },
         // If true, allow trailing empty params to preserve position (common in ZPL)
         "allowEmptyTrailing": { "type": "boolean", "default": true },

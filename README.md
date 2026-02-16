@@ -37,7 +37,7 @@ ZPL II is the standard language for Zebra thermal label printers, used across lo
 
 ### Formatting
 
-- **Auto-formatter** — spec-driven, configurable indentation (none / label / field), optional field compaction, semicolon comment placement mode (inline / line), trailing-arg trimming, idempotent output
+- **Auto-formatter** — spec-driven, configurable indentation (none / label / field), optional field compaction, trailing-arg trimming, idempotent output
 
 ### Printing
 
@@ -242,8 +242,8 @@ zpl format label.zpl --write
 # Auto-format with field compaction (shared core formatter option)
 zpl format label.zpl --write --indent none --compaction field
 
-# Keep semicolon comments on separate lines
-zpl format label.zpl --write --comment-placement line
+# Format while preserving official ^FX comment lines
+zpl format label.zpl --write
 
 # Explain a diagnostic
 zpl explain ZPL1401

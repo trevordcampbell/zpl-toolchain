@@ -135,6 +135,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24.13.1"
+          cache: npm
+          cache-dependency-path: packages/ts/core/package-lock.json
+
       - uses: ./.github/actions/setup-rust
         with:
           targets: wasm32-unknown-unknown
@@ -143,18 +149,13 @@ jobs:
       - name: Install wasm-pack
         uses: taiki-e/install-action@wasm-pack
 
-      - name: Build WASM package for @zpl-toolchain/core
-        run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "24.13.1"
-          cache: npm
-          cache-dependency-path: packages/ts/core/package-lock.json
-
       - name: Install dependencies
         working-directory: packages/ts/core
         run: npm ci
+
+      - name: Build WASM package for @zpl-toolchain/core
+        working-directory: packages/ts/core
+        run: npm run build:wasm
 
       - name: Type-check
         working-directory: packages/ts/core
@@ -479,4 +480,6 @@ jobs:
         working-directory: packages/dotnet
         env:
           LD_LIBRARY_PATH: ${{ github.workspace }}/target/release
+          NUGET_PACKAGES: ${{ runner.temp }}/nuget/packages
+          NUGET_HTTP_CACHE_PATH: ${{ runner.temp }}/nuget/http-cache
         run: dotnet test ZplToolchain.Tests/ZplToolchain.Tests.csproj -v minimal

@@ -9,8 +9,8 @@ use std::sync::OnceLock;
 use std::time::Duration;
 
 use zpl_toolchain_core::{
-    CommentPlacement, Compaction, EmitConfig, Indent, ParseResult, ValidationResult, emit_zpl,
-    parse_str, parse_with_tables, validate_with_profile,
+    Compaction, EmitConfig, Indent, ParseResult, ValidationResult, emit_zpl, parse_with_tables,
+    validate_with_profile,
 };
 use zpl_toolchain_profile::{Profile, load_profile_from_str};
 use zpl_toolchain_spec_tables::ParserTables;
@@ -41,12 +41,15 @@ pub fn embedded_tables() -> Option<&'static ParserTables> {
 
 // ── Parse ───────────────────────────────────────────────────────────────
 
-/// Parse ZPL input using embedded tables if available, otherwise table-less.
-pub fn parse_zpl(input: &str) -> ParseResult {
-    match embedded_tables() {
-        Some(t) => parse_with_tables(input, Some(t)),
-        None => parse_str(input),
-    }
+/// Parse ZPL input using embedded parser tables.
+///
+/// Returns an error when tables are unavailable.
+pub fn parse_zpl(input: &str) -> Result<ParseResult, String> {
+    let tables = embedded_tables().ok_or_else(|| {
+        "parser tables required for parse but not embedded; provide explicit tables JSON via parse_zpl_with_tables_json"
+            .to_string()
+    })?;
+    Ok(parse_with_tables(input, Some(tables)))
 }
 
 /// Parse ZPL input with explicitly provided tables JSON.
@@ -132,17 +135,9 @@ pub fn parse_compaction(compaction: Option<&str>) -> Compaction {
     }
 }
 
-/// Parse a comment-placement string into the `CommentPlacement` enum.
-pub fn parse_comment_placement(comment_placement: Option<&str>) -> CommentPlacement {
-    match comment_placement {
-        Some("line") => CommentPlacement::Line,
-        _ => CommentPlacement::Inline,
-    }
-}
-
 /// Format ZPL input with the given indent style.
-pub fn format_zpl(input: &str, indent: Option<&str>) -> String {
-    format_zpl_with_options(input, indent, None, None)
+pub fn format_zpl(input: &str, indent: Option<&str>) -> Result<String, String> {
+    format_zpl_with_options(input, indent, None)
 }
 
 /// Format ZPL input with indent and compaction options.
@@ -150,20 +145,18 @@ pub fn format_zpl_with_options(
     input: &str,
     indent: Option<&str>,
     compaction: Option<&str>,
-    comment_placement: Option<&str>,
-) -> String {
-    let tables = embedded_tables();
-    let res = match tables {
-        Some(t) => parse_with_tables(input, Some(t)),
-        None => parse_str(input),
-    };
+) -> Result<String, String> {
+    let tables = embedded_tables().ok_or_else(|| {
+        "parser tables required for format but not embedded; provide explicit tables JSON via parse_zpl_with_tables_json and format externally"
+            .to_string()
+    })?;
+    let res = parse_with_tables(input, Some(tables));
 
     let config = EmitConfig {
         indent: parse_indent(indent),
         compaction: parse_compaction(compaction),
-        comment_placement: parse_comment_placement(comment_placement),
     };
-    emit_zpl(&res.ast, tables, &config)
+    Ok(emit_zpl(&res.ast, Some(tables), &config))
 }
 
 // ── Explain ─────────────────────────────────────────────────────────────
@@ -400,7 +393,7 @@ pub fn query_printer_info_with_options(
 
 #[cfg(all(test, not(target_arch = "wasm32")))]
 mod tests {
-    use super::{build_printer_config, parse_comment_placement, parse_compaction, parse_indent};
+    use super::{build_printer_config, parse_compaction, parse_indent};
     use std::time::Duration;
     use zpl_toolchain_core::{Compaction, Indent};
 
@@ -466,21 +459,5 @@ mod tests {
         assert_eq!(parse_compaction(Some("field")), Compaction::Field);
         assert_eq!(parse_indent(Some("field")), Indent::Field);
         assert_eq!(parse_compaction(None), Compaction::None);
-    }
-
-    #[test]
-    fn parse_comment_placement_defaults_to_inline() {
-        assert_eq!(
-            parse_comment_placement(None),
-            zpl_toolchain_core::CommentPlacement::Inline
-        );
-        assert_eq!(
-            parse_comment_placement(Some("line")),
-            zpl_toolchain_core::CommentPlacement::Line
-        );
-        assert_eq!(
-            parse_comment_placement(Some("bogus")),
-            zpl_toolchain_core::CommentPlacement::Inline
-        );
     }
 }

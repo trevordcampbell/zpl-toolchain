@@ -49,8 +49,7 @@ public static class Zpl
     private static extern IntPtr zpl_format_with_options_v2(
         [MarshalAs(Utf8String)] string input,
         [MarshalAs(Utf8String)] string? indent,
-        [MarshalAs(Utf8String)] string? compaction,
-        [MarshalAs(Utf8String)] string? commentPlacement);
+        [MarshalAs(Utf8String)] string? compaction);
 
     [DllImport(LibName, CallingConvention = CallingConvention.Cdecl)]
     private static extern IntPtr zpl_explain(
@@ -204,14 +203,14 @@ public static class Zpl
     /// <param name="input">ZPL source code.</param>
     /// <param name="indent">"none", "label", or "field" (null for default).</param>
     /// <param name="compaction">"none" or "field" (null for default).</param>
-    /// <param name="commentPlacement">"inline" or "line" (null for default "inline").</param>
     public static string FormatWithOptions(
         string input,
         string? indent = null,
-        string? compaction = null,
-        string? commentPlacement = null)
+        string? compaction = null)
     {
-        var formatted = ConsumePtr(zpl_format_with_options_v2(input, indent, compaction, commentPlacement))
+        if (string.IsNullOrEmpty(indent)) indent = null;
+        if (string.IsNullOrEmpty(compaction)) compaction = null;
+        var formatted = ConsumePtr(zpl_format_with_options_v2(input, indent, compaction))
             ?? throw new InvalidOperationException("zpl_format_with_options_v2 returned NULL");
         CheckForError(formatted);
         return formatted;

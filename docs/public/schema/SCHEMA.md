@@ -25,7 +25,7 @@ This document summarizes the ZPL spec registry schema used by the spec-compiler.
   "signature": {                             // wire format builder
     "params": ["o","h","f","g","e","m"],
     "joiner": ",",
-    "noSpaceAfterOpcode": true,
+    "spacingPolicy": "forbid",
     "allowEmptyTrailing": true
   },
   "signatureOverrides": { /* optional per-opcode */ },

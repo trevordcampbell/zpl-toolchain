@@ -9,7 +9,7 @@ use std::borrow::Cow;
 
 use crate::grammar::ast::{ArgSlot, Ast, Label, Node, Presence};
 use zpl_toolchain_diagnostics::Span;
-use zpl_toolchain_spec_tables::{CommandCategory, CommandScope, ParserTables};
+use zpl_toolchain_spec_tables::{CommandCategory, CommandScope, ParserTables, SpacingPolicy};
 
 // ── Configuration ───────────────────────────────────────────────────────
 
@@ -36,16 +36,6 @@ pub enum Compaction {
     Field,
 }
 
-/// Placement style for semicolon comments.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum CommentPlacement {
-    /// Keep semicolon comments inline with the preceding command when safe.
-    #[default]
-    Inline,
-    /// Preserve one-comment-per-line output.
-    Line,
-}
-
 /// Configuration for the ZPL emitter.
 #[derive(Debug, Clone, Default)]
 pub struct EmitConfig {
@@ -53,8 +43,6 @@ pub struct EmitConfig {
     pub indent: Indent,
     /// Optional compaction mode.
     pub compaction: Compaction,
-    /// Semicolon comment placement mode.
-    pub comment_placement: CommentPlacement,
 }
 
 // ── Public API ──────────────────────────────────────────────────────────
@@ -69,15 +57,10 @@ pub fn emit_zpl(ast: &Ast, tables: Option<&ParserTables>, config: &EmitConfig) -
     for label in &ast.labels {
         emit_label(&mut out, label, tables, config);
     }
-    let compacted = if matches!(config.compaction, Compaction::Field) {
+    if matches!(config.compaction, Compaction::Field) {
         compact_printable_fields(&out, tables)
     } else {
         out
-    };
-    if matches!(config.comment_placement, CommentPlacement::Inline) {
-        inline_semicolon_comments(&compacted)
-    } else {
-        compacted
     }
 }
 
@@ -209,8 +192,8 @@ fn emit_command(
 
     let joiner = sig.map_or(",", |s| s.joiner.as_str());
     let split_rule = sig.and_then(|s| s.split_rule.as_ref());
-    let no_space_after_opcode = sig.is_none_or(|s| s.no_space_after_opcode);
-    if !no_space_after_opcode {
+    let spacing_policy = sig.map_or(SpacingPolicy::Forbid, |s| s.spacing_policy);
+    if matches!(spacing_policy, SpacingPolicy::Require) {
         out.push(' ');
     }
 
@@ -370,6 +353,7 @@ fn compact_printable_fields(formatted: &str, tables: Option<&ParserTables>) -> S
     }
 
     flush_field_block(&mut output, &mut field_lines, tables);
+    let output = inline_data_terminators(output, tables);
 
     let mut result = output.join("\n");
     result.push('\n');
@@ -392,57 +376,6 @@ fn flush_field_block(
     field_lines.clear();
 }
 
-fn inline_semicolon_comments(formatted: &str) -> String {
-    if formatted.is_empty() {
-        return String::new();
-    }
-
-    let has_trailing_newline = formatted.ends_with('\n');
-    let mut lines: Vec<&str> = formatted.lines().collect();
-    if lines.is_empty() {
-        return formatted.to_string();
-    }
-    if has_trailing_newline && formatted.trim().is_empty() {
-        return formatted.to_string();
-    }
-
-    let mut output: Vec<String> = Vec::with_capacity(lines.len());
-    for line in lines.drain(..) {
-        let trimmed_start = line.trim_start();
-        let is_comment_only = trimmed_start.starts_with(';');
-        if !is_comment_only {
-            output.push(line.to_string());
-            continue;
-        }
-        if output.is_empty() {
-            output.push(line.to_string());
-            continue;
-        }
-
-        let prev_index = output
-            .iter()
-            .rposition(|existing| !existing.trim().is_empty());
-        let Some(prev_index) = prev_index else {
-            output.push(line.to_string());
-            continue;
-        };
-
-        if output[prev_index].trim_start().starts_with(';') {
-            output.push(line.to_string());
-            continue;
-        }
-
-        let previous = output[prev_index].trim_end().to_string();
-        output[prev_index] = format!("{previous} {trimmed_start}");
-    }
-
-    let mut rebuilt = output.join("\n");
-    if has_trailing_newline {
-        rebuilt.push('\n');
-    }
-    rebuilt
-}
-
 fn compact_field_block(lines: &[String]) -> String {
     let first = lines.first().map_or("", String::as_str);
     let indent_len = first
@@ -456,6 +389,37 @@ fn compact_field_block(lines: &[String]) -> String {
         .collect::<Vec<_>>()
         .join("");
     format!("{indent}{compacted}")
+}
+
+fn inline_data_terminators(lines: Vec<String>, tables: Option<&ParserTables>) -> Vec<String> {
+    let mut output: Vec<String> = Vec::with_capacity(lines.len());
+    for line in lines {
+        let trimmed = line.trim();
+        let opcode = detect_opcode(trimmed);
+        if matches!(opcode.as_deref(), Some("FS"))
+            && let Some(previous) = output.last_mut()
+            && can_inline_fs_after(previous, tables)
+        {
+            previous.push_str(trimmed);
+            continue;
+        }
+        output.push(line);
+    }
+    output
+}
+
+fn can_inline_fs_after(previous_line: &str, tables: Option<&ParserTables>) -> bool {
+    let opcode = detect_opcode(previous_line.trim());
+    let Some(opcode) = opcode else {
+        return false;
+    };
+    if opcode == "FX" {
+        return true;
+    }
+    if let Some(entry) = lookup_command_entry(tables, &opcode) {
+        return entry.field_data;
+    }
+    matches!(opcode.as_str(), "FD" | "FV")
 }
 
 fn detect_opcode(line: &str) -> Option<String> {
@@ -569,6 +533,20 @@ fn lookup_command_category(tables: Option<&ParserTables>, opcode: &str) -> Optio
             && let Some(category) = entry.category
         {
             return Some(category);
+        }
+    }
+    None
+}
+
+fn lookup_command_entry<'a>(
+    tables: Option<&'a ParserTables>,
+    opcode: &str,
+) -> Option<&'a zpl_toolchain_spec_tables::CommandEntry> {
+    let tables = tables?;
+    for leader in ['^', '~'] {
+        let code = format!("{leader}{opcode}");
+        if let Some(entry) = tables.cmd_by_code(&code) {
+            return Some(entry);
         }
     }
     None

@@ -17,7 +17,7 @@
     }
   },
   "scripts": {
-    "build:wasm": "wasm-pack build ../../crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg",
+    "build:wasm": "wasm-pack build ../../../crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg",
     "build": "npx tsc",
     "typecheck": "npx tsc --noEmit",
     "test": "npm run build && node --test dist/test/*.js",

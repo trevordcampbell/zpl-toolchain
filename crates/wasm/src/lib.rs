@@ -12,11 +12,10 @@ use zpl_toolchain_bindings_common as common;
 
 /// Parse a ZPL string and return `{ ast, diagnostics }`.
 ///
-/// Uses embedded parser tables when available, falls back to table-less
-/// parsing otherwise.
+/// Uses embedded parser tables and returns an error when unavailable.
 #[wasm_bindgen]
 pub fn parse(input: &str) -> Result<JsValue, JsError> {
-    let result = common::parse_zpl(input);
+    let result = common::parse_zpl(input).map_err(|e| JsError::new(&e))?;
     to_js(&result)
 }
 
@@ -58,21 +57,15 @@ pub fn validate_with_tables_js(
 ///
 /// `indent` controls indentation: `"none"` (default), `"label"`, or `"field"`.
 /// `compaction` controls optional compaction: `"none"` (default) or `"field"`.
-/// `comment_placement` controls semicolon comments: `"inline"` (default) or `"line"`.
 /// Returns the formatted ZPL string.
 #[wasm_bindgen]
 pub fn format(
     input: &str,
     indent: Option<String>,
     compaction: Option<String>,
-    comment_placement: Option<String>,
 ) -> Result<String, JsError> {
-    Ok(common::format_zpl_with_options(
-        input,
-        indent.as_deref(),
-        compaction.as_deref(),
-        comment_placement.as_deref(),
-    ))
+    common::format_zpl_with_options(input, indent.as_deref(), compaction.as_deref())
+        .map_err(|e| JsError::new(&e))
 }
 
 /// Explain a diagnostic code (e.g., "ZPL1201").

@@ -738,6 +738,32 @@ fn diag_zpl2204_paired_fs_passes() {
     );
 }
 
+#[test]
+fn diag_zpl2204_fx_comment_fs_passes() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^FX Comment^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::ORPHANED_FIELD_SEPARATOR),
+        "^FX comment terminator ^FS should not emit ZPL2204: {:?}",
+        vr.issues,
+    );
+}
+
+#[test]
+fn diag_zpl2203_fx_without_fs_emits_unclosed_field() {
+    let tables = &*common::TABLES;
+    let result = parse_with_tables("^XA^FX Comment^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        vr.issues.iter().any(|d| d.id == codes::FIELD_NOT_CLOSED),
+        "^FX without ^FS should emit ZPL2203: {:?}",
+        vr.issues,
+    );
+}
+
 // ─── ZPL2205: Host Command in Label ──────────────────────────────────────────
 
 #[test]

@@ -1,5 +1,6 @@
 import { describe, it } from "node:test";
 import { strict as assert } from "node:assert";
+import net from "node:net";
 import { print, printBatch, PrintError, TcpPrinter } from "../index.js";
 import { createMockTcpServer } from "./mock-tcp-server.js";
 import { canBindLocalTcp } from "./network-availability.js";
@@ -63,6 +64,55 @@ describe("print happy-path with mock TCP server", {
 describe("TcpPrinter/printBatch resilience", {
   skip: !NETWORK_INTEGRATION_AVAILABLE,
 }, () => {
+  it("getStatus reads bursty framed ~HS responses without truncation", async () => {
+    const server = net.createServer((socket) => {
+      socket.on("data", async (data) => {
+        const payload = data.toString("utf-8");
+        if (!payload.includes("~HS")) {
+          socket.end();
+          return;
+        }
+        const frames = [
+          "\x02030,0,0,1245,000,0,0,0,000,0,0,0\x03\r\n",
+          "\x02000,0,0,0,0,2,4,0,00000000,1,000\x03\r\n",
+          "\x021234,0\x03\r\n",
+        ];
+        socket.write(frames[0]);
+        await new Promise((resolve) => setTimeout(resolve, 325));
+        socket.write(frames[1]);
+        await new Promise((resolve) => setTimeout(resolve, 325));
+        socket.write(frames[2]);
+        socket.end();
+      });
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(0, "127.0.0.1", () => resolve());
+    });
+    const address = server.address();
+    if (!address || typeof address === "string") {
+      server.close();
+      throw new Error("Failed to bind test server");
+    }
+
+    const printer = new TcpPrinter({
+      host: "127.0.0.1",
+      port: address.port,
+      timeout: 2500,
+      maxRetries: 0,
+    });
+    try {
+      const status = await printer.getStatus();
+      assert.equal(status.ready, true);
+      assert.equal(status.partialFormat, false);
+      assert.equal(status.labelsRemaining, 0);
+    } finally {
+      await printer.close();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
   it("printBatch handles mid-batch connection failure without throwing", async () => {
     const mock = await createMockTcpServer({ failAfterPayloads: 1 });
     try {

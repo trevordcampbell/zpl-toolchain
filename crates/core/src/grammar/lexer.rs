@@ -11,8 +11,6 @@ pub enum TokKind {
     Newline,
     /// One or more whitespace characters (excluding newlines).
     Whitespace,
-    /// A comment from `;` through end of line or next command leader.
-    Comment,
 }
 
 /// A token that borrows its text directly from the source input — zero allocation.
@@ -77,26 +75,6 @@ pub fn tokenize_with_config(
                 start,
                 end: i,
             });
-        } else if c == ';' {
-            // Comment token.
-            //
-            // We intentionally stop at command leaders as well as newline so field
-            // data payloads like "^FD>;>...^FS" do not swallow "^FS" into comment
-            // trivia. This keeps semicolons usable in GS1 payloads while preserving
-            // existing comment behavior for common ";...<newline>" forms.
-            while i < b.len() {
-                let ch = b[i] as char;
-                if ch == '\n' || ch == cmd_prefix || ch == ctrl_prefix {
-                    break;
-                }
-                i += 1;
-            }
-            toks.push(Token {
-                kind: TokKind::Comment,
-                text: &input[start..i],
-                start,
-                end: i,
-            });
         } else if c == delimiter {
             i += 1;
             toks.push(Token {
@@ -105,8 +83,13 @@ pub fn tokenize_with_config(
                 start,
                 end: i,
             });
-        } else if c == '\n' {
-            i += 1;
+        } else if c == '\n' || c == '\r' {
+            // Normalize CRLF/CR/LF into a single Newline token.
+            if c == '\r' && i + 1 < b.len() && b[i + 1] as char == '\n' {
+                i += 2;
+            } else {
+                i += 1;
+            }
             toks.push(Token {
                 kind: TokKind::Newline,
                 text: &input[start..i],
@@ -115,7 +98,11 @@ pub fn tokenize_with_config(
             });
         } else if c.is_ascii_whitespace() {
             i += 1;
-            while i < b.len() && (b[i] as char).is_ascii_whitespace() && (b[i] as char) != '\n' {
+            while i < b.len()
+                && (b[i] as char).is_ascii_whitespace()
+                && (b[i] as char) != '\n'
+                && (b[i] as char) != '\r'
+            {
                 i += 1;
             }
             toks.push(Token {
@@ -125,7 +112,7 @@ pub fn tokenize_with_config(
                 end: i,
             });
         } else {
-            // Value run — stop on delimiter, configured prefixes, newline, or semicolon
+            // Value run — stop on delimiter, configured prefixes, or newline
             i += 1;
             while i < b.len() {
                 let ch = b[i] as char;
@@ -133,7 +120,7 @@ pub fn tokenize_with_config(
                     || ch == cmd_prefix
                     || ch == ctrl_prefix
                     || ch == '\n'
-                    || ch == ';'
+                    || ch == '\r'
                 {
                     break;
                 }

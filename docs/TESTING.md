@@ -147,9 +147,9 @@ so these integration tests do not get silently skipped.
 The core TypeScript package wraps WASM and requires a full WASM build to test:
 
 ```bash
-wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
 cd packages/ts/core
 npm ci
+npm run build:wasm
 npm run build
 npm test
 ```
@@ -261,7 +261,7 @@ Tests run automatically on every push and PR via GitHub Actions:
 | Job | What it does |
 |-----|-------------|
 | `Build & Test (ubuntu/macos/windows)` | `cargo fmt`, `cargo build`, `cargo clippy`, `cargo nextest run` across 3 OS (all transports are default) |
-| `TypeScript Core Tests` | `wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg` → `npm ci` → `tsc --noEmit` → `npm run build` → `node --test dist/test/*.js` |
+| `TypeScript Core Tests` | `npm ci` → `npm run build:wasm` → `tsc --noEmit` → `npm run build` → `node --test dist/test/*.js` |
 | `TypeScript Print Tests` | `npm ci` → `tsc --noEmit` → `npm run build` → artifact assertions + local TCP bind precheck → `npm test` |
 | `TypeScript CLI Wrapper Tests` | `npm test` in `packages/ts/cli` (platform mapping + unsupported-runtime guard coverage) |
 | `VS Code Extension Build & Test` | `npm ci` → `npm run test:ci` (typecheck/build + extension-host integration where supported) → `npx @vscode/vsce package` + VSIX integrity check |

@@ -266,7 +266,7 @@ jobs:
 
       # ── @zpl-toolchain/core (WASM) ──────────────────────────────────
       - name: Build WASM
-        run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
+        run: npm --prefix packages/ts/core run build:wasm
 
       - name: Install dependencies & build @zpl-toolchain/core
         working-directory: packages/ts/core

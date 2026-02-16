@@ -3,16 +3,30 @@ use crate::grammar::{ast::Ast, diag::Severity, diag::Span, diag::codes, tables::
 use crate::state::{DeviceState, LabelValueState, ResolvedLabelState, Units, convert_to_dots};
 use serde::Serialize;
 use std::collections::{BTreeMap, HashMap, HashSet};
-use std::sync::OnceLock;
 use zpl_toolchain_diagnostics::policy::{
     OBJECT_BOUNDS_LOW_CONFIDENCE_MAX_OVERFLOW_DOTS,
     OBJECT_BOUNDS_LOW_CONFIDENCE_MAX_OVERFLOW_RATIO, OBJECT_BOUNDS_LOW_CONFIDENCE_SEVERITY,
 };
-use zpl_toolchain_diagnostics::{message_template_for, severity_for_code};
 use zpl_toolchain_profile::Profile;
 use zpl_toolchain_spec_tables::{
     CommandScope, ComparisonOp, ConstraintKind, ConstraintScope, NoteAudience, Plane, RoundingMode,
 };
+
+mod diagnostics_util;
+mod predicates;
+mod profile_constraints;
+
+use self::diagnostics_util::{
+    diagnostic_with_constraint_severity, diagnostic_with_spec_severity, map_sev,
+    render_diagnostic_message, trim_f64,
+};
+use self::predicates::{
+    any_target_in_set, enum_contains, evaluate_note_when_expression, predicate_matches,
+};
+#[cfg(test)]
+pub(crate) use self::predicates::{firmware_version_gte, profile_predicate_matches};
+use self::profile_constraints::check_profile_op;
+pub use self::profile_constraints::resolve_profile_field;
 
 /// Shorthand for building a `BTreeMap<String, String>` context from key-value pairs.
 ///
@@ -34,275 +48,6 @@ pub struct ValidationResult {
     pub issues: Vec<Diagnostic>,
     /// Renderer-ready resolved state for each label.
     pub resolved_labels: Vec<ResolvedLabelState>,
-}
-
-fn map_constraint_sev(sev: zpl_toolchain_spec_tables::ConstraintSeverity) -> Severity {
-    match sev {
-        zpl_toolchain_spec_tables::ConstraintSeverity::Error => Severity::Error,
-        zpl_toolchain_spec_tables::ConstraintSeverity::Info => Severity::Info,
-        zpl_toolchain_spec_tables::ConstraintSeverity::Warn => Severity::Warn,
-    }
-}
-
-fn map_sev(
-    sev: Option<&zpl_toolchain_spec_tables::ConstraintSeverity>,
-    default: Option<&zpl_toolchain_spec_tables::ConstraintSeverity>,
-) -> Severity {
-    if let Some(sev) = sev {
-        return map_constraint_sev(*sev);
-    }
-    if let Some(default) = default {
-        return map_constraint_sev(*default);
-    }
-    Severity::Warn
-}
-
-fn diagnostic_with_spec_severity(
-    id: &'static str,
-    message: impl Into<String>,
-    span: Option<Span>,
-) -> Diagnostic {
-    Diagnostic::new(
-        id,
-        severity_for_code(id).unwrap_or(Severity::Warn),
-        message.into(),
-        span,
-    )
-}
-
-fn diagnostic_with_constraint_severity(
-    id: &'static str,
-    severity: zpl_toolchain_spec_tables::ConstraintSeverity,
-    message: impl Into<String>,
-    span: Option<Span>,
-) -> Diagnostic {
-    Diagnostic::new(id, map_constraint_sev(severity), message.into(), span)
-}
-
-fn render_diagnostic_message(
-    id: &'static str,
-    variant: &str,
-    substitutions: &[(&str, String)],
-    fallback: String,
-) -> String {
-    let Some(template) = message_template_for(id, variant) else {
-        return fallback;
-    };
-    let substitution_map: HashMap<&str, &str> = substitutions
-        .iter()
-        .map(|(key, value)| (*key, value.as_str()))
-        .collect();
-    let mut rendered = String::with_capacity(template.len() + 16);
-    let mut scan_from = 0usize;
-    while let Some(open_rel) = template[scan_from..].find('{') {
-        let open = scan_from + open_rel;
-        rendered.push_str(&template[scan_from..open]);
-        let after_open = open + 1;
-        if let Some(close_rel) = template[after_open..].find('}') {
-            let close = after_open + close_rel;
-            let key = &template[after_open..close];
-            if let Some(value) = substitution_map.get(key) {
-                rendered.push_str(value);
-            } else {
-                rendered.push_str(&template[open..=close]);
-            }
-            scan_from = close + 1;
-        } else {
-            rendered.push_str(&template[open..]);
-            return rendered;
-        }
-    }
-    rendered.push_str(&template[scan_from..]);
-    rendered
-}
-
-fn trim_f64(n: f64) -> String {
-    let s = format!("{:.6}", n);
-    let s = s.trim_end_matches('0').trim_end_matches('.').to_string();
-    if s.is_empty() { "0".to_string() } else { s }
-}
-
-/// Profile predicate support for note when: expressions.
-/// When profile is None, all profile predicates return false (conservative).
-#[allow(dead_code)]
-pub(crate) fn profile_predicate_matches(predicate: &str, profile: Option<&Profile>) -> bool {
-    let Some(p) = profile else {
-        return false;
-    };
-    if let Some(rest) = predicate.strip_prefix("profile:id:") {
-        let accepted: Vec<&str> = rest
-            .split('|')
-            .map(|s| s.trim())
-            .filter(|s| !s.is_empty())
-            .collect();
-        return accepted.is_empty() || accepted.iter().any(|id| *id == p.id);
-    }
-    if let Some(rest) = predicate.strip_prefix("profile:dpi:") {
-        let accepted: Vec<&str> = rest
-            .split('|')
-            .map(|s| s.trim())
-            .filter(|s| !s.is_empty())
-            .collect();
-        return accepted
-            .iter()
-            .any(|s| s.parse::<u32>().ok() == Some(p.dpi));
-    }
-    if let Some(rest) = predicate.strip_prefix("profile:feature:") {
-        let gates: Vec<&str> = rest
-            .split('|')
-            .map(|s| s.trim())
-            .filter(|s| !s.is_empty())
-            .collect();
-        if let Some(features) = &p.features {
-            return gates
-                .iter()
-                .any(|g| zpl_toolchain_profile::resolve_gate(features, g) == Some(true));
-        }
-        return false;
-    }
-    if let Some(rest) = predicate.strip_prefix("profile:featureMissing:") {
-        let gates: Vec<&str> = rest
-            .split('|')
-            .map(|s| s.trim())
-            .filter(|s| !s.is_empty())
-            .collect();
-        if let Some(features) = &p.features {
-            return gates
-                .iter()
-                .any(|g| zpl_toolchain_profile::resolve_gate(features, g) == Some(false));
-        }
-        return false;
-    }
-    if let Some(prefix) = predicate.strip_prefix("profile:firmware:") {
-        return p
-            .memory
-            .as_ref()
-            .and_then(|m| m.firmware_version.as_deref())
-            .map(|fw| fw.starts_with(prefix.trim()))
-            .unwrap_or(false);
-    }
-    if let Some(rest) = predicate.strip_prefix("profile:firmwareGte:") {
-        let min_ver = rest.trim();
-        let fw = p
-            .memory
-            .as_ref()
-            .and_then(|m| m.firmware_version.as_deref());
-        return fw
-            .map(|v| firmware_version_gte(v, min_ver))
-            .unwrap_or(false);
-    }
-    // profile:model: is an alias for profile:id: (profile id often encodes model)
-    if let Some(rest) = predicate.strip_prefix("profile:model:") {
-        let accepted: Vec<&str> = rest
-            .split('|')
-            .map(|s| s.trim())
-            .filter(|s| !s.is_empty())
-            .collect();
-        return accepted.is_empty() || accepted.iter().any(|m| p.id.contains(m) || p.id == *m);
-    }
-    false
-}
-
-/// Compare Zebra firmware version strings (e.g. V60.19.15Z, X60.14.3).
-/// Returns true if fw >= min_ver when both parse, false otherwise.
-#[allow(dead_code)]
-pub(crate) fn firmware_version_gte(fw: &str, min_ver: &str) -> bool {
-    fn parse_version(s: &str) -> Option<(u32, u32)> {
-        let s = s
-            .strip_prefix('V')
-            .or_else(|| s.strip_prefix('X'))
-            .unwrap_or(s);
-        let mut parts = s.split('.');
-        let major: u32 = parts.next()?.parse().ok()?;
-        let minor: u32 = parts
-            .next()
-            .and_then(|p| {
-                p.chars()
-                    .take_while(|c| c.is_ascii_digit())
-                    .collect::<String>()
-                    .parse::<u32>()
-                    .ok()
-            })
-            .unwrap_or(0);
-        Some((major, minor))
-    }
-    match (parse_version(fw), parse_version(min_ver)) {
-        (Some((fw_maj, fw_min)), Some((min_maj, min_min))) => {
-            (fw_maj, fw_min) >= (min_maj, min_min)
-        }
-        _ => false,
-    }
-}
-
-// Very small predicate support for conditionalRange / roundingPolicyWhen
-// MVP: support keys like "arg:keyIsValue:X" or "arg:keyPresent" or "arg:keyEmpty"
-fn predicate_matches(when: &str, args: &[crate::grammar::ast::ArgSlot]) -> bool {
-    if let Some(rest) = when.strip_prefix("arg:") {
-        if let Some((k, rhs)) = rest.split_once("IsValue:") {
-            let accepted: Vec<&str> = rhs.split('|').collect();
-            return args.iter().any(|a| {
-                a.key.as_deref() == Some(k)
-                    && a.value
-                        .as_deref()
-                        .is_some_and(|value| accepted.contains(&value))
-            });
-        }
-        if let Some(k) = rest.strip_suffix("Present") {
-            return args.iter().any(|a| {
-                a.key.as_deref() == Some(k) && a.presence == crate::grammar::ast::Presence::Value
-            });
-        }
-        if let Some(k) = rest.strip_suffix("Empty") {
-            return args.iter().any(|a| {
-                a.key.as_deref() == Some(k) && a.presence == crate::grammar::ast::Presence::Empty
-            });
-        }
-    }
-    false
-}
-
-fn evaluate_note_when_expression(
-    expression: &str,
-    args: &[crate::grammar::ast::ArgSlot],
-    label_codes: &HashSet<&str>,
-    profile: Option<&Profile>,
-) -> bool {
-    expression.split("||").any(|disjunction| {
-        disjunction.split("&&").all(|term| {
-            let token = term.trim();
-            if token.is_empty() {
-                return false;
-            }
-            let (negated, predicate) = if let Some(rest) = token.strip_prefix('!') {
-                (true, rest.trim())
-            } else {
-                (false, token)
-            };
-            let mut matches = if predicate.starts_with("arg:") {
-                predicate_matches(predicate, args)
-            } else if let Some(targets) = predicate.strip_prefix("label:has:") {
-                any_target_in_set(targets, label_codes)
-            } else if let Some(targets) = predicate.strip_prefix("label:missing:") {
-                !any_target_in_set(targets, label_codes)
-            } else if predicate.starts_with("profile:") {
-                profile_predicate_matches(predicate, profile)
-            } else {
-                false
-            };
-            if negated {
-                matches = !matches;
-            }
-            matches
-        })
-    })
-}
-
-/// Check if an enum value list contains a given value.
-fn enum_contains(values: &[zpl_toolchain_spec_tables::EnumValue], target: &str) -> bool {
-    values.iter().any(|e| match e {
-        zpl_toolchain_spec_tables::EnumValue::Simple(s) => s == target,
-        zpl_toolchain_spec_tables::EnumValue::Object { value, .. } => value == target,
-    })
 }
 
 // Select the effective Arg from an ArgUnion using a simple heuristic based on the slot value.
@@ -333,96 +78,6 @@ fn select_effective_arg<'a>(
             one_of.first()
         }
     }
-}
-
-/// Type alias for profile field accessor functions.
-type ProfileFieldFn = fn(&Profile) -> Option<f64>;
-
-/// Declarative registry of all numeric profile fields.
-///
-/// Adding a new numeric profile field requires adding one entry here.
-/// The `all_profile_constraint_fields_are_resolvable` test ensures
-/// coverage of all fields referenced by `profileConstraint` in specs.
-const PROFILE_FIELD_REGISTRY: &[(&str, ProfileFieldFn)] = &[
-    ("dpi", |p| Some(p.dpi as f64)),
-    ("page.width_dots", |p| {
-        p.page
-            .as_ref()
-            .and_then(|pg| pg.width_dots.map(|v| v as f64))
-    }),
-    ("page.height_dots", |p| {
-        p.page
-            .as_ref()
-            .and_then(|pg| pg.height_dots.map(|v| v as f64))
-    }),
-    ("speed_range.min", |p| {
-        p.speed_range.as_ref().map(|r| r.min as f64)
-    }),
-    ("speed_range.max", |p| {
-        p.speed_range.as_ref().map(|r| r.max as f64)
-    }),
-    ("darkness_range.min", |p| {
-        p.darkness_range.as_ref().map(|r| r.min as f64)
-    }),
-    ("darkness_range.max", |p| {
-        p.darkness_range.as_ref().map(|r| r.max as f64)
-    }),
-    ("memory.ram_kb", |p| {
-        p.memory.as_ref().and_then(|m| m.ram_kb.map(|v| v as f64))
-    }),
-    ("memory.flash_kb", |p| {
-        p.memory.as_ref().and_then(|m| m.flash_kb.map(|v| v as f64))
-    }),
-];
-
-/// Cached lookup map from field path to accessor function.
-static PROFILE_FIELD_MAP: OnceLock<HashMap<&'static str, ProfileFieldFn>> = OnceLock::new();
-
-fn profile_field_map() -> &'static HashMap<&'static str, ProfileFieldFn> {
-    PROFILE_FIELD_MAP.get_or_init(|| PROFILE_FIELD_REGISTRY.iter().copied().collect())
-}
-
-/// Resolve a profile field by dotted path (e.g., "page.width_dots").
-///
-/// Returns the numeric value of the named profile field, or `None` if the
-/// field path is unrecognized or the corresponding value is not set in the
-/// profile. Used by the validator for `profileConstraint` checks and
-/// exposed publicly so that tests can verify coverage of all constraint
-/// field paths referenced in command specs.
-pub fn resolve_profile_field(profile: &Profile, field: &str) -> Option<f64> {
-    profile_field_map().get(field).and_then(|f| f(profile))
-}
-
-/// Check a profile constraint operator.
-///
-/// Returns `false` (constraint violated) for non-finite values (NaN, infinity)
-/// to prevent them from silently passing validation.
-///
-/// The `Eq` tolerance of 0.5 is intentional: all profile fields (DPI, dots,
-/// speed, darkness, KB) are integer values cast to `f64`, so two values
-/// represent the same integer exactly when they round to the same whole
-/// number — i.e., when their difference is less than 0.5.  This is far more
-/// robust than `f64::EPSILON` (~2.2e-16), which is the unit-of-least-precision
-/// near 1.0 and is neither a correct nor a general-purpose equality tolerance.
-fn check_profile_op(value: f64, op: &ComparisonOp, limit: f64) -> bool {
-    if !value.is_finite() || !limit.is_finite() {
-        return false;
-    }
-    match op {
-        ComparisonOp::Lte => value <= limit,
-        ComparisonOp::Gte => value >= limit,
-        ComparisonOp::Lt => value < limit,
-        ComparisonOp::Gt => value > limit,
-        ComparisonOp::Eq => (value - limit).abs() < 0.5,
-    }
-}
-
-/// Check if any of the pipe-separated targets are present in a pre-built set (O(1) per target).
-fn any_target_in_set(targets: &str, seen: &HashSet<&str>) -> bool {
-    targets
-        .split('|')
-        .map(str::trim)
-        .any(|target| !target.is_empty() && seen.contains(target))
 }
 
 // ─── Cross-command state tracking ───────────────────────────────────────────

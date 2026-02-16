@@ -25,8 +25,7 @@ declare module "../wasm/pkg/zpl_toolchain_wasm.js" {
   export function format(
     input: string,
     indent?: string,
-    compaction?: string,
-    commentPlacement?: string
+    compaction?: string
   ): string;
 
   /** Explain a diagnostic code. Returns the explanation or undefined. */

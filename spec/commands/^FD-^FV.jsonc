@@ -7,6 +7,10 @@
       "plane": "format",
       "scope": "field",
       "arity": 1, "field_data": true,
+      "signature": { "params": ["data"], "joiner": "", "spacingPolicy": "allow", "allowEmptyTrailing": true },
+      "args": [
+        { "name": "field data", "key": "data", "type": "string", "optional": true }
+      ],
       "constraints": [
         { "kind": "emptyData", "message": "empty field data", "severity": "warn" }
       ],

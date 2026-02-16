@@ -4,7 +4,7 @@ use super::{
     lexer::{TokKind, tokenize},
     tables::ParserTables,
 };
-use zpl_toolchain_spec_tables::CommandEntry;
+use zpl_toolchain_spec_tables::{CommandEntry, SpacingPolicy};
 
 /// Shorthand for building a `BTreeMap<String, String>` context from key-value pairs.
 macro_rules! ctx {
@@ -263,16 +263,6 @@ impl<'a> Parser<'a> {
         let tok = &self.toks[self.pos];
         match tok.kind {
             TokKind::Leader => self.parse_command(),
-            TokKind::Comment => {
-                let text = self.toks[self.pos].text.to_owned();
-                let start = self.toks[self.pos].start;
-                let end = self.toks[self.pos].end;
-                self.pos += 1;
-                self.nodes.push(Node::Trivia {
-                    text,
-                    span: Span::new(start, end),
-                });
-            }
             // Whitespace and newlines between commands are expected; skip silently.
             TokKind::Whitespace | TokKind::Newline => {
                 self.pos += 1;
@@ -460,7 +450,7 @@ impl<'a> Parser<'a> {
         }
         self.pos += 1;
 
-        // Continue collecting until next leader, newline, or comment
+        // Continue collecting until next leader or newline.
         while !self.at_end() {
             match self.toks[self.pos].kind {
                 TokKind::Leader => break,
@@ -468,10 +458,70 @@ impl<'a> Parser<'a> {
                     self.pos += 1;
                     break;
                 }
-                TokKind::Comment => break,
                 TokKind::Whitespace | TokKind::Value | TokKind::Comma => {
                     raw.push_str(self.toks[self.pos].text);
                     self.pos += 1;
+                }
+            }
+        }
+
+        let is_field_data = self.is_field_data_command(&code);
+        let raw_payload = !is_field_data && self.is_raw_payload_command(&code);
+        let is_free_text_command = !is_field_data
+            && !raw_payload
+            && self
+                .effective_signature(&code)
+                .is_some_and(|sig| sig.joiner.is_empty());
+
+        // Free-form text commands (signature joiner="") treat everything up to the next
+        // command prefix as raw text. If a bare leader appears in that text (e.g., "^ text"
+        // or "~ text"), emit a targeted parser error and keep scanning until a real command head.
+        if is_free_text_command {
+            while !self.at_end() {
+                if !matches!(self.toks[self.pos].kind, TokKind::Leader) {
+                    break;
+                }
+                let leader_start = self.toks[self.pos].start;
+                let leader_len = self.toks[self.pos].text.len();
+                let leader_char = self.toks[self.pos].text.chars().next().unwrap_or('\0');
+                let interrupt_canonical = if leader_char == self.command_prefix {
+                    "^"
+                } else {
+                    "~"
+                };
+                let has_opcode_head = if self.pos + 1 < self.toks.len()
+                    && self.toks[self.pos + 1].kind == TokKind::Value
+                {
+                    let head =
+                        self.recognize_opcode(interrupt_canonical, self.toks[self.pos + 1].start);
+                    !head.is_empty()
+                } else {
+                    false
+                };
+                if has_opcode_head {
+                    break;
+                }
+                self.diags.push(
+                    Diagnostic::error(
+                        codes::PARSER_INVALID_COMMAND,
+                        format!(
+                            "reserved command leader '{}' inside {} free-form text; avoid raw '^'/'~' in free-form content",
+                            interrupt_canonical, code
+                        ),
+                        Some(Span::new(leader_start, leader_start + leader_len)),
+                    )
+                    .with_context(ctx!("command" => code.clone())),
+                );
+                // Consume malformed leader and continue collecting remaining comment text.
+                self.pos += 1;
+                while !self.at_end() {
+                    match self.toks[self.pos].kind {
+                        TokKind::Leader | TokKind::Newline => break,
+                        TokKind::Whitespace | TokKind::Value | TokKind::Comma => {
+                            raw.push_str(self.toks[self.pos].text);
+                            self.pos += 1;
+                        }
+                    }
                 }
             }
         }
@@ -549,40 +599,44 @@ impl<'a> Parser<'a> {
             self.fh_active = true;
         }
 
-        // ── Enforce signature noSpaceAfterOpcode semantics (schema-driven) ─────
-        let is_field_data = self.is_field_data_command(&code);
-        let raw_payload = !is_field_data && self.is_raw_payload_command(&code);
+        // ── Enforce signature spacingPolicy semantics (schema-driven) ─────
         if !raw_payload {
             let raw_non_empty = !raw.trim().is_empty();
             if raw_non_empty {
                 let starts_with_ws = raw.chars().next().is_some_and(|c| c.is_whitespace());
-                let no_space_after_opcode = self
+                let spacing_policy = self
                     .effective_signature(&code)
-                    .map(|s| s.no_space_after_opcode)
-                    .unwrap_or(true);
-                if no_space_after_opcode && starts_with_ws {
-                    self.diags.push(
-                        Diagnostic::error(
-                            codes::PARSER_INVALID_COMMAND,
-                            format!(
-                                "{} should not include a space between opcode and arguments",
-                                code
+                    .map(|s| s.spacing_policy)
+                    .unwrap_or(SpacingPolicy::Forbid);
+                match spacing_policy {
+                    SpacingPolicy::Forbid if starts_with_ws => {
+                        self.diags.push(
+                            Diagnostic::error(
+                                codes::PARSER_INVALID_COMMAND,
+                                format!(
+                                    "{} should not include a space between opcode and arguments",
+                                    code
+                                ),
+                                Some(cmd_span),
+                            )
+                            .with_context(
+                                ctx!("command" => code.clone(), "spacing" => "spacingPolicy=forbid"),
                             ),
-                            Some(cmd_span),
-                        )
-                        .with_context(
-                            ctx!("command" => code.clone(), "spacing" => "noSpaceAfterOpcode=true"),
-                        ),
-                    );
-                } else if !no_space_after_opcode && !starts_with_ws {
-                    self.diags.push(
-                        Diagnostic::error(
-                            codes::PARSER_INVALID_COMMAND,
-                            format!("{} expects a space between opcode and arguments", code),
-                            Some(cmd_span),
-                        )
-                        .with_context(ctx!("command" => code.clone(), "spacing" => "noSpaceAfterOpcode=false")),
-                    );
+                        );
+                    }
+                    SpacingPolicy::Require if !starts_with_ws => {
+                        self.diags.push(
+                            Diagnostic::error(
+                                codes::PARSER_INVALID_COMMAND,
+                                format!("{} expects a space between opcode and arguments", code),
+                                Some(cmd_span),
+                            )
+                            .with_context(
+                                ctx!("command" => code.clone(), "spacing" => "spacingPolicy=require"),
+                            ),
+                        );
+                    }
+                    SpacingPolicy::Allow | SpacingPolicy::Forbid | SpacingPolicy::Require => {}
                 }
             }
         }
@@ -590,14 +644,13 @@ impl<'a> Parser<'a> {
         // ── Handle field data commands (^FD, ^FV): entire raw content is a single arg ──
         let args = if is_field_data {
             // Field data: entire raw content is literal text, not comma-separated
-            let trimmed = raw.trim();
-            if trimmed.is_empty() {
+            if raw.is_empty() {
                 Vec::new()
             } else {
                 vec![ArgSlot {
                     key: Some("data".into()),
                     presence: Presence::Value,
-                    value: Some(trimmed.to_string()),
+                    value: Some(raw.to_string()),
                 }]
             }
         } else {
@@ -749,9 +802,14 @@ impl<'a> Parser<'a> {
         };
 
         let raw_trimmed = raw.trim();
+        let preserve_verbatim = joiner.is_empty();
 
         let mut parts: Vec<String> = if raw_trimmed.is_empty() {
             Vec::new()
+        } else if preserve_verbatim {
+            // Some commands (notably ^FX) intentionally use an empty joiner and
+            // treat the remainder as a single free-form parameter.
+            vec![raw.to_string()]
         } else {
             raw_trimmed.split(&joiner).map(|s| s.to_string()).collect()
         };
@@ -815,8 +873,12 @@ impl<'a> Parser<'a> {
 
         let mut args = Vec::new();
         for (idx, p) in parts.iter().enumerate() {
-            let vtrim = p.trim();
-            if vtrim.is_empty() {
+            let normalized = if preserve_verbatim {
+                p.as_str()
+            } else {
+                p.trim()
+            };
+            if normalized.is_empty() {
                 args.push(ArgSlot {
                     key: param_keys.get(idx).cloned(),
                     presence: Presence::Empty,
@@ -826,7 +888,7 @@ impl<'a> Parser<'a> {
                 args.push(ArgSlot {
                     key: param_keys.get(idx).cloned(),
                     presence: Presence::Value,
-                    value: Some(vtrim.to_string()),
+                    value: Some(normalized.to_string()),
                 });
             }
         }
@@ -897,19 +959,57 @@ impl<'a> Parser<'a> {
                     } else {
                         "~"
                     };
-                    let interrupter = if self.pos + 1 < self.toks.len()
+                    let (interrupter, has_opcode_head) = if self.pos + 1 < self.toks.len()
                         && self.toks[self.pos + 1].kind == TokKind::Value
                     {
                         let head = self
                             .recognize_opcode(interrupt_canonical, self.toks[self.pos + 1].start);
                         if head.is_empty() {
-                            interrupt_canonical.to_owned()
+                            (interrupt_canonical.to_owned(), false)
                         } else {
-                            format!("{}{}", interrupt_canonical, head)
+                            (format!("{}{}", interrupt_canonical, head), true)
                         }
                     } else {
-                        interrupt_canonical.to_owned()
+                        (interrupt_canonical.to_owned(), false)
                     };
+
+                    // A bare leader inside field data/comment (e.g., "^ text" or "~ text")
+                    // is structurally invalid and otherwise tends to cascade into generic
+                    // "expected command code after leader" diagnostics. Emit a targeted
+                    // parser error here and continue scanning until ^FS.
+                    if !has_opcode_head {
+                        let content = self.input[content_start..leader_start].to_string();
+                        if !content.is_empty() {
+                            self.nodes.push(Node::FieldData {
+                                content,
+                                hex_escaped: hex_escape,
+                                span: Span::new(content_start, leader_start),
+                            });
+                        }
+                        let leader_len = self.toks[self.pos].text.len();
+                        self.diags.push(
+                            Diagnostic::error(
+                                codes::PARSER_INVALID_COMMAND,
+                                format!(
+                                    "reserved command leader '{}' encountered inside field data; use encoded text or remove the character",
+                                    interrupter
+                                ),
+                                Some(Span::new(leader_start, leader_start + leader_len)),
+                            )
+                            .with_context(ctx!("command" => interrupter)),
+                        );
+                        self.pos += 1;
+                        let next_content_start = if self.at_end() {
+                            self.input.len()
+                        } else {
+                            self.toks[self.pos].start
+                        };
+                        self.mode = Mode::FieldData {
+                            content_start: next_content_start,
+                            hex_escape,
+                        };
+                        continue;
+                    }
 
                     // Emit what we have as field data
                     let content = self.input[content_start..leader_start].to_string();

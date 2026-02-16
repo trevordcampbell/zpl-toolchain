@@ -7,7 +7,7 @@ Accepted
 All three parsing modes are implemented:
 - **Raw payload mode** (`Mode::RawData`): collects multi-line data until next command leader; emits `Node::RawData` with spans; EOF diagnostic for unterminated data. Triggered by `CommandEntry.raw_payload` flag.
 - **Field data mode** (`Mode::FieldData`): collects content until `^FS`; preserves commas in field data; respects `^FH` hex escape flag. Triggered by `CommandEntry.field_data` flag.
-- **Trivia**: semicolon comments emitted as `Node::Trivia` via `TokKind::Comment` tokens.
+- **Trivia**: parser preserves non-command trivia while keeping comment semantics official (`^FX`), with no semicolon-specific lexer tokens.
 
 9 dedicated tests for raw payload mode; field data and trivia covered by parser test suite.
 
@@ -16,7 +16,7 @@ The AST (in `crates/core/src/grammar/ast.rs`) already defines `RawData` and `Tri
 
 - **Raw payload commands** (`^GF`, `~DG`, `~DY`, `~DB`) send binary or hex-encoded graphic payloads after their header parameters. The payload length is determined by a `total_bytes` parameter in the command header.
 - **Field data commands** (`^FD`, `^FV`) contain free-form text that runs until the next `^FS` delimiter. When `^FH` appears in the current field, hex escape sequences (e.g. `_1A`) must be respected.
-- **Comments** (lines starting with `;`) are currently stripped by the lexer with no trivia preservation, making round-tripping impossible.
+- **Comments** use official ZPL `^FX` semantics; semicolon text is treated as ordinary command/data content.
 - **Round-tripping** (parse → modify → emit identical ZPL) requires that whitespace, comments, and content outside `^XA`/`^XZ` blocks are preserved in the AST.
 
 ## Decision
@@ -29,7 +29,6 @@ Introduce three parsing modes, triggered by command type:
 The `raw_payload` and `field_data` flags are already present in the generated `CommandEntry` tables; the parser will consult these flags after recognising an opcode to select the appropriate mode.
 
 `Trivia` nodes should be created for:
-- Semicolon comments.
 - Inter-command whitespace.
 - Content outside `^XA`/`^XZ` blocks.
 

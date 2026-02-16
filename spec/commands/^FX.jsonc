@@ -8,7 +8,13 @@
       "plane": "format",
       "scope": "field",
       "arity": 1,
-      "signature": { "params": ["c"], "joiner": "", "allowEmptyTrailing": true },
+      "opens_field": true,
+      "signature": {
+        "params": ["c"],
+        "joiner": "",
+        "spacingPolicy": "allow",
+        "allowEmptyTrailing": true
+      },
       "args": [
         { "name": "comment", "key": "c", "type": "string", "optional": true,
           "doc": "Non-printing comment text. Everything after ^FX up to the next caret (^) or tilde (~) prefix is treated as a comment and ignored by the printer." }

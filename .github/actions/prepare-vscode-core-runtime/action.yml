@@ -4,15 +4,12 @@ description: Build and verify @zpl-toolchain/core runtime artifacts for extensio
 runs:
   using: composite
   steps:
-    - name: Build WASM package for @zpl-toolchain/core
-      shell: bash
-      run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
-
-    - name: Install dependencies and build @zpl-toolchain/core
+    - name: Install dependencies, build WASM, and build @zpl-toolchain/core
       shell: bash
       run: |
         cd packages/ts/core
         npm ci
+        npm run build:wasm
         npm run build
 
     - name: Verify core runtime artifacts exist

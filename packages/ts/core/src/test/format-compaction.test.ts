@@ -10,30 +10,23 @@ describe("@zpl-toolchain/core format compaction", () => {
     );
   });
 
-  it("accepts comment placement argument in format signature", () => {
-    assert.throws(
-      () => format("^XA^XZ", "label", "field", "line"),
-      /WASM not initialized/i,
-    );
-  });
-
-  it("applies field compaction and inline comment placement", async () => {
+  it("applies field compaction", async () => {
     await init();
     const input = "^XA\n^FO30,30\n^A0N,35,35\n^FDWIDGET-3000\n^FS\n^XZ\n";
-    const formatted = format(input, "label", "field", "inline");
+    const formatted = format(input, "label", "field");
     assert.ok(
       /  \^FO30,30\^A0N,35,35\^FDWIDGET-3000\^FS/.test(formatted),
       "Expected field compaction to collapse printable field commands."
     );
   });
 
-  it("preserves standalone semicolon comments when comment placement is line", async () => {
+  it("treats semicolon as plain data (no comment semantics)", async () => {
     await init();
-    const input = "^XA\n^PW812\n; set print width\n^XZ\n";
-    const formatted = format(input, "none", "none", "line");
+    const input = "^XA\n^FO10,10^FDPart;A^FS\n^XZ\n";
+    const formatted = format(input, "none", "none");
     assert.ok(
-      /\^PW812\n; set print width/.test(formatted),
-      "Expected line comment placement to preserve standalone comment lines."
+      formatted.includes("Part;A"),
+      "Expected semicolon to be preserved as normal field data."
     );
   });
 });

@@ -20,7 +20,7 @@ println!("{} commands", tables.commands.len());
 
 ## Artifacts
 
-- `parser_tables.json` (format_version 0.3.0; includes opcode trie inline)
+- `parser_tables.json` (format_version 0.4.0; includes opcode trie inline)
 - `docs_bundle.json` (by_code with anchors, formatTemplate, enumValues, composites.exposesArgs, missingFields — not consumed at runtime; for external tooling)
 - `constraints_bundle.json` (per-code constraints — not consumed at runtime; for external tooling)
 - `coverage.json` (present/missing counts, per_code missing fields/union positions, validation_errors)

@@ -346,7 +346,12 @@ jobs:
             packages/ts/print/package-lock.json
 
       - name: Build WASM
-        run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
+        run: |
+          if node -e "const p=require('./packages/ts/core/package.json'); process.exit(p.scripts && p.scripts['build:wasm'] ? 0 : 1)"; then
+            npm --prefix packages/ts/core run build:wasm
+          else
+            wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
+          fi
 
       - name: Install dependencies & build @zpl-toolchain/core
         working-directory: packages/ts/core
@@ -511,7 +516,12 @@ jobs:
       # Use inline prep here so recovery works for older tags that predate
       # `.github/actions/prepare-vscode-core-runtime`.
       - name: Build WASM package for @zpl-toolchain/core
-        run: wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
+        run: |
+          if node -e "const p=require('./packages/ts/core/package.json'); process.exit(p.scripts && p.scripts['build:wasm'] ? 0 : 1)"; then
+            npm --prefix packages/ts/core run build:wasm
+          else
+            wasm-pack build crates/wasm --target bundler --out-dir ../../packages/ts/core/wasm/pkg
+          fi
 
       - name: Install dependencies and build @zpl-toolchain/core
         working-directory: packages/ts/core

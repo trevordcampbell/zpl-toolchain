@@ -10,7 +10,7 @@ Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) pr
 - Zero-allocation lexer: `Token<'a>` borrows text directly from input (`&'a str`), eliminating per-token heap allocations.
 - Longest-match opcode lookup using the opcode trie (embedded in `parser_tables.json`) with cached `ParserTables` methods (`OnceLock`).
 - Signature-driven argument parsing (joiner, allowEmptyTrailing).
-- Handles glued forms (e.g., `^A0N` → `f=0`, `o=N`), comments `;`, field/raw regions.
+- Handles glued forms (e.g., `^A0N` → `f=0`, `o=N`) plus field/raw regions.
 - Explicit state machine: `Mode::Normal`, `Mode::FieldData`, `Mode::RawData`.
 - Emits `^XA`/`^XZ` as nodes while also delimiting labels.
 - Safe UTF-8 handling throughout (multi-byte character boundary checks).
@@ -39,7 +39,7 @@ Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) pr
 - The crate root re-exports the most common entry points for convenience:
   - **Parser:** `parse_str`, `parse_with_tables`, `ParseResult`
   - **AST:** `Ast`, `Label`, `Node`, `ArgSlot`, `Presence`
-  - **Emitter:** `emit_zpl`, `strip_spans`, `EmitConfig`, `Indent`, `Compaction`, `CommentPlacement`
+  - **Emitter:** `emit_zpl`, `strip_spans`, `EmitConfig`, `Indent`, `Compaction`
   - **Diagnostics:** `Diagnostic`, `Span`, `Severity`, `codes`
   - **Validator:** `validate_with_profile`, `ValidationResult`
   - **Tables:** `ParserTables`
@@ -50,7 +50,7 @@ Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) pr
 - 300+ tests split across focused test files:
   - `parser.rs` (61 tests) — tokenization, command recognition, AST structure, field/raw data modes, span tracking, prefix/delimiter, parser diagnostics, error recovery.
   - `validator.rs` (111 tests) — validation diagnostics, profile constraints, printer gates, media modes, structural/semantic validation, cross-command constraints, barcode field data.
-  - `emit_roundtrip.rs` (30+ tests) — formatter round-trip/idempotency, compaction, comment placement.
+- `emit_roundtrip.rs` (30+ tests) — formatter round-trip/idempotency and compaction.
   - `fuzz_smoke.rs` (26 tests) — adversarial input and invariant checking.
   - `snapshots.rs` (11 tests) — golden AST/diagnostic snapshots.
   - `samples.rs`, `cross_command_state.rs`, `rich_fields.rs`, `opcode_trie.rs`, `arg_union.rs` — targeted integration tests.

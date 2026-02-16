@@ -44,12 +44,10 @@ char* zpl_validate_with_tables(const char* input, const char* tables_json, const
 char* zpl_format(const char* input, const char* indent);
 // compaction may be NULL ("none") or "field".
 char* zpl_format_with_options(const char* input, const char* indent, const char* compaction);
-// v2 adds comment placement: NULL/"inline" (default) or "line".
 char* zpl_format_with_options_v2(
   const char* input,
   const char* indent,
-  const char* compaction,
-  const char* comment_placement
+  const char* compaction
 );
 
 // Explain a diagnostic code → string or NULL

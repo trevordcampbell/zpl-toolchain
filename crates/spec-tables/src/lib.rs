@@ -54,7 +54,7 @@ where
 }
 
 /// Current format version for the spec table JSON schema.
-pub const TABLE_FORMAT_VERSION: &str = "0.3.0";
+pub const TABLE_FORMAT_VERSION: &str = "0.4.0";
 
 /// Command scope — determines the lifecycle boundary of the command's effect.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
@@ -425,8 +425,20 @@ pub struct SplitRule {
     pub char_counts: Vec<usize>,
 }
 
+/// Opcode spacing policy between command code and first argument.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum SpacingPolicy {
+    /// No space is allowed after the opcode (e.g., `^FO10,10`).
+    Forbid,
+    /// A space is required after the opcode (e.g., `^FX comment`).
+    Require,
+    /// Either style is accepted (e.g., `^FXcomment` and `^FX comment`).
+    Allow,
+}
+
 /// Describes the parameter signature of a ZPL command.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Signature {
     /// Ordered list of parameter names (keys).
@@ -434,9 +446,8 @@ pub struct Signature {
     /// Character(s) that separate arguments (default `","`).
     #[serde(default = "default_joiner")]
     pub joiner: String,
-    /// Whether an opcode is immediately followed by parameters with no space.
-    #[serde(default = "default_no_space_after_opcode")]
-    pub no_space_after_opcode: bool,
+    /// Spacing policy between opcode and first argument.
+    pub spacing_policy: SpacingPolicy,
     /// Whether to pad the argument list with empty trailing slots.
     #[serde(default = "default_allow_empty_trailing")]
     pub allow_empty_trailing: bool,
@@ -449,12 +460,49 @@ fn default_joiner() -> String {
     ",".to_string()
 }
 
-fn default_no_space_after_opcode() -> bool {
+fn default_allow_empty_trailing() -> bool {
     true
 }
 
-fn default_allow_empty_trailing() -> bool {
-    true
+impl<'de> Deserialize<'de> for Signature {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct SignatureSerde {
+            params: Vec<String>,
+            #[serde(default = "default_joiner")]
+            joiner: String,
+            #[serde(default)]
+            spacing_policy: Option<SpacingPolicy>,
+            // Legacy compatibility: map noSpaceAfterOpcode into spacingPolicy.
+            #[serde(default)]
+            no_space_after_opcode: Option<bool>,
+            #[serde(default = "default_allow_empty_trailing")]
+            allow_empty_trailing: bool,
+            #[serde(default)]
+            split_rule: Option<SplitRule>,
+        }
+
+        let raw = SignatureSerde::deserialize(deserializer)?;
+        let spacing_policy = raw
+            .spacing_policy
+            .unwrap_or(match raw.no_space_after_opcode {
+                Some(true) => SpacingPolicy::Forbid,
+                Some(false) => SpacingPolicy::Require,
+                None => SpacingPolicy::Forbid,
+            });
+
+        Ok(Self {
+            params: raw.params,
+            joiner: raw.joiner,
+            spacing_policy,
+            allow_empty_trailing: raw.allow_empty_trailing,
+            split_rule: raw.split_rule,
+        })
+    }
 }
 
 /// A node in the opcode trie used for longest-match command recognition.
@@ -857,7 +905,7 @@ pub struct Constraint {
 mod tests {
     use super::{
         Arg, ArgPresence, ConstraintDefaults, ConstraintSeverity, ResourceKind, RoundingPolicy,
-        Signature,
+        Signature, SpacingPolicy,
     };
 
     #[test]
@@ -868,6 +916,24 @@ mod tests {
             sig.allow_empty_trailing,
             "allow_empty_trailing should default to true to match schema"
         );
+        assert_eq!(
+            sig.spacing_policy,
+            SpacingPolicy::Forbid,
+            "spacing_policy should default to forbid to match schema"
+        );
+    }
+
+    #[test]
+    fn signature_legacy_no_space_after_opcode_maps_to_spacing_policy() {
+        let forbid: Signature =
+            serde_json::from_str(r#"{"params":["a"],"noSpaceAfterOpcode":true}"#)
+                .expect("valid legacy signature");
+        let require: Signature =
+            serde_json::from_str(r#"{"params":["a"],"noSpaceAfterOpcode":false}"#)
+                .expect("valid legacy signature");
+
+        assert_eq!(forbid.spacing_policy, SpacingPolicy::Forbid);
+        assert_eq!(require.spacing_policy, SpacingPolicy::Require);
     }
 
     #[test]

@@ -373,10 +373,10 @@ Common context keys include:
 #### ZPL.PARSER.1001 — Invalid or Missing Command Code
 - **Severity**: Error
 - **Category**: Parser
-- **Description**: Invalid or missing command code after leader (^ or ~), or a spacing violation between opcode and arguments.
-- **Example**: `^X` — Incomplete command code after ^. Also: `^FO 10,10` when `noSpaceAfterOpcode=true`.
-- **Fix**: Provide a valid command code after the leader character, or fix spacing to match the command signature.
-- **Context keys**: `command` (the leader character/opcode), optional `spacing` (`noSpaceAfterOpcode=true|false`)
+- **Description**: Invalid or missing command code after leader (^ or ~), spacing violation between opcode and arguments, or reserved raw leader characters used inside command-defined free-form text segments (for example, inside `^FX` comment bodies).
+- **Example**: `^X` (incomplete code), `^FO 10,10` when `spacingPolicy=forbid`, or `^FX Comment with ^ character^FS`.
+- **Fix**: Provide a valid command code after the leader, match signature spacing policy, and avoid raw `^`/`~` inside free-form text (encode/remove them).
+- **Context keys**: `command` (the leader character/opcode), optional `spacing` (`spacingPolicy=forbid|require`)
 
 #### ZPL.PARSER.1002 — Unknown Command Code
 - **Severity**: Warn

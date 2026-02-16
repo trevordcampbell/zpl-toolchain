@@ -7,7 +7,7 @@ Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) pr
 ## Key types
 - `ParserTables { schema_version, format_version, commands, opcode_trie }`
 - `CommandEntry { codes, arity, field_data, raw_payload, opens_field, closes_field, hex_escape_modifier, field_number, serialization, requires_field, signature, args, constraints, effects, plane, scope, ... }`
-- `Signature { params, joiner, no_space_after_opcode, allow_empty_trailing }`
+- `Signature { params, joiner, spacing_policy, allow_empty_trailing }`
 - `Arg { name, key, type, unit, range, optional, presence, default, default_from, profile_constraint, range_when, rounding_policy, rounding_policy_when, resource, enum, min_length, max_length }`
 - `Constraint { kind: ConstraintKind, expr, message, severity: Option<ConstraintSeverity> }`
 - `Effects { sets: Vec<String> }`
@@ -30,8 +30,9 @@ Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) pr
 - `Composite { prefix, args }` — composite command expansion (e.g., `^XG`)
 
 ## Notes
-- `TABLE_FORMAT_VERSION` is currently `0.3.0`.
+- `TABLE_FORMAT_VERSION` is currently `0.4.0`.
 - Legacy `args_spec` was removed in format `0.3.0`; use `args` (and `ArgUnion`).
+- Signature spacing now uses `spacing_policy` (`forbid`/`require`/`allow`) in format `0.4.0`.
 - Structural role flags (`opens_field`, `closes_field`, etc.) drive the validator's field-tracking state machine.
 - Conditional rules are evaluated by the validator using simple predicates.
 

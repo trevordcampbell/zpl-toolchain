@@ -38,9 +38,6 @@ Extension identity:
 - `zplToolchain.format.indent` — formatter style (`none`, `label`, `field`).
 - `zplToolchain.format.compaction` — optional compaction (`none`, `field`, default: `field`), independent of indentation mode.
   - `field` keeps printable field blocks (`^FO/^FT/^FM/^FN ... ^FS`) on one line while preserving expanded setup/global flow when `format.indent = none`.
-- `zplToolchain.format.commentPlacement` — comment style (`inline`, `line`, default: `inline`).
-  - `inline` keeps standalone semicolon comments attached to the preceding command where safe.
-  - `line` preserves fully line-oriented formatter output.
 - `zplToolchain.hover.enabled` — enable/disable command hovers.
 - `zplToolchain.themePreset` — optional token-color preset (`custom`, `default`, `high-contrast`, `minimal`).
 
@@ -60,6 +57,7 @@ IntelliSense note:
 Use Command Palette:
 
 - `ZPL Toolchain: Apply Theme Preset`
+- `ZPL Toolchain: Toggle ^FX Comment`
 
 ## Local development
 

@@ -27,6 +27,7 @@ dist/
 .venv-python-wheel-tests/
 .venv-tools/
 .venv/
+.venv-*/
 
 # Node / TypeScript
 node_modules/
@@ -68,3 +69,4 @@ z.plan.md
 
 # VS Code extension test runtime downloads
 **/.vscode-test/
+*.vsix

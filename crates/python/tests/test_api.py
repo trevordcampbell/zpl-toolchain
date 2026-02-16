@@ -72,10 +72,10 @@ class PythonBindingApiTests(unittest.TestCase):
         formatted = zpl_toolchain.format(input_zpl, "label", "field")
         self.assertIn("  ^FO30,30^A0N,35,35^FDWIDGET-3000^FS", formatted)
 
-    def test_format_comment_placement_line_keeps_comment_on_new_line(self) -> None:
-        input_zpl = "^XA\n^PW812\n; set print width\n^XZ\n"
-        formatted = zpl_toolchain.format(input_zpl, "none", "none", "line")
-        self.assertIn("^PW812\n; set print width", formatted)
+    def test_format_semicolon_remains_plain_data(self) -> None:
+        input_zpl = "^XA\n^FO10,10^FDPart;A^FS\n^XZ\n"
+        formatted = zpl_toolchain.format(input_zpl, "none", "none")
+        self.assertIn("Part;A", formatted)
 
     def test_explain_unknown_returns_none(self) -> None:
         self.assertIsNone(zpl_toolchain.explain("ZPL9999"))

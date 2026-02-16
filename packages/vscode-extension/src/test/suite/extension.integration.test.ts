@@ -412,41 +412,75 @@ suite("VS Code extension integration", () => {
     }
   });
 
-  test("formatting respects non-default compaction and comment placement settings", async () => {
+  test("formatting respects non-default compaction settings", async () => {
     const uri = await createTempZplFile(
       "format-non-default-settings.zpl",
-      "^XA\n^FO30,30\n^A0N,35,35\n^FDWIDGET-3000\n^FS\n^PW812\n; set print width\n^XZ\n"
+      "^XA\n^FO30,30\n^A0N,35,35\n^FDWIDGET-3000\n^FS\n^PW812\n^XZ\n"
     );
     created.push(uri);
     await openZpl(uri);
 
     const config = vscode.workspace.getConfiguration("zplToolchain", uri);
     const previousCompaction = config.get("format.compaction");
-    const previousCommentPlacement = config.get("format.commentPlacement");
 
     try {
       await config.update("format.compaction", "none", vscode.ConfigurationTarget.Workspace);
-      await config.update(
-        "format.commentPlacement",
-        "line",
-        vscode.ConfigurationTarget.Workspace
-      );
 
       const formatted = await applyFormattingEdits(uri);
       assert.match(formatted, /\^FO30,30\n\^A0N,35,35\n\^FDWIDGET-3000\n\^FS/);
-      assert.match(formatted, /\^PW812\n; set print width/);
+      assert.match(formatted, /\^PW812/);
     } finally {
       await config.update(
         "format.compaction",
         previousCompaction,
         vscode.ConfigurationTarget.Workspace
       );
-      await config.update(
-        "format.commentPlacement",
-        previousCommentPlacement,
-        vscode.ConfigurationTarget.Workspace
-      );
     }
+  });
+
+  test("toggle comment inserts and removes ^FX comments", async () => {
+    const uri = await createTempZplFile("toggle-fx-comment.zpl", "^XA\n^PW812\n^XZ\n");
+    created.push(uri);
+    const editor = await openZpl(uri);
+
+    editor.selection = new vscode.Selection(1, 0, 1, 0);
+    await vscode.commands.executeCommand("zplToolchain.toggleFxComment");
+    const commented = await waitFor(
+      () => editor.document.getText(),
+      (text) => /\^FX \^PW812\^FS/.test(text)
+    );
+    assert.match(commented, /\^FX \^PW812\^FS/);
+
+    editor.selection = new vscode.Selection(1, 0, 1, 0);
+    await vscode.commands.executeCommand("zplToolchain.toggleFxComment");
+    const uncommented = await waitFor(
+      () => editor.document.getText(),
+      (text) => /\^PW812/.test(text) && !text.includes("^FX ^PW812^FS")
+    );
+    assert.match(uncommented, /\^PW812/);
+    assert.ok(!uncommented.includes("^FX ^PW812^FS"));
+  });
+
+  test("toggle comment on empty line inserts placeholder and selects it", async () => {
+    const uri = await createTempZplFile("toggle-fx-comment-placeholder.zpl", "^XA\n\n^XZ\n");
+    created.push(uri);
+    const editor = await openZpl(uri);
+
+    editor.selection = new vscode.Selection(1, 0, 1, 0);
+    await vscode.commands.executeCommand("zplToolchain.toggleFxComment");
+
+    const lineText = await waitFor(
+      () => editor.document.lineAt(1).text,
+      (text) => text === "^FX comment^FS"
+    );
+    assert.equal(lineText, "^FX comment^FS");
+    const selectedText = await waitFor(
+      () =>
+        editor.selections.length === 1 ? editor.document.getText(editor.selections[0]) : "",
+      (text) => text === "comment"
+    );
+    assert.equal(editor.selections.length, 1);
+    assert.equal(selectedText, "comment");
   });
 
   test("large-document diagnostics stay within latency budget", async () => {

@@ -39,14 +39,14 @@ func TestFormatWithOptionsCompactsFieldBlockWithLabelIndent(t *testing.T) {
 	}
 }
 
-func TestFormatWithOptionsCommentPlacementLinePreservesStandaloneComment(t *testing.T) {
-	input := "^XA\n^PW812\n; set print width\n^XZ\n"
-	formatted, err := FormatWithOptionsEx(input, "none", "none", "line")
+func TestFormatSemicolonRemainsPlainData(t *testing.T) {
+	input := "^XA\n^FO10,10^FDPart;A^FS\n^XZ\n"
+	formatted, err := FormatWithOptions(input, "none", "none")
 	if err != nil {
 		t.Fatalf("FormatWithOptions failed: %v", err)
 	}
-	if !strings.Contains(formatted, "^PW812\n; set print width") {
-		t.Fatalf("expected standalone comment line, got: %q", formatted)
+	if !strings.Contains(formatted, "Part;A") {
+		t.Fatalf("expected semicolon to remain plain data, got: %q", formatted)
 	}
 }
 

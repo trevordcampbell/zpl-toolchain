@@ -41,6 +41,7 @@ changelog_path = "CHANGELOG.md"
 # Include commits from all published crates in the changelog,
 # so changes to core/diagnostics/etc. aren't invisible.
 changelog_include = [
+    "zpl_toolchain_jsonc_strip",
     "zpl_toolchain_diagnostics",
     "zpl_toolchain_spec_tables",
     "zpl_toolchain_profile",

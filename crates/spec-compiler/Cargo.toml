@@ -18,7 +18,7 @@ serde_json = { workspace = true }
 clap = { workspace = true }
 walkdir = "2"
 zpl_toolchain_spec_tables = { path = "../spec-tables", version = "0.6.0" }
-zpl_toolchain_jsonc_strip = { path = "../jsonc-strip" }
+zpl_toolchain_jsonc_strip = { workspace = true }
 
 [[bin]]
 name = "zpl-spec-compiler"

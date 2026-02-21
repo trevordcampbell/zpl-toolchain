@@ -29,6 +29,9 @@ jobs:
       - name: Validate contract fixtures
         run: node scripts/validate-contract-fixtures.mjs
 
+      - name: Publishability preflight (manifest + package)
+        run: python scripts/check-publishable-crates.py
+
       - uses: ./.github/actions/setup-rust
         with:
           components: rustfmt, clippy

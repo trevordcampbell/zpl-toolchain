@@ -7,7 +7,6 @@ repository.workspace = true
 authors.workspace = true
 homepage.workspace = true
 description = "Shared JSONC comment stripping utility for zpl-toolchain"
-publish = false
 
 [lints]
 workspace = true

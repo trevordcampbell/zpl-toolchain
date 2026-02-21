@@ -207,13 +207,14 @@ release-plz handles ordering automatically. For manual publishing, follow this o
 
 | # | Crate | Dependencies |
 |---|-------|-------------|
-| 1 | `zpl_toolchain_diagnostics` | — |
-| 2 | `zpl_toolchain_spec_tables` | — |
-| 3 | `zpl_toolchain_profile` | — |
-| 4 | `zpl_toolchain_print_client` | — |
-| 5 | `zpl_toolchain_core` | diagnostics, spec-tables, profile |
-| 6 | `zpl_toolchain_spec_compiler` | spec-tables |
-| 7 | `zpl_toolchain_cli` | core, diagnostics, profile, print-client |
+| 1 | `zpl_toolchain_jsonc_strip` | — |
+| 2 | `zpl_toolchain_diagnostics` | jsonc-strip (build) |
+| 3 | `zpl_toolchain_spec_tables` | — |
+| 4 | `zpl_toolchain_profile` | — |
+| 5 | `zpl_toolchain_print_client` | — |
+| 6 | `zpl_toolchain_core` | diagnostics, spec-tables, profile |
+| 7 | `zpl_toolchain_spec_compiler` | spec-tables, jsonc-strip |
+| 8 | `zpl_toolchain_cli` | core, diagnostics, profile, print-client |
 
 Binding crates (`bindings-common`, `wasm`, `python`, `ffi`) have `publish = false` —
 they are distributed through npm, PyPI, and binary downloads instead.

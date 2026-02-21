@@ -16,7 +16,7 @@ serde = { workspace = true }
 
 [build-dependencies]
 serde_json = { workspace = true }
-zpl_toolchain_jsonc_strip = { path = "../jsonc-strip" }
+zpl_toolchain_jsonc_strip = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }

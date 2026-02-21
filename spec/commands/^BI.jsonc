@@ -20,8 +20,8 @@
           "doc": "Whether to print the interpretation line above the barcode" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BI to set module width", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BI should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BI to set module width", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BI should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print an Industrial 2 of 5 barcode, a discrete self-checking numeric symbology.",
       "fieldDataRules": { "characterSet": "0-9", "notes": "Numeric only" }

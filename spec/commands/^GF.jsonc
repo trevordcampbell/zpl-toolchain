@@ -36,7 +36,7 @@
         }
       ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FS", "message": "^GF header must precede its ^FS-delimited data block", "severity": "info" }
+        { "kind": "order", "expr": "before:^FS", "message": "^GF header must precede its ^FS-delimited data block", "severity": "info", "scope": "field"}
       ],
       "docs": "Graphic field: download graphic data directly into bitmap storage. Parameters: compression type (A=ASCII hex, B=binary, C=compressed binary), binary byte count, graphic field count, bytes per row, followed by data."
     }

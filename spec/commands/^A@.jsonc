@@ -24,7 +24,7 @@
           "doc": "Full font name including drive location and extension (e.g. E:MYFONT.TTF). If no drive letter specified, default device is R:. Once set, carries over on subsequent ^A@ commands without a font name." }
       ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FS", "message": "^A@ should appear before its field terminator ^FS", "severity": "info" }
+        { "kind": "order", "expr": "before:^FS", "message": "^A@ should appear before its field terminator ^FS", "severity": "info", "scope": "field"}
       ],
       "docs": "Selects a font by its full filename rather than a single-character identifier. Once defined, the font name persists for subsequent ^A@ commands until a new name is specified."
     }

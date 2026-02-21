@@ -214,7 +214,7 @@ suite("VS Code extension integration", () => {
     assert.ok(hasExplain, "Expected explain diagnostic code action wiring.");
   });
 
-  test("quick fix Add missing ^XZ applies and clears diagnostic", async () => {
+  test("suggested edit Insert ^XZ applies and clears diagnostic", async () => {
     const content = "^XA\n^FO10,10^FDok^FS\n";
     const uri = await createTempZplFile("quickfix-xz.zpl", content);
     created.push(uri);
@@ -238,15 +238,15 @@ suite("VS Code extension integration", () => {
         "edit" in a &&
         a.edit !== undefined &&
         typeof a.title === "string" &&
-        a.title.includes("Add missing ^XZ")
+        a.title.includes("Insert ^XZ")
     );
-    assert.ok(addXzAction, "Expected Add missing ^XZ quick fix action.");
+    assert.ok(addXzAction, "Expected Insert ^XZ suggested edit action.");
 
     const applied = await vscode.workspace.applyEdit(addXzAction.edit!);
-    assert.ok(applied, "Expected quick fix edit to apply.");
+    assert.ok(applied, "Expected suggested edit to apply.");
 
     const after = (await vscode.workspace.openTextDocument(uri)).getText();
-    assert.match(after, /\^XZ\s*$/, "Document should end with ^XZ after quick fix.");
+    assert.match(after, /\^XZ\s*$/, "Document should end with ^XZ after suggested edit.");
 
     const afterDiags = await waitFor(
       () => getDiagnostics(uri),

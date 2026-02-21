@@ -22,8 +22,8 @@
           "doc": "Whether to print the check digit in the interpretation line" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BA to set module width", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BA should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BA to set module width", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BA should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print a Code 93 barcode, a variable-length continuous symbology using the full 128-character ASCII set.",
       "fieldDataRules": { "notes": "Full 128-character ASCII set. Native set: 0-9, A-Z, - . $ / + % and space. Control characters encoded via paired substitutes (& ' ( ) map to Ctrl $/%/+/). Two check digits (C and K) auto-calculated" }

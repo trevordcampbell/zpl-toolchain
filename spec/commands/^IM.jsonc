@@ -18,7 +18,7 @@
           "doc": "Extension. Fixed value: .GRF or .PNG." }
       ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FS", "message": "^IM should appear before its ^FS", "severity": "info" }
+        { "kind": "order", "expr": "before:^FS", "message": "^IM should appear before its ^FS", "severity": "info", "scope": "field"}
       ],
       "docs": "Performs a direct move of an image from storage area into the bitmap. Identical to ^XG but without magnification parameters. Can be positioned anywhere on the label using ^FO."
     }

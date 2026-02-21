@@ -24,8 +24,8 @@
           "doc": "Whether to print a truncated (compact) PDF417 symbol" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^B7 to set module width", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^B7 should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^B7 to set module width", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^B7 should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print a PDF417 two-dimensional stacked barcode capable of encoding over 1000 characters.",
       "fieldDataRules": { "maxLength": 3072, "notes": "Full ASCII set except ZPL control characters; \\& encodes CR/LF, \\\\ encodes backslash (requires ^CI13); use ^FH for hex-encoded binary data; serialization not supported" }

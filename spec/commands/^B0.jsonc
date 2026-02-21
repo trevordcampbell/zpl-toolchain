@@ -28,7 +28,7 @@
           "doc": "Optional ID field for structured append (used to identify related symbols)" }
       ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^B0 should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^B0 should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print an Aztec two-dimensional matrix barcode with configurable magnification, error correction, and structured append.",
       "fieldDataRules": { "notes": "Full 8-bit binary; ECI support for non-ASCII" }

@@ -22,8 +22,8 @@
           "doc": "Whether to print the check digit in the interpretation line" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BU to set module width", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BU should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BU to set module width", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BU should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print a UPC-A barcode, a fixed-length numeric symbology for retail packaging.",
       "fieldDataRules": { "characterSet": "0-9", "exactLength": 11, "notes": "11 data digits; 12th check digit auto-calculated" }

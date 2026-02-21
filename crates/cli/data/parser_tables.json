@@ -108,12 +108,14 @@
           "expr": "before:^FS",
           "kind": "order",
           "message": "^A should appear before its field terminator ^FS",
+          "scope": "field",
           "severity": "info"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^A should appear before field data (^FD/^FV)",
+          "scope": "field",
           "severity": "warn"
         }
       ],
@@ -262,6 +264,7 @@
           "expr": "before:^FS",
           "kind": "order",
           "message": "^A@ should appear before its field terminator ^FS",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -474,6 +477,7 @@
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^B0 should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -641,12 +645,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^B1 to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^B1 should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -837,12 +843,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^B2 to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^B2 should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -1011,12 +1019,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^B3 to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^B3 should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -1165,12 +1175,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^B4 to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^B4 should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -1311,12 +1323,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^B5 to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^B5 should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -1506,12 +1520,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^B7 to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^B7 should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -1655,12 +1671,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^B8 to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^B8 should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -1827,12 +1845,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^B9 to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^B9 should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -2000,12 +2020,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^BA to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BA should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -2196,12 +2218,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^BB to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BB should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -2394,12 +2418,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^BC to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BC should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -2516,6 +2542,7 @@
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BD should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -2656,12 +2683,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^BE to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BE should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -2780,12 +2809,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^BF to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BF should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -2926,12 +2957,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^BI to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BI should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -3073,12 +3106,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^BJ to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BJ should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -3295,12 +3330,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^BK to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BK should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -3421,12 +3458,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^BL to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BL should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -3617,12 +3656,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^BM to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BM should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -3837,6 +3878,7 @@
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BO should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -4004,12 +4046,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^BP to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BP should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -4181,6 +4225,7 @@
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BQ should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -4370,12 +4415,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BR requires ^BY to set module width defaults",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BR should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -4518,12 +4565,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^BS to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BS should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -4717,12 +4766,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BT requires ^BY to set module width defaults",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BT should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -4890,12 +4941,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^BU to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BU should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -5136,6 +5189,7 @@
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BX should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -5424,12 +5478,14 @@
           "expr": "^BY",
           "kind": "requires",
           "message": "^BY should precede ^BZ to set module width",
+          "scope": "label",
           "severity": "warn"
         },
         {
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^BZ should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -6683,6 +6739,7 @@
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^FB should precede its field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -6969,6 +7026,7 @@
           "expr": "before:^FD|^FV",
           "kind": "order",
           "message": "^FH should precede field data (^FD/^FV)",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -7354,6 +7412,7 @@
           "expr": "before:^FS",
           "kind": "order",
           "message": "^FO should appear before its ^FS",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -7600,6 +7659,7 @@
           "expr": "before:^FS",
           "kind": "order",
           "message": "^FT should appear before its ^FS",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -7904,6 +7964,7 @@
           "expr": "before:^FS",
           "kind": "order",
           "message": "^GB should appear before its ^FS",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -8016,6 +8077,7 @@
           "expr": "before:^FS",
           "kind": "order",
           "message": "^GC should appear before its ^FS",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -8174,6 +8236,7 @@
           "expr": "before:^FS",
           "kind": "order",
           "message": "^GD should appear before its ^FS",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -8310,6 +8373,7 @@
           "expr": "before:^FS",
           "kind": "order",
           "message": "^GE should appear before its ^FS",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -8467,6 +8531,7 @@
           "expr": "before:^FS",
           "kind": "order",
           "message": "^GF header must precede its ^FS-delimited data block",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -8594,6 +8659,7 @@
           "expr": "before:^FS",
           "kind": "order",
           "message": "^GS should appear before its ^FS",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -9949,6 +10015,7 @@
           "expr": "before:^FS",
           "kind": "order",
           "message": "^IM should appear before its ^FS",
+          "scope": "field",
           "severity": "info"
         }
       ],
@@ -18453,6 +18520,7 @@
           "expr": "before:^FS",
           "kind": "order",
           "message": "^TB should appear before its ^FS",
+          "scope": "field",
           "severity": "info"
         },
         {
@@ -20125,6 +20193,7 @@
           "expr": "before:^FS",
           "kind": "order",
           "message": "^XG should appear before its ^FS",
+          "scope": "field",
           "severity": "info"
         }
       ],

@@ -24,8 +24,8 @@
           "doc": "Segment width for expanded variants (even values 2-22)" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BR requires ^BY to set module width defaults", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BR should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BR requires ^BY to set module width defaults", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BR should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print a GS1 DataBar (formerly Reduced Space Symbology) barcode for space-constrained identification.",
       "fieldDataRules": { "notes": "Data format depends on symbology type (b param). Types 1-5 (DataBar variants): numeric 0-9, 14-digit GTIN, check digit auto-calculated. Type 6 (Expanded): alphanumeric GS1 AI element strings. Types 7-10 (UPC/EAN composites): numeric per underlying symbology. Types 11-12 (UCC/EAN-128 composites): full ASCII via Code 128 subsets" }

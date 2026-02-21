@@ -23,8 +23,8 @@
         { "kind": "fontReference", "action": "validate", "argIndex": 0 }
       ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FS", "message": "^A should appear before its field terminator ^FS", "severity": "info" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^A should appear before field data (^FD/^FV)", "severity": "warn" }
+        { "kind": "order", "expr": "before:^FS", "message": "^A should appear before its field terminator ^FS", "severity": "info", "scope": "field"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^A should appear before field data (^FD/^FV)", "severity": "warn", "scope": "field"}
       ],
       "docs": "Select device font, orientation, and font size (dots)."
     }

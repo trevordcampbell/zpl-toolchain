@@ -23,7 +23,7 @@
       ],
       "constraints": [
         { "kind": "requires", "expr": "^FD|^FV", "scope": "field", "message": "^FB is meaningful with a following ^FD/^FV", "severity": "info" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^FB should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^FB should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Format block text: width, lines, line spacing, justification, indent."
     }

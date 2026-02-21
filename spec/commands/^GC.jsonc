@@ -18,7 +18,7 @@
           "doc": "Line color. B=black, W=white." }
       ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FS", "message": "^GC should appear before its ^FS", "severity": "info" }
+        { "kind": "order", "expr": "before:^FS", "message": "^GC should appear before its ^FS", "severity": "info", "scope": "field"}
       ],
       "docs": "Produces a circle on the printed label. Parameters specify diameter, border thickness (extends inward), and line color."
     }

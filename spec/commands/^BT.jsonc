@@ -24,8 +24,8 @@
           "doc": "Row height of the MicroPDF417 component in dots" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BT requires ^BY to set module width defaults", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BT should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BT requires ^BY to set module width defaults", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BT should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print a TLC39 composite barcode combining Code 39 and MicroPDF417 for TCIF telecommunications tagging.",
       "fieldDataRules": { "maxLength": 150, "notes": "Comma-separated structured data: NNNNNN[,serial[,additional,...]]. Field 1 (ECI number): exactly 6 digits, required. Field 2 (serial): up to 25 alphanumeric chars (no punctuation), stored in MicroPDF417. Field 3+ (additional): up to 25 alphanumeric chars each. Total including commas must not exceed 150 bytes. If no comma after ECI, only Code 39 prints" }

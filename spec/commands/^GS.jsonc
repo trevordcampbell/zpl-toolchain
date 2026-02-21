@@ -18,7 +18,7 @@
           "doc": "Character width proportional to height. Default: last ^CF value." }
       ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FS", "message": "^GS should appear before its ^FS", "severity": "info" }
+        { "kind": "order", "expr": "before:^FS", "message": "^GS should appear before its ^FS", "severity": "info", "scope": "field"}
       ],
       "docs": "Enables generation of registered trademark, copyright symbol, and other symbols. Use with ^FD and character A-E to select the desired symbol."
     }

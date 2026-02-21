@@ -23,7 +23,7 @@
         { "kind": "positionBounds", "action": "validateFieldOrigin" }
       ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FS", "message": "^FT should appear before its ^FS", "severity": "info" }
+        { "kind": "order", "expr": "before:^FS", "message": "^FT should appear before its ^FS", "severity": "info", "scope": "field"}
       ],
       "docs": "Set field typeset origin (x,y) using baseline positioning. If x or y is omitted, the position after the last formatted text field is used. Optional z parameter sets justification (0=left, 1=right, 2=auto)."
     }

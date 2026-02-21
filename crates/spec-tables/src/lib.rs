@@ -6,7 +6,7 @@
 //! and consumed by the parser and validator.
 
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::OnceLock;
 
 // ─── Custom serde for HashMap<char, V> ──────────────────────────────────────
@@ -161,6 +161,190 @@ impl std::fmt::Display for Stability {
     }
 }
 
+/// Schema-declared structural validator rule kinds.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[serde(rename_all = "camelCase")]
+pub enum StructuralRuleKind {
+    /// Duplicate field-number checks (for commands like ^FN).
+    DuplicateFieldNumber,
+    /// Position/layout bounds checks (for ^FO/^FT with ^PW/^LL/profile bounds).
+    PositionBounds,
+    /// Font registration/reference checks (for commands like ^CW/^A).
+    FontReference,
+    /// Media compatibility checks (^MM/^MN/^MT against profile capabilities).
+    MediaModes,
+    /// ^GF payload length checks against declared byte counts.
+    GfDataLength,
+    /// ^GF bounds + preflight memory tracking checks.
+    GfPreflightTracking,
+}
+
+impl StructuralRuleKind {
+    /// All structural rule kinds. Keep in sync with spec schema enum.
+    pub const ALL: &[Self] = &[
+        Self::DuplicateFieldNumber,
+        Self::PositionBounds,
+        Self::FontReference,
+        Self::MediaModes,
+        Self::GfDataLength,
+        Self::GfPreflightTracking,
+    ];
+}
+
+/// Action variant for position-bounds structural rules.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "camelCase")]
+pub enum PositionBoundsAction {
+    /// Update effective label width from the current command's state effect.
+    TrackWidth,
+    /// Update effective label height from the current command's state effect.
+    TrackHeight,
+    /// Capture the latest field-origin coordinates for downstream bounds checks.
+    TrackFieldOrigin,
+    /// Validate tracked field-origin coordinates against effective label bounds.
+    ValidateFieldOrigin,
+}
+
+/// Action variant for font-reference structural rules.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "camelCase")]
+pub enum FontReferenceAction {
+    /// Register a loaded font identifier into label-local font state.
+    Register,
+    /// Validate a font reference against built-in and loaded font registries.
+    Validate,
+}
+
+/// Target variant for media-modes structural rules.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(rename_all = "camelCase")]
+pub enum MediaModesTarget {
+    /// Validate against `profile.media.supported_modes`.
+    SupportedModes,
+    /// Validate against `profile.media.supported_tracking`.
+    SupportedTracking,
+    /// Validate against `profile.media.print_method`.
+    PrintMethod,
+}
+
+/// Schema-declared structural validation rule payload.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum StructuralRule {
+    /// Detect duplicate field numbers by arg value.
+    DuplicateFieldNumber {
+        /// Argument index carrying the field number.
+        #[serde(default)]
+        arg_index: usize,
+    },
+    /// Track/validate position bounds behavior.
+    PositionBounds {
+        /// Action for this position-bounds rule.
+        action: PositionBoundsAction,
+    },
+    /// Register/validate font references.
+    FontReference {
+        /// Action for this font-reference rule.
+        action: FontReferenceAction,
+        /// Argument index carrying the font identifier.
+        #[serde(default)]
+        arg_index: usize,
+    },
+    /// Validate media command arguments against profile capabilities.
+    MediaModes {
+        /// Profile target used for validation.
+        target: MediaModesTarget,
+        /// Argument index carrying the media value.
+        #[serde(default)]
+        arg_index: usize,
+    },
+    /// Validate declared vs actual ^GF payload length.
+    GfDataLength {
+        /// Argument index containing compression mode (A/B/C).
+        #[serde(default)]
+        compression_arg_index: usize,
+        /// Argument index containing declared byte count.
+        #[serde(default = "default_gf_declared_arg_index")]
+        declared_byte_count_arg_index: usize,
+        /// Argument index containing inline data payload.
+        #[serde(default = "default_gf_data_arg_index")]
+        data_arg_index: usize,
+    },
+    /// Track ^GF memory usage and validate graphic bounds.
+    GfPreflightTracking {
+        /// Argument index containing graphic field count.
+        #[serde(default = "default_gf_gfc_arg_index")]
+        graphic_field_count_arg_index: usize,
+        /// Argument index containing bytes-per-row.
+        #[serde(default = "default_gf_bpr_arg_index")]
+        bytes_per_row_arg_index: usize,
+    },
+}
+
+const fn default_gf_declared_arg_index() -> usize {
+    1
+}
+
+const fn default_gf_data_arg_index() -> usize {
+    4
+}
+
+const fn default_gf_gfc_arg_index() -> usize {
+    2
+}
+
+const fn default_gf_bpr_arg_index() -> usize {
+    3
+}
+
+impl StructuralRule {
+    /// Get normalized kind for this structural rule.
+    pub fn kind(&self) -> StructuralRuleKind {
+        match self {
+            Self::DuplicateFieldNumber { .. } => StructuralRuleKind::DuplicateFieldNumber,
+            Self::PositionBounds { .. } => StructuralRuleKind::PositionBounds,
+            Self::FontReference { .. } => StructuralRuleKind::FontReference,
+            Self::MediaModes { .. } => StructuralRuleKind::MediaModes,
+            Self::GfDataLength { .. } => StructuralRuleKind::GfDataLength,
+            Self::GfPreflightTracking { .. } => StructuralRuleKind::GfPreflightTracking,
+        }
+    }
+}
+
+/// Trigger flags used to pre-index structural rule applicability.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[serde(rename_all = "camelCase")]
+pub enum StructuralTrigger {
+    /// Command opens a field block.
+    OpensField,
+    /// Command closes a field block.
+    ClosesField,
+    /// Command captures field-data payload.
+    FieldData,
+    /// Command captures raw payload data.
+    RawPayload,
+    /// Command defines a field number.
+    FieldNumber,
+    /// Command performs serialization semantics.
+    Serialization,
+    /// Command is valid only with an active field.
+    RequiresField,
+    /// Command toggles hex escape behavior.
+    HexEscapeModifier,
+}
+
+/// Generated structural rule pre-index keyed by kind, trigger, and effect.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StructuralRuleIndex {
+    /// Canonical command codes grouped by structural rule kind.
+    pub by_kind: BTreeMap<StructuralRuleKind, Vec<String>>,
+    /// Canonical command codes grouped by structural trigger flags.
+    pub by_trigger: BTreeMap<StructuralTrigger, Vec<String>>,
+    /// Canonical command codes grouped by declared effect key.
+    pub by_effect: BTreeMap<String, Vec<String>>,
+}
+
 /// Top-level container for all ZPL command spec tables.
 ///
 /// Deserialized from the generated JSON spec and used by the parser and
@@ -178,6 +362,9 @@ pub struct ParserTables {
     /// Optional opcode trie for fast longest-match command recognition.
     #[serde(default)]
     pub opcode_trie: Option<OpcodeTrieNode>,
+    /// Optional structural rule pre-index by kind/trigger/effect.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub structural_rule_index: Option<StructuralRuleIndex>,
 
     /// Cached set of all known command codes (lazily initialized).
     #[serde(skip)]
@@ -205,6 +392,7 @@ impl ParserTables {
             format_version,
             commands,
             opcode_trie,
+            structural_rule_index: None,
             code_set_cache: OnceLock::new(),
             cmd_map: OnceLock::new(),
         }
@@ -289,6 +477,9 @@ pub struct CommandEntry {
     /// Cross-command state effects: which state keys this command sets.
     #[serde(default)]
     pub effects: Option<Effects>,
+    /// Schema-selected structural validator rule payloads for this command.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub structural_rules: Option<Vec<StructuralRule>>,
     /// Plane: format, config, host, device.
     #[serde(default)]
     pub plane: Option<Plane>,

@@ -221,6 +221,35 @@ fn print_dry_run_json() {
 }
 
 #[test]
+fn print_dry_run_sarif() {
+    let (_dir, path) = write_temp_zpl(SAMPLE_ZPL);
+
+    let output = zpl_cmd()
+        .args([
+            "print",
+            &path,
+            "--printer",
+            "127.0.0.1:9100",
+            "--dry-run",
+            "--no-lint",
+            "--output",
+            "sarif",
+        ])
+        .output()
+        .unwrap();
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let sarif: serde_json::Value =
+        serde_json::from_str(&stdout).expect("dry-run --output sarif must emit valid SARIF JSON");
+    assert_eq!(sarif["version"].as_str(), Some("2.1.0"));
+    let runs = sarif["runs"].as_array().expect("runs array");
+    assert_eq!(runs.len(), 1);
+    let artifacts = runs[0]["artifacts"].as_array().expect("artifacts array");
+    assert_eq!(artifacts.len(), 1);
+}
+
+#[test]
 fn print_note_audience_problem_filters_contextual_notes() {
     let (_dir, path) = write_temp_zpl("^XA\n^BY2,3,80\n^XZ\n");
 
@@ -613,6 +642,65 @@ fn serial_probe_reopen_attempts_failure_exits_nonzero_with_attempts() {
 }
 
 #[test]
+#[cfg(feature = "serial")]
+fn serial_probe_failure_emits_sarif() {
+    let output = zpl_cmd()
+        .args([
+            "serial-probe",
+            "/dev/does-not-exist",
+            "--output",
+            "sarif",
+            "--timeout",
+            "1",
+        ])
+        .output()
+        .unwrap();
+
+    assert!(!output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let sarif: serde_json::Value = serde_json::from_str(&stdout).expect("valid SARIF");
+    assert_eq!(sarif["version"].as_str(), Some("2.1.0"));
+    assert!(
+        sarif["runs"][0]["results"]
+            .as_array()
+            .is_some_and(|results| !results.is_empty()),
+        "expected serial-probe SARIF result for failure"
+    );
+}
+
+#[test]
+#[cfg(feature = "tcp")]
+fn bt_status_failure_emits_sarif() {
+    let output = zpl_cmd()
+        .args([
+            "bt-status",
+            "--printer",
+            "127.0.0.1:9",
+            "--timeout",
+            "1",
+            "--retries",
+            "1",
+            "--retry-delay-ms",
+            "10",
+            "--output",
+            "sarif",
+        ])
+        .output()
+        .expect("run bt-status");
+
+    assert!(!output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let sarif: serde_json::Value = serde_json::from_str(&stdout).expect("valid SARIF");
+    assert_eq!(sarif["version"].as_str(), Some("2.1.0"));
+    assert!(
+        sarif["runs"][0]["results"]
+            .as_array()
+            .is_some_and(|results| !results.is_empty()),
+        "expected bt-status SARIF result for failure"
+    );
+}
+
+#[test]
 fn print_tcp_path_rejects_bluetooth_mac_without_dry_run() {
     let (_dir, path) = write_temp_zpl(SAMPLE_ZPL);
     let output = zpl_cmd()
@@ -710,4 +798,30 @@ fn print_dry_run_with_validation() {
             "expected tables error, got: {stderr}"
         );
     }
+}
+
+#[test]
+fn print_connection_failure_sarif() {
+    let (_dir, path) = write_temp_zpl(SAMPLE_ZPL);
+    let output = zpl_cmd()
+        .args([
+            "print",
+            &path,
+            "--printer",
+            "127.0.0.1:9",
+            "--no-lint",
+            "--output",
+            "sarif",
+        ])
+        .output()
+        .unwrap();
+
+    assert!(
+        !output.status.success(),
+        "expected connection failure for closed local port"
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let sarif: serde_json::Value =
+        serde_json::from_str(&stdout).expect("connection failure should still emit SARIF JSON");
+    assert_eq!(sarif["version"].as_str(), Some("2.1.0"));
 }

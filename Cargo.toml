@@ -2,6 +2,7 @@
 members = [
     "crates/core",
     "crates/spec-compiler",
+    "crates/jsonc-strip",
     "crates/cli",
     "crates/diagnostics",
     "crates/spec-tables",

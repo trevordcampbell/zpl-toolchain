@@ -21,7 +21,7 @@
           "doc": "Long filename support flag for extended info_type='o'. Y enables long filename support; N disables it." }
       ],
       "constraints": [
-        { "kind": "note", "message": "When info_type is 'o', an extended format is used: ^HZO,d:o.x,l where d = device (R:,E:,B:,A:), o = object name (1-16 chars), x = extension (.FNT,.GRF,.PNG,.ZPL,.DAT,.ZOB,.STO), and l = long filename support (Y/N, default N)." }
+        { "kind": "note", "audience": "contextual", "message": "When info_type is 'o', an extended format is used: ^HZO,d:o.x,l where d = device (R:,E:,B:,A:), o = object name (1-16 chars), x = extension (.FNT,.GRF,.PNG,.ZPL,.DAT,.ZOB,.STO), and l = long filename support (Y/N, default N)." }
       ],
       "docs": "Returns printer description information in XML format including format parameters, object directories, individual object data, and print status information."
     }

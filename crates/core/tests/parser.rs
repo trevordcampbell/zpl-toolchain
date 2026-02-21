@@ -68,6 +68,7 @@ fn tables_with_spacing_command(
             constraints: None,
             constraint_defaults: None,
             effects: None,
+            structural_rules: None,
             plane: None,
             scope: None,
             placement: None,

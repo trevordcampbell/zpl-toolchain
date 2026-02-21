@@ -6,7 +6,7 @@ The `zpl-toolchain` repository includes a VS Code-family extension at
 ## Current Status
 
 - Extension package exists in-repo and is wired into CI/release workflows.
-- Version follows toolchain release versioning (`0.1.13` currently).
+- Version follows toolchain release versioning (`0.1.15` currently).
 - Marketplace/Open VSX publishing is automated in `release-plz.yml` once release
   secrets are configured.
 
@@ -36,7 +36,21 @@ Extension identity:
 - Contextual note routing: explanatory notes are shown in hover details instead of
   polluting the Problems panel
 - Completion items for command opcodes and enum-like argument values
-- Diagnostic explain command + quick action
+- Diagnostic explain command + action
+- Diagnostic-driven suggested edits for clearly automatable parser recoveries (insert missing `^XZ`, `^FS`)
+
+## Suggested Edits (F09)
+
+The extension provides high-confidence suggested edits for a small set of parser diagnostics.
+Suggested edits are produced from diagnostic metadata (`suggested_edit.*`) emitted by core diagnostics.
+Only deterministic, low-risk insert operations are offered—no heuristic or risky auto-fixes.
+
+| Diagnostic | Suggested edit | Safety condition |
+|------------|----------|-------------------|
+| `ZPL.PARSER.1102` (missing label terminator) | Add missing `^XZ` at document end | Parser span at EOF; append is unambiguous |
+| `ZPL.PARSER.1202` (missing field separator) | Insert `^FS` at computed position | Span distinguishes "before ^XZ" vs "before EOF" |
+
+Other diagnostics (e.g. `ZPL2310` add `^PW`/`^LL`) require profile context or multiple valid resolutions; these are deferred to keep fixes safe and maintainable.
 
 ## Settings
 

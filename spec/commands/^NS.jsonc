@@ -44,7 +44,7 @@
           "doc": "Base raw port number for RAW data." }
       ],
       "constraints": [
-        { "kind": "note", "message": "For Xi4, RXi4, ZM400/ZM600, and RZ400/RZ600 printers, Zebra recommends using ^ND instead of ^NS." }
+        { "kind": "note", "audience": "contextual", "message": "For Xi4, RXi4, ZM400/ZM600, and RZ400/RZ600 printers, Zebra recommends using ^ND instead of ^NS." }
       ],
       "docs": "Changes the wired print server network settings."
     }

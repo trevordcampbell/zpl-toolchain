@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "description": "Minimal print job lifecycle semantics for Rust/TS parity. Used by crates/print-client and packages/ts/print.",
+  "phases": [
+    "queued",
+    "sending",
+    "sent",
+    "printing",
+    "completed",
+    "failed",
+    "aborted"
+  ],
+  "phase_descriptions": {
+    "queued": "Job created, not yet transmitted",
+    "sending": "Bytes being transmitted to printer",
+    "sent": "All bytes delivered to printer (transport-level; deterministic when send returns Ok)",
+    "printing": "Printer has data; physical printing in progress",
+    "completed": "Printer reports formatsInBuffer=0, labelsRemaining=0 (deterministic when waitForCompletion returns Ok)",
+    "failed": "Error occurred during send or completion",
+    "aborted": "User cancelled (e.g., AbortSignal)"
+  },
+  "deterministic_completion": {
+    "sent": "BatchResult/PrintResult success = bytes delivered. Single canonical outcome per call.",
+    "completed": "wait_for_completion/waitForCompletion Ok = printer idle (formatsInBuffer=0, labelsRemaining=0).",
+    "timeout": "Err(CompletionTimeout) / throw with code TIMEOUT carries final formatsInBuffer, labelsRemaining."
+  },
+  "job_id": {
+    "format": "opaque string (implementation-defined)",
+    "assigner": "client-generated when job starts",
+    "scope": "One ID per logical job (single label or batch)"
+  }
+}

@@ -143,7 +143,7 @@ Not all features are available in every binding. The table below summarises what
 | Host Status (`~HS`) | `printer.query_status()` → `HostStatus` | `query_printer_status()` (Python dict / C FFI JSON) | `QueryStatus()` / `QueryStatusTyped()` | `Zpl.QueryStatus()` / `Zpl.QueryStatusTyped()` | `printer.getStatus()` → `PrinterStatus` |
 | Host Identification (`~HI`) | `printer.query_info()` → `PrinterInfo` | `query_printer_info()` (Python dict / C FFI JSON) | `QueryInfo()` / `QueryInfoTyped()` | `Zpl.QueryInfo()` / `Zpl.QueryInfoTyped()` | `printer.query('~HI')` → raw string |
 | Raw command query | `printer.query_raw()` | — | — | — | `printer.query(cmd)` → raw string |
-| Batch printing | `send_batch()` / `send_batch_with_status()` | — | — | — | `printBatch()` / `printer.printBatch()` |
+| Batch printing (with job ID) | `send_batch()` / `send_batch_with_status()` → `BatchResult` with `job_id` | — | — | — | `printBatch()` / `printer.printBatch()` → `BatchResult` with `jobId` |
 | Wait for completion | `wait_for_completion()` (generic) | — | — | — | `printer.waitForCompletion()` |
 | USB transport | `UsbPrinter` + CLI `--printer usb` | — | — | — | — |
 | Serial / BT SPP transport | `SerialPrinter` + CLI `--serial` | — | — | — | — |
@@ -233,7 +233,7 @@ zpl print <FILES>... --printer <ADDR> [OPTIONS]
 | `--serial-stop-bits <MODE>` | Serial stop bit override: `one` or `two`. Requires `--serial`. |
 | `--serial-data-bits <MODE>` | Serial data bit override: `seven` or `eight`. Requires `--serial`. |
 | `--trace-io` | Emit serial transport hex/ASCII TX/RX dumps to stderr (diagnostics only). Requires `--serial`. |
-| `--output <FORMAT>` | Output format: `pretty` or `json`. Defaults to `pretty` when stdout is a TTY, `json` when piped. Global flag. |
+| `--output <FORMAT>` | Output format: `pretty`, `json`, or `sarif`. Defaults to `pretty` when stdout is a TTY, `json` when piped. `sarif` emits SARIF 2.1.0 for CI (e.g. GitHub Code Scanning). Global flag. |
 
 ### Address Formats
 
@@ -526,6 +526,11 @@ console.log(`Printer info: ${info}`);
 await printer.close();
 ```
 
+Status parsing behavior for TypeScript:
+- `parseHostStatus()` is strict by default (throws on malformed/truncated `~HS`).
+- `parseHostStatusStrict()` and `parseHostStatusLenient()` are both exported for explicit mode selection.
+- `TcpPrinter.getStatus()` uses strict parsing.
+
 Uses `node:net` for TCP sockets — pure TypeScript, no native dependencies.
 
 You can also use the `TcpPrinter` constructor directly or the one-shot `print()` function:
@@ -664,6 +669,11 @@ The WebSocket endpoint shares the same security configuration as the HTTP endpoi
 
 ### Host Status (`~HS`)
 
+Framing contract:
+- `~HS` responses are expected as exactly **3** `STX/ETX` frames.
+- `~HI` responses are expected as exactly **1** `STX/ETX` frame.
+- Known framed commands are parsed with byte-level frame state machines.
+
 Query comprehensive printer status:
 
 ```rust
@@ -709,6 +719,21 @@ zpl print label.zpl -p 192.168.1.55 --status --output json
 
 ---
 
+## Job Lifecycle (F13)
+
+Print operations use a minimal job model for correlation and deterministic completion semantics:
+
+- **Job ID**: Each batch (or logical job) gets a unique `JobId`, generated via `create_job_id()` (Rust) or `createJobId()` (TypeScript). Use for correlation between batch send and completion wait.
+- **Phases vocabulary**: `queued`, `sending`, `sent`, `printing`, `completed`, `failed`, `aborted`.
+  - `send_batch()` / `send_batch_with_status()` and `TcpPrinter.printBatch()` emit `queued`, `sending`, `sent`, and terminal `failed`/`aborted` events in progress callbacks.
+  - `printing`/`completed` are completion semantics represented by `wait_for_completion()` / `waitForCompletion()`.
+- **Deterministic completion**:
+  - `sent`: Batch success = all bytes delivered to printer. Single canonical outcome.
+  - `completed`: `wait_for_completion()` / `waitForCompletion()` returns `Ok` when printer reports `formatsInBuffer=0`, `labelsRemaining=0`.
+  - `timeout`: On timeout, the error carries `formatsInBuffer` and `labelsRemaining` from the last poll (Rust: `CompletionTimeout`; TypeScript: `PrintError` with `formatsInBuffer` / `labelsRemaining`).
+
+See `contracts/fixtures/print-job-lifecycle.v1.json` for the shared schema.
+
 ## Batch Printing
 
 Send multiple labels with optional progress tracking:
@@ -729,7 +754,7 @@ let opts = BatchOptions {
     status_interval: Some(NonZeroUsize::new(10).unwrap()),
 };
 
-// Basic batch (no status polling)
+// Basic batch (no status polling); result includes job_id for correlation
 let result = send_batch(&mut printer, &labels, |progress| {
     println!("Sent {}/{}", progress.sent, progress.total);
     ControlFlow::Continue(())
@@ -746,7 +771,7 @@ let result = send_batch_with_status(&mut printer, &labels, &opts, |progress| {
     ControlFlow::Continue(())
 })?;
 
-println!("Sent {}/{} labels", result.sent, result.total);
+println!("Sent {}/{} labels (job {})", result.sent, result.total, result.job_id);
 ```
 
 ### Wait for Completion

@@ -2,7 +2,7 @@
 //!
 //! Each function is pure (input → output), testable independently.
 
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::ffi::OsStr;
 use std::path::Path;
 
@@ -497,6 +497,12 @@ fn validate_command_constraints_spec(
                             ci, expr
                         ));
                     }
+                    if constraint.scope.is_none() {
+                        errors.push(format!(
+                            "constraints[{}] order constraint requires explicit scope",
+                            ci
+                        ));
+                    }
                 }
                 zpl_toolchain_spec_tables::ConstraintKind::Requires
                 | zpl_toolchain_spec_tables::ConstraintKind::Incompatible => {
@@ -507,6 +513,12 @@ fn validate_command_constraints_spec(
                         ));
                     } else {
                         validate_target_expr(expr, ci, errors);
+                    }
+                    if constraint.scope.is_none() {
+                        errors.push(format!(
+                            "constraints[{}] {:?} constraint requires explicit scope",
+                            ci, constraint.kind
+                        ));
                     }
                 }
                 zpl_toolchain_spec_tables::ConstraintKind::EmptyData => {
@@ -640,6 +652,149 @@ fn validate_effects(cmd: &SourceCommand, errors: &mut Vec<String>) {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum StructuralBindingKey {
+    Kind(zpl_toolchain_spec_tables::StructuralRuleKind),
+    PositionAction(zpl_toolchain_spec_tables::PositionBoundsAction),
+    FontAction(zpl_toolchain_spec_tables::FontReferenceAction),
+    MediaTarget(zpl_toolchain_spec_tables::MediaModesTarget),
+}
+
+fn required_structural_bindings_for_code(code: &str) -> Option<&'static [StructuralBindingKey]> {
+    use zpl_toolchain_spec_tables::FontReferenceAction as FA;
+    use zpl_toolchain_spec_tables::MediaModesTarget as MT;
+    use zpl_toolchain_spec_tables::PositionBoundsAction as PA;
+    use zpl_toolchain_spec_tables::StructuralRuleKind as K;
+    match code {
+        "^FN" => Some(&[StructuralBindingKey::Kind(K::DuplicateFieldNumber)]),
+        "^PW" => Some(&[StructuralBindingKey::PositionAction(PA::TrackWidth)]),
+        "^LL" => Some(&[StructuralBindingKey::PositionAction(PA::TrackHeight)]),
+        "^FO" | "^FT" => Some(&[
+            StructuralBindingKey::PositionAction(PA::TrackFieldOrigin),
+            StructuralBindingKey::PositionAction(PA::ValidateFieldOrigin),
+        ]),
+        "^A" => Some(&[StructuralBindingKey::FontAction(FA::Validate)]),
+        "^CW" => Some(&[StructuralBindingKey::FontAction(FA::Register)]),
+        "^MM" => Some(&[StructuralBindingKey::MediaTarget(MT::SupportedModes)]),
+        "^MN" => Some(&[StructuralBindingKey::MediaTarget(MT::SupportedTracking)]),
+        "^MT" => Some(&[StructuralBindingKey::MediaTarget(MT::PrintMethod)]),
+        "^GF" => Some(&[
+            StructuralBindingKey::Kind(K::GfDataLength),
+            StructuralBindingKey::Kind(K::GfPreflightTracking),
+        ]),
+        _ => None,
+    }
+}
+
+/// Validate schema-selected structural rules for commands that require structural checks.
+fn validate_structural_rules_binding(cmd: &SourceCommand, errors: &mut Vec<String>) {
+    let Some(code) = cmd.canonical_code() else {
+        return;
+    };
+    let Some(required_rules) = required_structural_bindings_for_code(&code) else {
+        return;
+    };
+
+    let configured_rules = cmd.structural_rules.as_deref().unwrap_or_default();
+    let arity = cmd.arity as usize;
+
+    for rule in configured_rules {
+        match rule {
+            zpl_toolchain_spec_tables::StructuralRule::DuplicateFieldNumber { arg_index }
+            | zpl_toolchain_spec_tables::StructuralRule::FontReference { arg_index, .. }
+            | zpl_toolchain_spec_tables::StructuralRule::MediaModes { arg_index, .. } => {
+                if *arg_index >= arity {
+                    errors.push(format!(
+                        "structuralRules argIndex {} is out of range for command '{}' (arity {})",
+                        arg_index, code, arity
+                    ));
+                }
+            }
+            zpl_toolchain_spec_tables::StructuralRule::GfDataLength {
+                compression_arg_index,
+                declared_byte_count_arg_index,
+                data_arg_index,
+            } => {
+                for idx in [
+                    compression_arg_index,
+                    declared_byte_count_arg_index,
+                    data_arg_index,
+                ] {
+                    if *idx >= arity {
+                        errors.push(format!(
+                            "structuralRules gfDataLength arg index {} is out of range for command '{}' (arity {})",
+                            idx, code, arity
+                        ));
+                    }
+                }
+            }
+            zpl_toolchain_spec_tables::StructuralRule::GfPreflightTracking {
+                graphic_field_count_arg_index,
+                bytes_per_row_arg_index,
+            } => {
+                for idx in [graphic_field_count_arg_index, bytes_per_row_arg_index] {
+                    if *idx >= arity {
+                        errors.push(format!(
+                            "structuralRules gfPreflightTracking arg index {} is out of range for command '{}' (arity {})",
+                            idx, code, arity
+                        ));
+                    }
+                }
+            }
+            zpl_toolchain_spec_tables::StructuralRule::PositionBounds { .. } => {}
+        }
+    }
+
+    let configured = configured_rules
+        .iter()
+        .map(|rule| match rule {
+            zpl_toolchain_spec_tables::StructuralRule::DuplicateFieldNumber { .. } => {
+                StructuralBindingKey::Kind(
+                    zpl_toolchain_spec_tables::StructuralRuleKind::DuplicateFieldNumber,
+                )
+            }
+            zpl_toolchain_spec_tables::StructuralRule::PositionBounds { action } => {
+                StructuralBindingKey::PositionAction(*action)
+            }
+            zpl_toolchain_spec_tables::StructuralRule::FontReference { action, .. } => {
+                StructuralBindingKey::FontAction(*action)
+            }
+            zpl_toolchain_spec_tables::StructuralRule::MediaModes { target, .. } => {
+                StructuralBindingKey::MediaTarget(*target)
+            }
+            zpl_toolchain_spec_tables::StructuralRule::GfDataLength { .. } => {
+                StructuralBindingKey::Kind(
+                    zpl_toolchain_spec_tables::StructuralRuleKind::GfDataLength,
+                )
+            }
+            zpl_toolchain_spec_tables::StructuralRule::GfPreflightTracking { .. } => {
+                StructuralBindingKey::Kind(
+                    zpl_toolchain_spec_tables::StructuralRuleKind::GfPreflightTracking,
+                )
+            }
+        })
+        .collect::<Vec<_>>();
+    let configured_set: HashSet<StructuralBindingKey> = configured.into_iter().collect();
+
+    for required in required_rules {
+        if !configured_set.contains(required) {
+            errors.push(format!(
+                "structuralRules missing required rule '{:?}' for command '{}'",
+                required, code
+            ));
+        }
+    }
+
+    for configured_rule in &configured_set {
+        if !required_rules.contains(configured_rule) {
+            errors.push(format!(
+                "structuralRules includes unsupported structural rule '{:?}' for command '{}'",
+                configured_rule, code
+            ));
+        }
+    }
+}
+
 /// Validate profileConstraint.field references against the profile schema for a single command.
 fn validate_profile_constraints_spec(
     cmd: &SourceCommand,
@@ -701,6 +856,7 @@ pub fn validate_cross_field(commands: &[SourceCommand], spec_dir: &Path) -> Vec<
         validate_command_constraints_spec(cmd, &all_codes, &mut errors);
         validate_composites_linkage(cmd, &mut errors);
         validate_effects(cmd, &mut errors);
+        validate_structural_rules_binding(cmd, &mut errors);
         validate_profile_constraints_spec(cmd, &profile_fields, &mut errors);
 
         if !errors.is_empty() {
@@ -839,6 +995,11 @@ fn extract_constraint_targets(constraint: &zpl_toolchain_spec_tables::Constraint
                 Some(expr)
             }
         }
+        zpl_toolchain_spec_tables::ConstraintKind::Note => expr
+            .strip_prefix("after:first:")
+            .or_else(|| expr.strip_prefix("before:first:"))
+            .or_else(|| expr.strip_prefix("after:"))
+            .or_else(|| expr.strip_prefix("before:")),
         _ => None,
     };
     match targets_str {
@@ -871,9 +1032,9 @@ pub fn generate_tables(
     schema_versions: &BTreeSet<String>,
 ) -> Result<serde_json::Value> {
     // BTreeSet is sorted ascending — use the highest (latest) version.
-    // If multiple schema versions exist, `warn_schema_versions()` in main.rs
-    // already warns about unexpected versions. We pick the latest here to
-    // ensure deterministic, forward-compatible output.
+    // The CLI enforces a single schemaVersion invariant before calling into
+    // generation, so this value is deterministic and represents the only
+    // allowed schema version in the loaded tree.
     let schema_version = schema_versions
         .iter()
         .next_back()
@@ -900,6 +1061,7 @@ pub fn generate_tables(
             constraints: cmd.constraints.clone(),
             constraint_defaults: cmd.constraint_defaults.clone(),
             effects: cmd.effects.clone(),
+            structural_rules: cmd.structural_rules.clone(),
             plane: cmd.plane,
             scope: cmd.scope,
             placement: cmd.placement.clone(),
@@ -919,6 +1081,95 @@ pub fn generate_tables(
         })
         .collect();
 
+    let mut by_kind: BTreeMap<zpl_toolchain_spec_tables::StructuralRuleKind, BTreeSet<String>> =
+        BTreeMap::new();
+    let mut by_trigger: BTreeMap<zpl_toolchain_spec_tables::StructuralTrigger, BTreeSet<String>> =
+        BTreeMap::new();
+    let mut by_effect: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+
+    for cmd in &out_cmds {
+        let Some(code) = cmd.codes.first().cloned() else {
+            continue;
+        };
+        if let Some(rules) = cmd.structural_rules.as_ref() {
+            for rule in rules {
+                by_kind.entry(rule.kind()).or_default().insert(code.clone());
+            }
+        }
+        if cmd.opens_field {
+            by_trigger
+                .entry(zpl_toolchain_spec_tables::StructuralTrigger::OpensField)
+                .or_default()
+                .insert(code.clone());
+        }
+        if cmd.closes_field {
+            by_trigger
+                .entry(zpl_toolchain_spec_tables::StructuralTrigger::ClosesField)
+                .or_default()
+                .insert(code.clone());
+        }
+        if cmd.field_data {
+            by_trigger
+                .entry(zpl_toolchain_spec_tables::StructuralTrigger::FieldData)
+                .or_default()
+                .insert(code.clone());
+        }
+        if cmd.raw_payload {
+            by_trigger
+                .entry(zpl_toolchain_spec_tables::StructuralTrigger::RawPayload)
+                .or_default()
+                .insert(code.clone());
+        }
+        if cmd.field_number {
+            by_trigger
+                .entry(zpl_toolchain_spec_tables::StructuralTrigger::FieldNumber)
+                .or_default()
+                .insert(code.clone());
+        }
+        if cmd.serialization {
+            by_trigger
+                .entry(zpl_toolchain_spec_tables::StructuralTrigger::Serialization)
+                .or_default()
+                .insert(code.clone());
+        }
+        if cmd.requires_field {
+            by_trigger
+                .entry(zpl_toolchain_spec_tables::StructuralTrigger::RequiresField)
+                .or_default()
+                .insert(code.clone());
+        }
+        if cmd.hex_escape_modifier {
+            by_trigger
+                .entry(zpl_toolchain_spec_tables::StructuralTrigger::HexEscapeModifier)
+                .or_default()
+                .insert(code.clone());
+        }
+
+        if let Some(effects) = cmd.effects.as_ref() {
+            for effect_key in &effects.sets {
+                by_effect
+                    .entry(effect_key.clone())
+                    .or_default()
+                    .insert(code.clone());
+            }
+        }
+    }
+
+    let structural_rule_index = zpl_toolchain_spec_tables::StructuralRuleIndex {
+        by_kind: by_kind
+            .into_iter()
+            .map(|(k, set)| (k, set.into_iter().collect()))
+            .collect(),
+        by_trigger: by_trigger
+            .into_iter()
+            .map(|(k, set)| (k, set.into_iter().collect()))
+            .collect(),
+        by_effect: by_effect
+            .into_iter()
+            .map(|(k, set)| (k, set.into_iter().collect()))
+            .collect(),
+    };
+
     // Build opcode trie from raw JSON values (reuse existing function)
     let raw_cmds: Vec<serde_json::Value> = commands
         .iter()
@@ -936,6 +1187,7 @@ pub fn generate_tables(
         "formatVersion": TABLE_FORMAT_VERSION,
         "commands": serde_json::to_value(&out_cmds)?,
         "opcodeTrie": trie_json,
+        "structuralRuleIndex": serde_json::to_value(&structural_rule_index)?,
     });
 
     // Verify the value deserializes into a valid ParserTables
@@ -1507,7 +1759,7 @@ pub fn load_master_codes(path: &str) -> BTreeSet<String> {
 #[cfg(test)]
 mod tests {
     use std::collections::BTreeSet;
-    use zpl_toolchain_spec_tables::ConstraintKind;
+    use zpl_toolchain_spec_tables::{ConstraintKind, ParserTables, StructuralTrigger};
 
     /// Verify that `ConstraintKind::ALL` and the JSONC schema's `kind` enum
     /// list exactly the same set of values (via serde serialized names).
@@ -1553,6 +1805,44 @@ mod tests {
             "ConstraintKind::ALL and JSONC schema kind enum are out of sync.\n\
              Rust: {:?}\nSchema: {:?}",
             rust_kinds, schema_kinds
+        );
+    }
+
+    #[test]
+    fn structural_rule_kinds_match_schema() {
+        let expected: BTreeSet<String> = zpl_toolchain_spec_tables::StructuralRuleKind::ALL
+            .iter()
+            .map(|kind| serde_json::to_value(kind).unwrap())
+            .map(|v| v.as_str().unwrap().to_string())
+            .collect();
+
+        let schema_path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../spec/schema/zpl-spec.schema.jsonc"
+        );
+        let schema_text =
+            std::fs::read_to_string(schema_path).expect("failed to read JSONC schema");
+        let schema_json: serde_json::Value =
+            crate::parse_jsonc(&schema_text).expect("failed to parse JSONC schema");
+
+        let schema_kinds: BTreeSet<String> = schema_json
+            .pointer("/$defs/structuralRule/oneOf")
+            .expect("could not find $defs.structuralRule.oneOf in schema")
+            .as_array()
+            .expect("structuralRule.oneOf is not an array")
+            .iter()
+            .map(|variant| {
+                variant
+                    .pointer("/properties/kind/const")
+                    .and_then(serde_json::Value::as_str)
+                    .expect("structuralRule variant kind.const is not a string")
+                    .to_string()
+            })
+            .collect();
+
+        assert_eq!(
+            expected, schema_kinds,
+            "structuralRule.kind enum in schema is out of sync"
         );
     }
 
@@ -1840,6 +2130,101 @@ mod tests {
     }
 
     #[test]
+    fn validate_constraints_require_explicit_scope_for_requires() {
+        use super::validate_cross_field;
+        use crate::source::SourceSpecFile;
+        use std::path::Path;
+
+        let json = r#"{
+            "schemaVersion":"1.1.1",
+            "commands":[
+              {
+                "codes":["^T2"],
+                "arity":0,
+                "constraints":[
+                  { "kind":"requires", "expr":"^XA", "message":"requires scope" }
+                ]
+              }
+            ]
+        }"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec");
+        let errs = validate_cross_field(&spec.commands, &spec_dir);
+        assert!(
+            errs.iter()
+                .flat_map(|entry| entry.errors.iter())
+                .any(|msg| msg.contains("constraint requires explicit scope")),
+            "expected explicit scope validation failure: {:?}",
+            errs
+        );
+    }
+
+    #[test]
+    fn validate_constraints_require_explicit_scope_for_order() {
+        use super::validate_cross_field;
+        use crate::source::SourceSpecFile;
+        use std::path::Path;
+
+        let json = r#"{
+            "schemaVersion":"1.1.1",
+            "commands":[
+              {
+                "codes":["^FD","^FV"],
+                "arity":0
+              },
+              {
+                "codes":["^T2"],
+                "arity":0,
+                "constraints":[
+                  { "kind":"order", "expr":"before:^FD|^FV", "message":"order without scope" }
+                ]
+              }
+            ]
+        }"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec");
+        let errs = validate_cross_field(&spec.commands, &spec_dir);
+        assert!(
+            errs.iter()
+                .flat_map(|entry| entry.errors.iter())
+                .any(|msg| msg.contains("order constraint requires explicit scope")),
+            "expected order constraint explicit scope validation failure: {:?}",
+            errs
+        );
+    }
+
+    #[test]
+    fn validate_constraints_order_with_scope_passes() {
+        use super::validate_cross_field;
+        use crate::source::SourceSpecFile;
+        use std::path::Path;
+
+        let json = r#"{
+            "schemaVersion":"1.1.1",
+            "commands":[
+              {
+                "codes":["^FD","^FV"],
+                "arity":0
+              },
+              {
+                "codes":["^T2"],
+                "arity":0,
+                "constraints":[
+                  { "kind":"order", "expr":"before:^FD|^FV", "scope":"field", "message":"order with scope" }
+                ]
+              }
+            ]
+        }"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec");
+        let errs = validate_cross_field(&spec.commands, &spec_dir);
+        assert!(errs.is_empty(), "order with scope should pass: {:?}", errs);
+    }
+
+    #[test]
     fn validate_constraints_reject_audience_on_non_note() {
         use super::validate_cross_field;
         use crate::source::SourceSpecFile;
@@ -1897,6 +2282,37 @@ mod tests {
                 .flat_map(|entry| entry.errors.iter())
                 .any(|msg| msg.contains("recognized note expression prefix")),
             "expected note expr validation failure: {:?}",
+            errs
+        );
+    }
+
+    #[test]
+    fn validate_note_expr_rejects_unknown_target_command_codes() {
+        use super::validate_cross_field;
+        use crate::source::SourceSpecFile;
+        use std::path::Path;
+
+        let json = r#"{
+            "schemaVersion":"1.1.1",
+            "commands":[
+              {
+                "codes":["^TN"],
+                "arity":0,
+                "constraints":[
+                  { "kind":"note", "expr":"after:first:^FAKE", "message":"bad target" }
+                ]
+              }
+            ]
+        }"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec");
+        let errs = validate_cross_field(&spec.commands, &spec_dir);
+        assert!(
+            errs.iter()
+                .flat_map(|entry| entry.errors.iter())
+                .any(|msg| msg.contains("references unknown command '^FAKE'")),
+            "expected unknown target command validation failure: {:?}",
             errs
         );
     }
@@ -1961,5 +2377,191 @@ mod tests {
             "expected unknown predicate validation failure: {:?}",
             errs
         );
+    }
+
+    #[test]
+    fn validate_structural_rules_requires_mapping_for_semantic_commands() {
+        use super::validate_cross_field;
+        use crate::source::SourceSpecFile;
+        use std::path::Path;
+
+        let json = r#"{
+            "schemaVersion":"1.1.1",
+            "commands":[
+              { "codes":["^FN"], "arity":1, "signature":{"params":["n"],"joiner":","}, "args":[{"name":"n","key":"n","type":"int"}] }
+            ]
+        }"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec");
+        let errs = validate_cross_field(&spec.commands, &spec_dir);
+        assert!(
+            errs.iter()
+                .flat_map(|entry| entry.errors.iter())
+                .any(|msg| msg.contains("structuralRules missing required rule")),
+            "expected missing structuralRules validation failure: {:?}",
+            errs
+        );
+    }
+
+    #[test]
+    fn validate_structural_rules_rejects_unsupported_rule_for_command() {
+        use super::validate_cross_field;
+        use crate::source::SourceSpecFile;
+        use std::path::Path;
+
+        let json = r#"{
+            "schemaVersion":"1.1.1",
+            "commands":[
+              { "codes":["^FN"], "arity":1, "structuralRules":[{"kind":"duplicateFieldNumber"},{"kind":"mediaModes","target":"supportedModes"}], "signature":{"params":["n"],"joiner":","}, "args":[{"name":"n","key":"n","type":"int"}] }
+            ]
+        }"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let spec_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../spec");
+        let errs = validate_cross_field(&spec.commands, &spec_dir);
+        assert!(
+            errs.iter()
+                .flat_map(|entry| entry.errors.iter())
+                .any(|msg| msg.contains("unsupported structural rule")),
+            "expected unsupported structuralRules validation failure: {:?}",
+            errs
+        );
+    }
+
+    #[test]
+    fn generate_tables_emits_structural_rule_index() {
+        use crate::source::SourceSpecFile;
+        use std::collections::BTreeSet;
+
+        let json = r#"{
+            "schemaVersion":"1.1.1",
+            "commands":[
+              {
+                "codes":["^PW"],
+                "arity":1,
+                "effects":{"sets":["label.width"]},
+                "structuralRules":[{"kind":"positionBounds","action":"trackWidth"}],
+                "signature":{"params":["w"],"joiner":","},
+                "args":[{"name":"w","key":"w","type":"int"}]
+              },
+              {
+                "codes":["^FO"],
+                "arity":2,
+                "opens_field":true,
+                "structuralRules":[
+                  {"kind":"positionBounds","action":"trackFieldOrigin"},
+                  {"kind":"positionBounds","action":"validateFieldOrigin"}
+                ],
+                "signature":{"params":["x","y"],"joiner":","},
+                "args":[{"name":"x","key":"x","type":"int"},{"name":"y","key":"y","type":"int"}]
+              }
+            ]
+        }"#;
+        let val = crate::parse_jsonc(json).expect("parse");
+        let spec: SourceSpecFile = serde_json::from_value(val).expect("deserialize");
+        let schema_versions = BTreeSet::from([String::from("1.1.1")]);
+        let tables = super::generate_tables(&spec.commands, &schema_versions).expect("tables");
+
+        let by_kind = tables
+            .pointer("/structuralRuleIndex/byKind/positionBounds")
+            .and_then(serde_json::Value::as_array)
+            .expect("missing structuralRuleIndex.byKind.positionBounds");
+        assert!(
+            by_kind.iter().any(|v| v == "^PW") && by_kind.iter().any(|v| v == "^FO"),
+            "expected ^PW and ^FO in byKind.positionBounds: {:?}",
+            by_kind
+        );
+
+        let by_trigger = tables
+            .pointer("/structuralRuleIndex/byTrigger/opensField")
+            .and_then(serde_json::Value::as_array)
+            .expect("missing structuralRuleIndex.byTrigger.opensField");
+        assert!(
+            by_trigger.iter().any(|v| v == "^FO"),
+            "expected ^FO in byTrigger.opensField: {:?}",
+            by_trigger
+        );
+
+        let by_effect = tables
+            .pointer("/structuralRuleIndex/byEffect/label.width")
+            .and_then(serde_json::Value::as_array)
+            .expect("missing structuralRuleIndex.byEffect.label.width");
+        assert!(
+            by_effect.iter().any(|v| v == "^PW"),
+            "expected ^PW in byEffect.label.width: {:?}",
+            by_effect
+        );
+    }
+
+    #[test]
+    fn structural_trigger_index_matches_command_entry_flags() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../generated/parser_tables.json");
+        let json = std::fs::read_to_string(&path)
+            .unwrap_or_else(|e| panic!("failed to read {}: {}", path.display(), e));
+        let tables: ParserTables = serde_json::from_str(&json)
+            .unwrap_or_else(|e| panic!("failed to parse {}: {}", path.display(), e));
+        let index = tables
+            .structural_rule_index
+            .as_ref()
+            .expect("expected structural_rule_index in parser tables");
+
+        for cmd in &tables.commands {
+            let Some(code) = cmd.codes.first() else {
+                continue;
+            };
+
+            let checks = [
+                (
+                    "opens_field",
+                    cmd.opens_field,
+                    StructuralTrigger::OpensField,
+                ),
+                (
+                    "closes_field",
+                    cmd.closes_field,
+                    StructuralTrigger::ClosesField,
+                ),
+                ("field_data", cmd.field_data, StructuralTrigger::FieldData),
+                (
+                    "raw_payload",
+                    cmd.raw_payload,
+                    StructuralTrigger::RawPayload,
+                ),
+                (
+                    "field_number",
+                    cmd.field_number,
+                    StructuralTrigger::FieldNumber,
+                ),
+                (
+                    "serialization",
+                    cmd.serialization,
+                    StructuralTrigger::Serialization,
+                ),
+                (
+                    "requires_field",
+                    cmd.requires_field,
+                    StructuralTrigger::RequiresField,
+                ),
+                (
+                    "hex_escape_modifier",
+                    cmd.hex_escape_modifier,
+                    StructuralTrigger::HexEscapeModifier,
+                ),
+            ];
+
+            for (flag_name, expected, trigger) in checks {
+                let present = index
+                    .by_trigger
+                    .get(&trigger)
+                    .is_some_and(|codes| codes.contains(code));
+                assert_eq!(
+                    present, expected,
+                    "command {} mismatch for {} against by_trigger.{:?}",
+                    code, flag_name, trigger
+                );
+            }
+        }
     }
 }

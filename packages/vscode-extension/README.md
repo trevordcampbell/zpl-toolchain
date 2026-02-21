@@ -14,6 +14,7 @@ by the CLI and language packages.
 - **Format support** via the same formatter used across the toolchain.
 - **Rich hovers** for commands and command parameters (types, ranges, enums, units).
 - **Explain diagnostic** quick action/command for fast issue triage.
+- **Safe quick fixes** for high-confidence automatable issues (add missing `^XZ`, `^FS`).
 - **Command + enum completions** while authoring labels.
 
 ## Part of the wider toolchain

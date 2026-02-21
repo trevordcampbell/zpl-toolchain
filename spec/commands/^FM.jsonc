@@ -18,7 +18,7 @@
           "doc": "Y-axis location of first symbol in dots. Use 'e' to exclude this bar code from printing." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Only works with ^B7 (PDF417) and ^BF (MicroPDF417) for structured append. Maximum 60 x,y pairs. Ignored with any other commands." }
+        { "kind": "note", "audience": "contextual", "message": "Only works with ^B7 (PDF417) and ^BF (MicroPDF417) for structured append. Maximum 60 x,y pairs. Ignored with any other commands." }
       ],
       "docs": "Designates multiple field origin locations for PDF417 and MicroPDF417 bar codes when using structured append capabilities."
     }

@@ -15,6 +15,9 @@
           "doc": "T = thermal transfer media (uses ribbon), D = direct thermal media (no ribbon)." }
       ],
       "effects": { "sets": ["media.type"] },
+      "structuralRules": [
+        { "kind": "mediaModes", "target": "printMethod", "argIndex": 0 }
+      ],
       "constraints": [],
       "docs": "Selects the type of media being used: thermal transfer (ribbon) or direct thermal (no ribbon)."
     }

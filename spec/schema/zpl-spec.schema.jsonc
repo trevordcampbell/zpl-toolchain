@@ -146,6 +146,13 @@
           "description": "Declares which cross-command state this command sets"
         },
 
+        // Structural validator rules selected by schema.
+        "structuralRules": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/structuralRule" },
+          "description": "Structural validator rules applicable to this command."
+        },
+
         // Validation rules for field data content when this barcode command is active
         "fieldDataRules": {
           "type": "object",
@@ -254,6 +261,73 @@
       // Keep existing requirement for arity
       "required": ["arity"],
       "additionalProperties": false
+    },
+
+    "structuralRule": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "duplicateFieldNumber" },
+            "argIndex": { "type": "integer", "minimum": 0, "default": 0 }
+          },
+          "required": ["kind"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "positionBounds" },
+            "action": {
+              "type": "string",
+              "enum": ["trackWidth", "trackHeight", "trackFieldOrigin", "validateFieldOrigin"]
+            }
+          },
+          "required": ["kind", "action"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "fontReference" },
+            "action": { "type": "string", "enum": ["register", "validate"] },
+            "argIndex": { "type": "integer", "minimum": 0, "default": 0 }
+          },
+          "required": ["kind", "action"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "mediaModes" },
+            "target": { "type": "string", "enum": ["supportedModes", "supportedTracking", "printMethod"] },
+            "argIndex": { "type": "integer", "minimum": 0, "default": 0 }
+          },
+          "required": ["kind", "target"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "gfDataLength" },
+            "compressionArgIndex": { "type": "integer", "minimum": 0, "default": 0 },
+            "declaredByteCountArgIndex": { "type": "integer", "minimum": 0, "default": 1 },
+            "dataArgIndex": { "type": "integer", "minimum": 0, "default": 4 }
+          },
+          "required": ["kind"],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": { "const": "gfPreflightTracking" },
+            "graphicFieldCountArgIndex": { "type": "integer", "minimum": 0, "default": 2 },
+            "bytesPerRowArgIndex": { "type": "integer", "minimum": 0, "default": 3 }
+          },
+          "required": ["kind"],
+          "additionalProperties": false
+        }
+      ]
     },
 
     // ────────────────────────────────────────────────────────────────────────────
@@ -441,8 +515,7 @@
         },
         "scope": {
           "enum": ["label", "field"],
-          "default": "label",
-          "description": "Constraint evaluation scope. 'field' limits checks to the current field."
+          "description": "Constraint evaluation scope. 'field' limits checks to the current field. Required for kind=order|requires|incompatible."
         },
 
         // For sandboxed WASM rulelets
@@ -451,6 +524,12 @@
         "extras": { "type": "object", "additionalProperties": true }
       },
       "required": ["kind", "message"],
+      "allOf": [
+        {
+          "if": { "properties": { "kind": { "enum": ["order", "requires", "incompatible"] } } },
+          "then": { "required": ["scope"] }
+        }
+      ],
       "additionalProperties": false
     },
 

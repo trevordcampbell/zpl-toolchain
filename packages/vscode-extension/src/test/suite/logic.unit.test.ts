@@ -1,9 +1,14 @@
 import * as assert from "node:assert/strict";
 
+import * as vscode from "vscode";
+
 import { resolveArgIndexWithSignature, type CompletionCommandContext } from "../../completionArgs";
 import type { CoreDiagnostic } from "../../coreApi";
 import { getDiagnosticContextValue, partitionCoreIssues } from "../../diagnosticRouting";
 import type { CommandDoc } from "../../docsBundle";
+import { buildSuggestedEditAction } from "../../suggestedEdits";
+
+type DiagnosticWithData = vscode.Diagnostic & { data?: unknown };
 
 function issue(input: Partial<CoreDiagnostic>): CoreDiagnostic {
   return {
@@ -89,5 +94,135 @@ suite("extension logic unit tests", () => {
     assert.equal(resolveArgIndexWithSignature(entry, lineText, context, 4), 1);
     assert.equal(resolveArgIndexWithSignature(entry, lineText, context, 5), 2);
     assert.equal(resolveArgIndexWithSignature(entry, lineText, context, lineText.length), 3);
+  });
+
+  suite("diagnostic suggested edits", () => {
+    test("buildSuggestedEditAction returns undefined without suggested_edit metadata", async () => {
+      const doc = await vscode.workspace.openTextDocument({
+        content: "^XA^FO10,10^FDok^FS",
+        language: "zpl",
+      });
+      const diag = new vscode.Diagnostic(
+        new vscode.Range(0, 0, 0, 5),
+        "Test",
+        vscode.DiagnosticSeverity.Error
+      );
+      diag.code = "ZPL1101";
+
+      const action = buildSuggestedEditAction(doc, diag);
+      assert.equal(action, undefined);
+    });
+
+    test("buildSuggestedEditAction inserts ^XZ at document end", async () => {
+      const content = "^XA^FO10,10^FDok^FS";
+      const doc = await vscode.workspace.openTextDocument({
+        content,
+        language: "zpl",
+      });
+      const diag = new vscode.Diagnostic(
+        new vscode.Range(
+          doc.positionAt(content.length),
+          doc.positionAt(content.length)
+        ),
+        "Missing terminator (^XZ)",
+        vscode.DiagnosticSeverity.Error
+      );
+      (diag as DiagnosticWithData).data = {
+        "suggested_edit.kind": "insert",
+        "suggested_edit.text": "^XZ",
+        "suggested_edit.position": "document.end",
+        "suggested_edit.title": "Insert ^XZ (label terminator)",
+      };
+
+      const action = buildSuggestedEditAction(doc, diag);
+      assert.ok(action, "Expected a suggested edit action");
+      assert.equal(action.title, "Insert ^XZ (label terminator)");
+      assert.ok(action.edit, "Expected edit on action");
+      const entries = action.edit!.entries();
+      assert.equal(entries.length, 1);
+      const [uri, edits] = entries[0];
+      assert.equal(edits.length, 1);
+      const textEdit = edits[0] as vscode.TextEdit;
+      assert.equal(textEdit.newText, "^XZ");
+      assert.equal(
+        doc.offsetAt(textEdit.range.start),
+        content.length,
+        "Insert position should be at document end"
+      );
+    });
+
+    test("buildSuggestedEditAction inserts ^FS at range start", async () => {
+      const content = "^XA^FO10,10^FDHello^XZ";
+      const doc = await vscode.workspace.openTextDocument({
+        content,
+        language: "zpl",
+      });
+      const xzStart = content.indexOf("^XZ");
+      const diag = new vscode.Diagnostic(
+        new vscode.Range(
+          doc.positionAt(xzStart),
+          doc.positionAt(xzStart + 3)
+        ),
+        "Missing field separator (^FS) before ^XZ",
+        vscode.DiagnosticSeverity.Error
+      );
+      (diag as DiagnosticWithData).data = {
+        "suggested_edit.kind": "insert",
+        "suggested_edit.text": "^FS",
+        "suggested_edit.position": "range.start",
+        "suggested_edit.title": "Insert ^FS (field separator)",
+      };
+
+      const action = buildSuggestedEditAction(doc, diag);
+      assert.ok(action, "Expected a suggested edit action");
+      assert.equal(action.title, "Insert ^FS (field separator)");
+      assert.ok(action.edit, "Expected edit on action");
+      const entries = action.edit!.entries();
+      assert.equal(entries.length, 1);
+      const [, edits] = entries[0];
+      const textEdit = edits[0] as vscode.TextEdit;
+      assert.equal(textEdit.newText, "^FS");
+      assert.equal(
+        doc.offsetAt(textEdit.range.start),
+        xzStart,
+        "Insert position should be before ^XZ"
+      );
+    });
+
+    test("buildSuggestedEditAction inserts ^FS at range end", async () => {
+      const content = "^XA^FO10,10^FDHello";
+      const doc = await vscode.workspace.openTextDocument({
+        content,
+        language: "zpl",
+      });
+      const fieldStart = content.indexOf("Hello");
+      const diag = new vscode.Diagnostic(
+        new vscode.Range(
+          doc.positionAt(fieldStart),
+          doc.positionAt(content.length)
+        ),
+        "Missing field separator (^FS) before end of input",
+        vscode.DiagnosticSeverity.Error
+      );
+      (diag as DiagnosticWithData).data = {
+        "suggested_edit.kind": "insert",
+        "suggested_edit.text": "^FS",
+        "suggested_edit.position": "range.end",
+        "suggested_edit.title": "Insert ^FS (field separator)",
+      };
+
+      const action = buildSuggestedEditAction(doc, diag);
+      assert.ok(action, "Expected a suggested edit action");
+      assert.equal(action.title, "Insert ^FS (field separator)");
+      assert.ok(action.edit, "Expected edit on action");
+      const [, edits] = action.edit!.entries()[0];
+      const textEdit = edits[0] as vscode.TextEdit;
+      assert.equal(textEdit.newText, "^FS");
+      assert.equal(
+        doc.offsetAt(textEdit.range.start),
+        content.length,
+        "Insert position should be at document end"
+      );
+    });
   });
 });

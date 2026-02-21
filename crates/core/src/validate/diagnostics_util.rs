@@ -89,3 +89,11 @@ pub(super) fn trim_f64(n: f64) -> String {
     let s = s.trim_end_matches('0').trim_end_matches('.').to_string();
     if s.is_empty() { "0".to_string() } else { s }
 }
+
+pub(super) fn sort_diagnostics_deterministically(issues: &mut [Diagnostic]) {
+    issues.sort_by(|a, b| {
+        let a_start = a.span.map_or(usize::MAX, |s| s.start);
+        let b_start = b.span.map_or(usize::MAX, |s| s.start);
+        a_start.cmp(&b_start).then_with(|| a.id.cmp(&b.id))
+    });
+}

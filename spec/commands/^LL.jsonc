@@ -19,6 +19,9 @@
           "doc": "N = length applies only to continuous media; Y = applies to all media including Gap and Mark." }
       ],
       "effects": { "sets": ["label.length"] },
+      "structuralRules": [
+        { "kind": "positionBounds", "action": "trackHeight" }
+      ],
       "constraints": [],
       "docs": "Set printable label length (height) in dots. Format: ^LLy.x where x controls whether length applies to all media types."
     }

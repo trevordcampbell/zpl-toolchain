@@ -8,7 +8,7 @@ use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 use zpl_toolchain_spec_tables::{
     Arg, ArgUnion, CommandCategory, CommandScope, Composite, Constraint, ConstraintDefaults,
-    Effects, Example, Placement, Plane, Signature, Stability,
+    Effects, Example, Placement, Plane, Signature, Stability, StructuralRule,
 };
 
 fn default_scope_opt() -> Option<CommandScope> {
@@ -131,6 +131,9 @@ pub struct SourceCommand {
     /// Side effects this command produces (e.g. setting state variables).
     #[serde(default)]
     pub effects: Option<Effects>,
+    /// Schema-selected structural validator rule payloads for this command.
+    #[serde(default)]
+    pub structural_rules: Option<Vec<StructuralRule>>,
     /// Rules governing how this command interacts with field data.
     #[serde(default)]
     pub field_data_rules: Option<zpl_toolchain_spec_tables::FieldDataRules>,

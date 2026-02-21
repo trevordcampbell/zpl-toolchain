@@ -214,6 +214,51 @@ suite("VS Code extension integration", () => {
     assert.ok(hasExplain, "Expected explain diagnostic code action wiring.");
   });
 
+  test("quick fix Add missing ^XZ applies and clears diagnostic", async () => {
+    const content = "^XA\n^FO10,10^FDok^FS\n";
+    const uri = await createTempZplFile("quickfix-xz.zpl", content);
+    created.push(uri);
+
+    const editor = await openZpl(uri);
+    const diagnostics = await waitFor(
+      () => getDiagnostics(uri),
+      (diags) => diags.some((d) => String(d.code) === "ZPL.PARSER.1102")
+    );
+    const missingXz = diagnostics.find((d) => String(d.code) === "ZPL.PARSER.1102");
+    assert.ok(missingXz, "Expected ZPL.PARSER.1102 diagnostic for missing ^XZ.");
+
+    const actions = (await vscode.commands.executeCommand(
+      "vscode.executeCodeActionProvider",
+      editor.document.uri,
+      missingXz.range
+    )) as Array<vscode.CodeAction | vscode.Command>;
+
+    const addXzAction = actions.find(
+      (a): a is vscode.CodeAction =>
+        "edit" in a &&
+        a.edit !== undefined &&
+        typeof a.title === "string" &&
+        a.title.includes("Add missing ^XZ")
+    );
+    assert.ok(addXzAction, "Expected Add missing ^XZ quick fix action.");
+
+    const applied = await vscode.workspace.applyEdit(addXzAction.edit!);
+    assert.ok(applied, "Expected quick fix edit to apply.");
+
+    const after = (await vscode.workspace.openTextDocument(uri)).getText();
+    assert.match(after, /\^XZ\s*$/, "Document should end with ^XZ after quick fix.");
+
+    const afterDiags = await waitFor(
+      () => getDiagnostics(uri),
+      (diags) => !diags.some((d) => String(d.code) === "ZPL.PARSER.1102"),
+      5000
+    );
+    assert.ok(
+      !afterDiags.some((d) => String(d.code) === "ZPL.PARSER.1102"),
+      "ZPL.PARSER.1102 diagnostic should be cleared after fix."
+    );
+  });
+
   test("hover resolves command metadata", async () => {
     const uri = await createTempZplFile("hover-docs.zpl", "^XA\n^FO10,10^FDdata^FS\n^XZ\n");
     created.push(uri);

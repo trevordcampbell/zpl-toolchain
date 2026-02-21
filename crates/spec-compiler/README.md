@@ -21,13 +21,15 @@ zpl-spec-compiler check --spec-dir spec
 - Schema reference: `../../spec/schema/zpl-spec.schema.jsonc`.
 
 ## Outputs
-- `parser_tables.json`: canonical table set consumed by parser/validator (includes the opcode trie inline).
+- `parser_tables.json`: canonical table set consumed by parser/validator (includes the opcode trie inline), per-command `structuralRules`, and top-level `structuralRuleIndex` (by kind/trigger/effect).
 - `constraints_bundle.json`: constraints extracted per command code (not consumed at runtime; available for external tooling such as IDE plugins and documentation generators).
 - `docs_bundle.json`: per-code docs view with signature, args, docs, enumValues, composites.exposesArgs, missingFields (not consumed at runtime; available for external tooling).
 - `coverage.json`: present/missing counts; per_code stats (arg_count, union_positions, missing fields, validation_errors).
 
 ## Notes
 - Comments are allowed in source JSONC; the compiler strips them before validation.
-- The compiler passes through fields to `spec-tables` structures and performs cross-field validation (signature/args/composites/overrides; arg hygiene).
+- The compiler passes through fields to `spec-tables` structures and performs cross-field validation (signature/args/composites/overrides; arg hygiene), including structural rule binding validation.
 - A `constraint_kinds_match_schema` test validates that `ConstraintKind::ALL` (the Rust enum) and the JSONC schema's `kind` enum stay in sync.
+- A structural trigger invariant test validates `CommandEntry` trigger flags align with `structuralRuleIndex.byTrigger`.
+- Schema version policy is strict: all loaded spec files must use a single schema version, and it must match the compiler `SCHEMA_VERSION` constant. Mixed or unexpected versions fail `check`/`build`.
 

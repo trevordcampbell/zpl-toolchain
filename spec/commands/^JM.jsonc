@@ -15,7 +15,7 @@
       ],
       "effects": { "sets": ["print.dotsPerMillimeter"] },
       "constraints": [
-        { "kind": "note", "message": "^JM must be entered before the first ^FS command in a format. Effects are persistent. Using ^JMB causes UPS MaxiCode to become out of specification." }
+        { "kind": "note", "audience": "contextual", "message": "^JM must be entered before the first ^FS command in a format. Effects are persistent. Using ^JMB causes UPS MaxiCode to become out of specification." }
       ],
       "docs": "Lowers print density: 24→12, 12→6, 8→4, 6→3 dots/mm. Also affects field origin (^FO) placement. Must be entered before the first ^FS in a format."
     }

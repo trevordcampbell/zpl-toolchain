@@ -19,8 +19,11 @@
           "doc": "Black mark offset in dots relative to the point of separation. Only used when mode is M. Range varies by printer model." }
       ],
       "effects": { "sets": ["media.trackingMode", "media.blackMarkOffset"] },
+      "structuralRules": [
+        { "kind": "mediaModes", "target": "supportedTracking", "argIndex": 0 }
+      ],
       "constraints": [
-        { "kind": "note", "expr": "when:arg:bPresent&&!arg:modeIsValue:M", "severity": "info", "message": "Parameter b is only used when mode is set to M (mark sensing). Range varies: -80 to 283 (direct-thermal), -240 to 566 (600 dpi), -75 to 283 (KR403), -120 to 283 (all others)." }
+        { "kind": "note", "expr": "when:arg:bPresent&&!arg:modeIsValue:M", "severity": "info", "audience": "contextual", "message": "Parameter b is only used when mode is set to M (mark sensing). Range varies: -80 to 283 (direct-thermal), -240 to 566 (600 dpi), -75 to 283 (KR403), -120 to 283 (all others)." }
       ],
       "docs": "Specifies the media type being used and the black mark offset in dots."
     }

@@ -20,7 +20,7 @@
       ],
       "effects": { "sets": ["rtc.mode", "rtc.language"] },
       "constraints": [
-        { "kind": "note", "message": "^SL must be placed before the first ^FO command in the format." }
+        { "kind": "note", "audience": "contextual", "message": "^SL must be placed before the first ^FO command in the format." }
       ],
       "docs": "Specifies the Real-Time Clock mode of operation and language for printing information. Controls whether the time is captured at format start (S) or at print time (T)."
     }

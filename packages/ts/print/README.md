@@ -77,6 +77,25 @@ await printer.close();
 | `waitForCompletion(pollInterval?, timeoutMs?, signal?)` | Poll until all labels are printed, timeout, or abort |
 | `close()` | Gracefully close the connection |
 
+### Status parsing modes
+
+`parseHostStatus()` now uses strict semantics by default:
+- requires exactly 3 `STX/ETX` frames for `~HS`
+- requires expected field counts per line
+- throws on malformed or truncated responses
+
+Use explicit helpers when you need mode control:
+
+```ts
+import {
+  parseHostStatus,          // strict default
+  parseHostStatusStrict,    // explicit strict
+  parseHostStatusLenient,   // best-effort defaults
+} from "@zpl-toolchain/print";
+```
+
+Lenient mode is useful for dashboards or degraded environments where partial responses are acceptable.
+
 ### Proxy — `@zpl-toolchain/print/proxy`
 
 ```ts
@@ -115,9 +134,18 @@ All types are exported from the main entry point:
 - **`PrintResult`** — success, bytesWritten, error details
 - **`PrinterStatus`** — 24-field parsed `~HS` response
 - **`PrintError`** — typed error with `code` (CONNECTION_REFUSED, TIMEOUT, etc.)
-- **`BatchOptions`** / **`BatchProgress`** / **`BatchResult`** — batch printing control (including partial error details where `error.index` is the 0-based failed label index)
+- **`BatchOptions`** / **`BatchProgress`** / **`BatchResult`** — batch printing control (including `jobId`, `phase`, and partial error details where `error.index` is the 0-based failed label index)
+- **`JobId`** / **`JobPhase`** / **`createJobId()`** — job lifecycle for correlation and deterministic completion (see [Print Client Guide](https://github.com/trevordcampbell/zpl-toolchain/blob/main/docs/PRINT_CLIENT.md#job-lifecycle-f13))
 - **`ProxyConfig`** — proxy server configuration
 - **`ValidateOptions`** — options for validated printing
+
+## Framing semantics (`tcpQuery`)
+
+For known framed Zebra commands:
+- `~HS` expects **3** `STX/ETX` frames
+- `~HI` expects **1** `STX/ETX` frame
+
+For these commands, `tcpQuery()` uses strict byte-level frame parsing and fails on truncated/wrong-frame-count responses. Unknown commands fall back to idle-based completion.
 
 ## Requirements
 

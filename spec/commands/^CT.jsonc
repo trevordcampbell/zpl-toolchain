@@ -15,7 +15,7 @@
       ],
       "effects": { "sets": ["parser.tildePrefix"] },
       "constraints": [
-        { "kind": "note", "message": "Takes immediate effect. All subsequent control commands must use the new prefix character. Use ^JUS to persist across power cycles." }
+        { "kind": "note", "audience": "contextual", "message": "Takes immediate effect. All subsequent control commands must use the new prefix character. Use ^JUS to persist across power cycles." }
       ],
       "docs": "Changes the control command prefix character from the default tilde (~) to any other ASCII character. Takes immediate effect for all subsequent control commands."
     }

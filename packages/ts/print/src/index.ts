@@ -3,26 +3,44 @@ import type {
   PrinterConfig,
   PrintResult,
   PrinterStatus,
+  PrintMode,
   PrintErrorCode,
+  StatusParseMode,
   ValidateOptions,
   BatchOptions,
   BatchProgress,
   BatchResult,
+  JobId,
+  JobPhase,
 } from "./types.js";
+import { createJobId } from "./types.js";
 import { PrintError } from "./types.js";
-import { parseHostStatus } from "./status.js";
+import {
+  parseHostStatus,
+  parseHostStatusLenient,
+  parseHostStatusStrict,
+} from "./status.js";
 
-export { parseHostStatus } from "./status.js";
+export {
+  parseHostStatus,
+  parseHostStatusLenient,
+  parseHostStatusStrict,
+} from "./status.js";
 export {
   PrintError,
+  createJobId,
   type PrinterConfig,
   type PrintResult,
   type PrinterStatus,
+  type PrintMode,
   type PrintErrorCode,
+  type StatusParseMode,
   type ValidateOptions,
   type BatchOptions,
   type BatchProgress,
   type BatchResult,
+  type JobId,
+  type JobPhase,
 } from "./types.js";
 
 // ─── Defaults ────────────────────────────────────────────────────────────────
@@ -31,6 +49,9 @@ const DEFAULT_PORT = 9100;
 const DEFAULT_TIMEOUT = 5_000;
 const DEFAULT_MAX_RETRIES = 2;
 const DEFAULT_RETRY_DELAY = 500;
+const STX_BYTE = 0x02;
+const ETX_BYTE = 0x03;
+const DEFAULT_MAX_FRAME_SIZE = 1024;
 
 // ─── Error classification ────────────────────────────────────────────────────
 
@@ -94,21 +115,25 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
       reject(abortError());
       return;
     }
+    let onAbort: (() => void) | undefined;
+    if (signal) {
+      onAbort = () => {
+        signal.removeEventListener("abort", onAbort!);
+        reject(abortError());
+      };
+      signal.addEventListener("abort", onAbort, { once: true });
+      if (signal.aborted) {
+        signal.removeEventListener("abort", onAbort);
+        reject(abortError());
+        return;
+      }
+    }
     const timer = setTimeout(() => {
       if (signal && onAbort) {
         signal.removeEventListener("abort", onAbort);
       }
       resolve();
     }, ms);
-    let onAbort: (() => void) | undefined;
-    if (signal) {
-      onAbort = () => {
-        clearTimeout(timer);
-        signal.removeEventListener("abort", onAbort!);
-        reject(abortError());
-      };
-      signal.addEventListener("abort", onAbort, { once: true });
-    }
   });
 }
 
@@ -222,7 +247,9 @@ export function tcpQuery(
     const trimmedCommand = command.trim().toUpperCase();
     const expectedFrames =
       trimmedCommand === "~HS" ? 3 : trimmedCommand === "~HI" ? 1 : 0;
-    let etxCount = 0;
+    let readingFrame = false;
+    let currentFrame: number[] = [];
+    const framedPayloads: Buffer[] = [];
     let idleTimer: ReturnType<typeof setTimeout> | undefined;
     let settled = false;
     let onAbort: (() => void) | undefined;
@@ -266,16 +293,39 @@ export function tcpQuery(
 
     sock.on("data", (chunk: Buffer) => {
       chunks.push(chunk);
-      for (const byte of chunk) {
-        if (byte === 0x03) {
-          etxCount += 1;
-        }
-      }
+      if (expectedFrames > 0) {
+        for (const byte of chunk) {
+          if (!readingFrame) {
+            if (byte === STX_BYTE) {
+              readingFrame = true;
+              currentFrame = [];
+            }
+            continue;
+          }
 
-      // Known framed status/info responses: complete as soon as expected ETX
-      // frame boundaries are observed.
-      if (expectedFrames > 0 && etxCount >= expectedFrames) {
-        sock.end();
+          if (byte === ETX_BYTE) {
+            framedPayloads.push(Buffer.from(currentFrame));
+            readingFrame = false;
+            currentFrame = [];
+
+            if (framedPayloads.length === expectedFrames) {
+              sock.end();
+              return;
+            }
+            continue;
+          }
+
+          currentFrame.push(byte);
+          if (currentFrame.length > DEFAULT_MAX_FRAME_SIZE) {
+            fail(
+              new PrintError(
+                `Query ${trimmedCommand} frame exceeded ${DEFAULT_MAX_FRAME_SIZE} bytes`,
+                "UNKNOWN"
+              )
+            );
+            return;
+          }
+        }
         return;
       }
 
@@ -287,13 +337,39 @@ export function tcpQuery(
     });
 
     sock.on("end", () => {
+      if (expectedFrames > 0) {
+        if (readingFrame) {
+          fail(
+            new PrintError(
+              `Query ${trimmedCommand} ended mid-frame before ETX`,
+              "UNKNOWN"
+            )
+          );
+          return;
+        }
+        if (framedPayloads.length !== expectedFrames) {
+          fail(
+            new PrintError(
+              `Query ${trimmedCommand} returned ${framedPayloads.length} frames (expected ${expectedFrames})`,
+              "UNKNOWN"
+            )
+          );
+          return;
+        }
+
+        const framed = framedPayloads
+          .map((payload) => `\x02${payload.toString("utf-8")}\x03`)
+          .join("\r\n");
+        finish(framed);
+        return;
+      }
       finish(Buffer.concat(chunks).toString("utf-8"));
     });
 
     sock.on("timeout", () => {
       // For known framed responses, timeout before expected frames means
       // response truncation.
-      if (expectedFrames > 0 && etxCount < expectedFrames) {
+      if (expectedFrames > 0 && framedPayloads.length < expectedFrames) {
         fail(
           new PrintError(
             `Query to ${host}:${port} timed out before receiving complete ${trimmedCommand} response`,
@@ -652,15 +728,40 @@ export class TcpPrinter {
     opts?: BatchOptions,
     onProgress?: (progress: BatchProgress) => boolean | void
   ): Promise<BatchResult> {
+    const jobId = createJobId();
     const total = labels.length;
     const interval = opts?.statusInterval ?? 0;
     let sent = 0;
 
+    if (onProgress) {
+      const shouldContinue = onProgress({
+        sent: 0,
+        total,
+        phase: "queued",
+        jobId,
+      });
+      if (shouldContinue === false) {
+        onProgress({ sent: 0, total, phase: "aborted", jobId });
+        return {
+          sent: 0,
+          total,
+          jobId,
+          error: {
+            index: 0,
+            code: "UNKNOWN",
+            message: "Operation aborted",
+          },
+        };
+      }
+    }
+
     for (const label of labels) {
       if (opts?.signal?.aborted) {
+        onProgress?.({ sent, total, phase: "aborted", jobId });
         return {
           sent,
           total,
+          jobId,
           error: {
             index: sent,
             code: "UNKNOWN",
@@ -673,9 +774,11 @@ export class TcpPrinter {
         sent++;
       } catch (err) {
         const wrapped = wrapError(err);
+        onProgress?.({ sent, total, phase: "failed", jobId });
         return {
           sent,
           total,
+          jobId,
           error: {
             index: sent,
             code: wrapped.code,
@@ -693,13 +796,27 @@ export class TcpPrinter {
         }
       }
 
+      const phase: JobPhase = sent < total ? "sending" : "sent";
+
       if (onProgress) {
-        const shouldContinue = onProgress({ sent, total, status });
-        if (shouldContinue === false) break;
+        const shouldContinue = onProgress({ sent, total, status, phase, jobId });
+        if (shouldContinue === false) {
+          onProgress({ sent, total, phase: "aborted", jobId });
+          return {
+            sent,
+            total,
+            jobId,
+            error: {
+              index: sent,
+              code: "UNKNOWN",
+              message: "Operation aborted",
+            },
+          };
+        }
       }
     }
 
-    return { sent, total };
+    return { sent, total, jobId };
   }
 
   /**
@@ -719,6 +836,7 @@ export class TcpPrinter {
   ): Promise<void> {
     const start = performance.now();
     const deadline = start + timeout;
+    let lastStatus: PrinterStatus | undefined;
 
     while (true) {
       if (signal?.aborted) {
@@ -726,13 +844,23 @@ export class TcpPrinter {
       }
       if (performance.now() >= deadline) {
         throw new PrintError(
-          `Printer did not finish within ${timeout}ms`,
-          "TIMEOUT"
+          lastStatus
+            ? `Printer did not finish within ${timeout}ms (formatsInBuffer=${lastStatus.formatsInBuffer}, labelsRemaining=${lastStatus.labelsRemaining})`
+            : `Printer did not finish within ${timeout}ms`,
+          "TIMEOUT",
+          undefined,
+          lastStatus
+            ? {
+                formatsInBuffer: lastStatus.formatsInBuffer,
+                labelsRemaining: lastStatus.labelsRemaining,
+              }
+            : undefined
         );
       }
 
       try {
         const status = await this.getStatus({ signal });
+        lastStatus = status;
         if (status.formatsInBuffer === 0 && status.labelsRemaining === 0) {
           return;
         }
@@ -743,11 +871,20 @@ export class TcpPrinter {
       const remaining = deadline - performance.now();
       if (remaining <= 0) {
         throw new PrintError(
-          `Printer did not finish within ${timeout}ms`,
-          "TIMEOUT"
+          lastStatus
+            ? `Printer did not finish within ${timeout}ms (formatsInBuffer=${lastStatus.formatsInBuffer}, labelsRemaining=${lastStatus.labelsRemaining})`
+            : `Printer did not finish within ${timeout}ms`,
+          "TIMEOUT",
+          undefined,
+          lastStatus
+            ? {
+                formatsInBuffer: lastStatus.formatsInBuffer,
+                labelsRemaining: lastStatus.labelsRemaining,
+              }
+            : undefined
         );
       }
-      await new Promise((resolve, reject) => {
+      await new Promise<void>((resolve, reject) => {
         const waitMs = Math.min(pollInterval, remaining);
         const timer = setTimeout(() => {
           if (signal && onAbort) {

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "commands": [
+    { "command": "~HS", "expected_frame_count": 3 },
+    { "command": "~HI", "expected_frame_count": 1 }
+  ],
+  "host_status": {
+    "healthy_raw": "\u0002030,0,0,1245,000,0,0,0,000,0,0,0\u0003\r\n\u0002000,0,0,0,0,2,4,0,00000000,1,000\u0003\r\n\u00021234,0\u0003",
+    "truncated_raw": "\u0002030,0,0,1245,000,0,0,0,000,0,0,0\u0003\r\n\u0002000,0,0,0,0,2,4,0,00000000,1,000\u0003",
+    "expected_healthy": {
+      "paper_out": false,
+      "paused": false,
+      "head_up": false,
+      "ribbon_out": false,
+      "formats_in_buffer": 0,
+      "labels_remaining": 0,
+      "print_mode": "TearOff"
+    }
+  },
+  "printer_info": {
+    "raw": "\u0002ZTC ZD421-300dpi ZPL,V85.20.19,300,131072\u0003",
+    "expected": {
+      "model": "ZTC ZD421-300dpi ZPL",
+      "firmware": "V85.20.19",
+      "dpi": 300,
+      "memory_kb": 131072
+    }
+  }
+}

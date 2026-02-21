@@ -60,7 +60,7 @@ zpl explain ZPL1201
 
 | Flag | Description |
 |------|-------------|
-| `--output pretty\|json` | Output format (default: auto-detect TTY) |
+| `--output pretty\|json\|sarif` | Output format (default: auto-detect TTY). `sarif` emits SARIF 2.1.0 for CI (e.g. GitHub Code Scanning). |
 
 ## JSON Output Contracts
 

@@ -28,7 +28,10 @@ use zpl_toolchain_print_client::{
     SerialDataBits, SerialFlowControl, SerialParity, SerialPrinter, SerialSettings, SerialStopBits,
 };
 
-use crate::render::{Format, print_summary, render_diagnostics};
+use crate::render::{
+    Format, SarifArtifactInput, emit_sarif_run, print_summary, render_diagnostics,
+    render_diagnostics_sarif_multi, sarif_result, sarif_rule,
+};
 
 // ── Embedded tables (ADR 0005) ──────────────────────────────────────────
 
@@ -47,9 +50,9 @@ const EMBEDDED_TABLES_JSON: &str = include_str!(concat!(env!("OUT_DIR"), "/parse
 )]
 struct Cli {
     /// Output mode: "pretty" for coloured terminal output, "json" for
-    /// machine-readable JSON. Defaults to "pretty" when stdout is a TTY,
-    /// "json" otherwise.
-    #[arg(long, global = true, value_parser = ["pretty", "json"])]
+    /// machine-readable JSON, "sarif" for SARIF 2.1.0 (CI/tooling integration).
+    /// Defaults to "pretty" when stdout is a TTY, "json" otherwise.
+    #[arg(long, global = true, value_parser = ["pretty", "json", "sarif"])]
     output: Option<String>,
 
     #[command(subcommand)]
@@ -592,6 +595,10 @@ fn cmd_parse(file: &str, tables_path: Option<&str>, format: Format) -> Result<()
             });
             println!("{}", serde_json::to_string_pretty(&out)?);
         }
+        Format::Sarif => {
+            // SARIF 2.1.0 to stdout; no AST (SARIF is diagnostic-focused).
+            render_diagnostics(&input, file, &res.diagnostics, format);
+        }
         Format::Pretty => {
             // AST to stdout, diagnostics to stderr.
             println!("{}", to_pretty_json(&res.ast));
@@ -621,6 +628,9 @@ fn cmd_syntax_check(file: &str, tables_path: Option<&str>, format: Format) -> Re
                 "diagnostics": res.diagnostics,
             });
             println!("{}", serde_json::to_string_pretty(&out)?);
+        }
+        Format::Sarif => {
+            render_diagnostics(&input, file, &res.diagnostics, format);
         }
         Format::Pretty => {
             render_diagnostics(&input, file, &res.diagnostics, format);
@@ -677,6 +687,9 @@ fn cmd_lint(
                 "resolved_labels": vr.resolved_labels,
             });
             println!("{}", serde_json::to_string_pretty(&out)?);
+        }
+        Format::Sarif => {
+            render_diagnostics(&input, file, &vr.issues, format);
         }
         Format::Pretty => {
             render_diagnostics(&input, file, &vr.issues, format);
@@ -741,6 +754,10 @@ fn cmd_format(
 
     let already_formatted = formatted == input;
 
+    if format == Format::Sarif {
+        render_diagnostics(&input, file, &res.diagnostics, format);
+    }
+
     if check {
         if format == Format::Json {
             let out = serde_json::json!({
@@ -795,6 +812,8 @@ fn cmd_format(
                 "diagnostics": res.diagnostics,
             });
             println!("{}", serde_json::to_string_pretty(&out)?);
+        } else if format == Format::Sarif {
+            // SARIF already output above; nothing more
         } else {
             print!("{}", formatted);
         }
@@ -814,6 +833,9 @@ fn status_message(format: Format, condition: bool, if_true: &str, if_false: &str
                 serde_json::to_string_pretty(&out).expect("status JSON serialization cannot fail")
             );
         }
+        Format::Sarif => {
+            // Status already conveyed via exit code; SARIF output done earlier
+        }
         Format::Pretty => {
             eprintln!("{}: {}", msg, file);
         }
@@ -823,7 +845,7 @@ fn status_message(format: Format, condition: bool, if_true: &str, if_false: &str
 fn emit_cli_error(format: Format, err: &anyhow::Error) {
     let message = format!("{err:#}");
     match format {
-        Format::Json => {
+        Format::Json | Format::Sarif => {
             let out = serde_json::json!({
                 "success": false,
                 "error": "command_failed",
@@ -937,6 +959,7 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
 
     // ── Validate (unless --no-lint) ─────────────────────────────────
     let mut all_diagnostics: Vec<Diagnostic> = Vec::new();
+    let mut diagnostics_by_file: Vec<(String, Vec<Diagnostic>)> = Vec::new();
 
     if !no_lint {
         let tables = resolve_tables(tables_path)?.context(
@@ -985,32 +1008,37 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
                 has_warnings = true;
             }
 
+            diagnostics_by_file.push((path.clone(), vr.issues.clone()));
             all_diagnostics.extend(vr.issues);
         }
 
         if has_errors {
-            if format == Format::Json {
-                let out = serde_json::json!({
-                    "error": "validation_failed",
-                    "message": "aborting print due to validation errors",
-                    "diagnostics": all_diagnostics,
-                });
-                println!("{}", serde_json::to_string_pretty(&out)?);
-            } else {
-                eprintln!("error: aborting print due to validation errors");
+            match format {
+                Format::Json => {
+                    let out = serde_json::json!({
+                        "error": "validation_failed",
+                        "message": "aborting print due to validation errors",
+                        "diagnostics": all_diagnostics,
+                    });
+                    println!("{}", serde_json::to_string_pretty(&out)?);
+                }
+                Format::Sarif => render_print_sarif(&file_contents, &diagnostics_by_file),
+                Format::Pretty => eprintln!("error: aborting print due to validation errors"),
             }
             process::exit(1);
         }
         if strict && has_warnings {
-            if format == Format::Json {
-                let out = serde_json::json!({
-                    "error": "validation_warnings",
-                    "message": "aborting print due to warnings (--strict)",
-                    "diagnostics": all_diagnostics,
-                });
-                println!("{}", serde_json::to_string_pretty(&out)?);
-            } else {
-                eprintln!("error: aborting print due to warnings (--strict)");
+            match format {
+                Format::Json => {
+                    let out = serde_json::json!({
+                        "error": "validation_warnings",
+                        "message": "aborting print due to warnings (--strict)",
+                        "diagnostics": all_diagnostics,
+                    });
+                    println!("{}", serde_json::to_string_pretty(&out)?);
+                }
+                Format::Sarif => render_print_sarif(&file_contents, &diagnostics_by_file),
+                Format::Pretty => eprintln!("error: aborting print due to warnings (--strict)"),
             }
             process::exit(1);
         }
@@ -1104,6 +1132,9 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
                 }
                 println!("{}", serde_json::to_string_pretty(&out)?);
             }
+            Format::Sarif => {
+                render_print_sarif(&file_contents, &diagnostics_by_file);
+            }
             Format::Pretty => {
                 eprintln!(
                     "dry run: would print {} file(s) to {} ({})",
@@ -1152,16 +1183,23 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
 
     // ── Connect and run print session ─────────────────────────────
     let connection_err = |e: zpl_toolchain_print_client::PrintError| {
-        if format == Format::Json {
-            let out = serde_json::json!({
-                "error": "connection_failed",
-                "message": format!("failed to connect to printer '{}': {}", printer_addr, e),
-            });
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&out).expect("JSON serialization cannot fail")
-            );
-            process::exit(1);
+        match format {
+            Format::Json => {
+                let out = serde_json::json!({
+                    "error": "connection_failed",
+                    "message": format!("failed to connect to printer '{}': {}", printer_addr, e),
+                });
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&out).expect("JSON serialization cannot fail")
+                );
+                process::exit(1);
+            }
+            Format::Sarif => {
+                render_print_sarif(&file_contents, &diagnostics_by_file);
+                process::exit(1);
+            }
+            Format::Pretty => {}
         }
         anyhow::anyhow!("failed to connect to printer '{}': {}", printer_addr, e)
     };
@@ -1169,6 +1207,7 @@ fn cmd_print(opts: PrintOpts<'_>) -> Result<()> {
     let make_session = |transport: &'static str| SessionOpts {
         file_contents: &file_contents,
         all_diagnostics: &all_diagnostics,
+        diagnostics_by_file: &diagnostics_by_file,
         info,
         status,
         verify,
@@ -1298,6 +1337,7 @@ fn parse_usb_vidpid(s: &str) -> Result<(u16, u16)> {
 struct SessionOpts<'a> {
     file_contents: &'a [(String, String)],
     all_diagnostics: &'a [Diagnostic],
+    diagnostics_by_file: &'a [(String, Vec<Diagnostic>)],
     info: bool,
     status: bool,
     verify: bool,
@@ -1320,6 +1360,7 @@ fn run_print_session<P: StatusQuery>(
     let SessionOpts {
         file_contents,
         all_diagnostics,
+        diagnostics_by_file,
         info,
         status,
         verify,
@@ -1361,18 +1402,25 @@ fn run_print_session<P: StatusQuery>(
     let mut files_sent: Vec<&str> = Vec::new();
     for (path, content) in file_contents {
         if let Err(e) = printer.send_zpl(content) {
-            if format == Format::Json {
-                let out = serde_json::json!({
-                    "error": "send_failed",
-                    "message": format!("failed to send '{}': {}", path, e),
-                    "file": path,
-                    "files_sent": files_sent,
-                });
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&out).expect("JSON serialization cannot fail")
-                );
-                process::exit(1);
+            match format {
+                Format::Json => {
+                    let out = serde_json::json!({
+                        "error": "send_failed",
+                        "message": format!("failed to send '{}': {}", path, e),
+                        "file": path,
+                        "files_sent": files_sent,
+                    });
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&out).expect("JSON serialization cannot fail")
+                    );
+                    process::exit(1);
+                }
+                Format::Sarif => {
+                    render_print_sarif(file_contents, diagnostics_by_file);
+                    process::exit(1);
+                }
+                Format::Pretty => {}
             }
             return Err(anyhow::anyhow!("failed to send '{}': {}", path, e));
         }
@@ -1432,32 +1480,38 @@ fn run_print_session<P: StatusQuery>(
             }
             Err(e) => {
                 if verify {
-                    if format == Format::Json {
-                        let serial_hint = if transport == "serial" {
-                            " Selected serial endpoint may be write-only for responses; verify the printer/adapter supports bidirectional ~HS over this port."
-                        } else {
-                            ""
-                        };
-                        json_result["success"] = serde_json::json!(false);
-                        json_result["error"] = serde_json::json!("verify_failed");
-                        json_result["message"] = serde_json::json!(format!(
-                            "post-send verification failed: could not query printer status (~HS): {}.{}",
-                            e, serial_hint
-                        ));
-                        println!(
-                            "{}",
-                            serde_json::to_string_pretty(&json_result)
-                                .expect("JSON serialization cannot fail")
-                        );
-                    } else {
-                        eprintln!(
-                            "error: post-send verification failed: could not query printer status (~HS): {}",
-                            e
-                        );
-                        if transport == "serial" {
-                            eprintln!(
-                                "hint: this serial endpoint may be write-only for responses; use a bidirectional serial/SPP port for --status/--wait/--verify."
+                    match format {
+                        Format::Json => {
+                            let serial_hint = if transport == "serial" {
+                                " Selected serial endpoint may be write-only for responses; verify the printer/adapter supports bidirectional ~HS over this port."
+                            } else {
+                                ""
+                            };
+                            json_result["success"] = serde_json::json!(false);
+                            json_result["error"] = serde_json::json!("verify_failed");
+                            json_result["message"] = serde_json::json!(format!(
+                                "post-send verification failed: could not query printer status (~HS): {}.{}",
+                                e, serial_hint
+                            ));
+                            println!(
+                                "{}",
+                                serde_json::to_string_pretty(&json_result)
+                                    .expect("JSON serialization cannot fail")
                             );
+                        }
+                        Format::Sarif => {
+                            render_print_sarif(file_contents, diagnostics_by_file);
+                        }
+                        Format::Pretty => {
+                            eprintln!(
+                                "error: post-send verification failed: could not query printer status (~HS): {}",
+                                e
+                            );
+                            if transport == "serial" {
+                                eprintln!(
+                                    "hint: this serial endpoint may be write-only for responses; use a bidirectional serial/SPP port for --status/--wait/--verify."
+                                );
+                            }
                         }
                     }
                     process::exit(1);
@@ -1495,25 +1549,31 @@ fn run_print_session<P: StatusQuery>(
                 }
             }
             Err(e) => {
-                if format == Format::Json {
-                    json_result["success"] = serde_json::json!(false);
-                    json_result["error"] = serde_json::json!("wait_timeout");
-                    json_result["message"] =
-                        serde_json::json!(format!("wait for completion failed: {}", e));
-                    println!(
-                        "{}",
-                        serde_json::to_string_pretty(&json_result)
-                            .expect("JSON serialization cannot fail")
-                    );
-                } else {
-                    eprintln!("error: wait for completion failed: {}", e);
-                    if transport == "serial" {
-                        eprintln!(
-                            "hint: wait polling uses ~HS status reads. If this times out on serial/Bluetooth, check bidirectional support and serial settings."
+                match format {
+                    Format::Json => {
+                        json_result["success"] = serde_json::json!(false);
+                        json_result["error"] = serde_json::json!("wait_timeout");
+                        json_result["message"] =
+                            serde_json::json!(format!("wait for completion failed: {}", e));
+                        println!(
+                            "{}",
+                            serde_json::to_string_pretty(&json_result)
+                                .expect("JSON serialization cannot fail")
                         );
-                        eprintln!(
-                            "hint: bootstrap serial via TCP and persist: ^XA^SC9600,8,N,1,X,N^JUS^XZ"
-                        );
+                    }
+                    Format::Sarif => {
+                        render_print_sarif(file_contents, diagnostics_by_file);
+                    }
+                    Format::Pretty => {
+                        eprintln!("error: wait for completion failed: {}", e);
+                        if transport == "serial" {
+                            eprintln!(
+                                "hint: wait polling uses ~HS status reads. If this times out on serial/Bluetooth, check bidirectional support and serial settings."
+                            );
+                            eprintln!(
+                                "hint: bootstrap serial via TCP and persist: ^XA^SC9600,8,N,1,X,N^JUS^XZ"
+                            );
+                        }
                     }
                 }
                 process::exit(1);
@@ -1529,35 +1589,41 @@ fn run_print_session<P: StatusQuery>(
             match printer.query_status() {
                 Ok(hs) => hs,
                 Err(e) => {
-                    if format == Format::Json {
-                        let serial_hint = if transport == "serial" {
-                            " Selected serial endpoint may be write-only for responses; verify the printer/adapter supports bidirectional ~HS over this port."
-                        } else {
-                            ""
-                        };
-                        json_result["success"] = serde_json::json!(false);
-                        json_result["error"] = serde_json::json!("verify_failed");
-                        json_result["message"] = serde_json::json!(format!(
-                            "post-send verification failed: could not query printer status (~HS): {}.{}",
-                            e, serial_hint
-                        ));
-                        println!(
-                            "{}",
-                            serde_json::to_string_pretty(&json_result)
-                                .expect("JSON serialization cannot fail")
-                        );
-                    } else {
-                        eprintln!(
-                            "error: post-send verification failed: could not query printer status (~HS): {}",
-                            e
-                        );
-                        if transport == "serial" {
-                            eprintln!(
-                                "hint: this serial endpoint may be write-only for responses, or serial settings/protocol may not match printer."
+                    match format {
+                        Format::Json => {
+                            let serial_hint = if transport == "serial" {
+                                " Selected serial endpoint may be write-only for responses; verify the printer/adapter supports bidirectional ~HS over this port."
+                            } else {
+                                ""
+                            };
+                            json_result["success"] = serde_json::json!(false);
+                            json_result["error"] = serde_json::json!("verify_failed");
+                            json_result["message"] = serde_json::json!(format!(
+                                "post-send verification failed: could not query printer status (~HS): {}.{}",
+                                e, serial_hint
+                            ));
+                            println!(
+                                "{}",
+                                serde_json::to_string_pretty(&json_result)
+                                    .expect("JSON serialization cannot fail")
                             );
+                        }
+                        Format::Sarif => {
+                            render_print_sarif(file_contents, diagnostics_by_file);
+                        }
+                        Format::Pretty => {
                             eprintln!(
-                                "hint: bootstrap serial via TCP and persist: ^XA^SC9600,8,N,1,X,N^JUS^XZ"
+                                "error: post-send verification failed: could not query printer status (~HS): {}",
+                                e
                             );
+                            if transport == "serial" {
+                                eprintln!(
+                                    "hint: this serial endpoint may be write-only for responses, or serial settings/protocol may not match printer."
+                                );
+                                eprintln!(
+                                    "hint: bootstrap serial via TCP and persist: ^XA^SC9600,8,N,1,X,N^JUS^XZ"
+                                );
+                            }
                         }
                     }
                     process::exit(1);
@@ -1592,25 +1658,31 @@ fn run_print_session<P: StatusQuery>(
         }
 
         if !hard_faults.is_empty() {
-            if format == Format::Json {
-                json_result["success"] = serde_json::json!(false);
-                json_result["error"] = serde_json::json!("verify_failed");
-                json_result["verify_faults"] =
-                    serde_json::to_value(&hard_faults).unwrap_or_default();
-                json_result["message"] = serde_json::json!(format!(
-                    "post-send verification found printer fault flags: {}",
-                    hard_faults.join(", ")
-                ));
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(&json_result)
-                        .expect("JSON serialization cannot fail")
-                );
-            } else {
-                eprintln!(
-                    "error: post-send verification found printer fault flags: {}",
-                    hard_faults.join(", ")
-                );
+            match format {
+                Format::Json => {
+                    json_result["success"] = serde_json::json!(false);
+                    json_result["error"] = serde_json::json!("verify_failed");
+                    json_result["verify_faults"] =
+                        serde_json::to_value(&hard_faults).unwrap_or_default();
+                    json_result["message"] = serde_json::json!(format!(
+                        "post-send verification found printer fault flags: {}",
+                        hard_faults.join(", ")
+                    ));
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&json_result)
+                            .expect("JSON serialization cannot fail")
+                    );
+                }
+                Format::Sarif => {
+                    render_print_sarif(file_contents, diagnostics_by_file);
+                }
+                Format::Pretty => {
+                    eprintln!(
+                        "error: post-send verification found printer fault flags: {}",
+                        hard_faults.join(", ")
+                    );
+                }
             }
             process::exit(1);
         }
@@ -1625,6 +1697,9 @@ fn run_print_session<P: StatusQuery>(
             }
             println!("{}", serde_json::to_string_pretty(&json_result)?);
         }
+        Format::Sarif => {
+            render_print_sarif(file_contents, diagnostics_by_file);
+        }
         Format::Pretty => {
             eprintln!(
                 "print complete: {} file(s) sent to {}",
@@ -1634,6 +1709,27 @@ fn run_print_session<P: StatusQuery>(
         }
     }
     Ok(())
+}
+
+fn render_print_sarif(
+    file_contents: &[(String, String)],
+    diagnostics_by_file: &[(String, Vec<Diagnostic>)],
+) {
+    use std::collections::HashMap;
+
+    let by_path: HashMap<&str, &[Diagnostic]> = diagnostics_by_file
+        .iter()
+        .map(|(path, diagnostics)| (path.as_str(), diagnostics.as_slice()))
+        .collect();
+    let entries: Vec<SarifArtifactInput<'_>> = file_contents
+        .iter()
+        .map(|(path, content)| SarifArtifactInput {
+            source: content,
+            artifact_uri: path,
+            diagnostics: by_path.get(path.as_str()).copied().unwrap_or(&[]),
+        })
+        .collect();
+    render_diagnostics_sarif_multi(&entries);
 }
 
 #[cfg(feature = "serial")]
@@ -1915,7 +2011,7 @@ fn cmd_serial_probe(opts: SerialProbeOpts<'_>) -> Result<()> {
             }
             Err(e) => {
                 open_failures += 1;
-                if format == Format::Json {
+                if format != Format::Pretty {
                     probe_json["success"] = serde_json::json!(false);
                     probe_json["stage"] = serde_json::json!("connect");
                     probe_json["message"] =
@@ -1924,7 +2020,11 @@ fn cmd_serial_probe(opts: SerialProbeOpts<'_>) -> Result<()> {
                         serde_json::json!(is_timeout_error(&e.to_string()));
                     probe_json["open_successes"] = serde_json::json!(open_successes);
                     probe_json["open_failures"] = serde_json::json!(open_failures);
-                    println!("{}", serde_json::to_string_pretty(&probe_json)?);
+                    match format {
+                        Format::Json => println!("{}", serde_json::to_string_pretty(&probe_json)?),
+                        Format::Sarif => render_serial_probe_sarif(&probe_json)?,
+                        Format::Pretty => {}
+                    }
                     process::exit(1);
                 }
                 anyhow::bail!("failed to open serial port '{}': {}", port, e);
@@ -2210,114 +2310,123 @@ fn cmd_serial_probe(opts: SerialProbeOpts<'_>) -> Result<()> {
         status_ok || info_ok || test_label_sent
     };
 
-    if format == Format::Json {
-        let probe_finished_ms = now_ms();
-        let mut timeout_stage_hits_json = timeout_stage_hits;
-        timeout_stage_hits_json.sort();
-        timeout_stage_hits_json.dedup();
-        probe_json["success"] = serde_json::json!(success);
-        probe_json["status_successes"] = serde_json::json!(status_successes);
-        probe_json["info_successes"] = serde_json::json!(info_successes);
-        probe_json["status_failures"] = serde_json::json!(status_failures);
-        probe_json["info_failures"] = serde_json::json!(info_failures);
-        probe_json["open_successes"] = serde_json::json!(open_successes);
-        probe_json["open_failures"] = serde_json::json!(open_failures);
-        probe_json["test_label_successes"] = serde_json::json!(test_label_successes);
-        probe_json["test_label_failures"] = serde_json::json!(test_label_failures);
-        probe_json["attempts_with_any_success"] = serde_json::json!(attempts_with_any_success);
-        probe_json["success_ratio"] = serde_json::json!(success_ratio);
-        probe_json["timeout_stages"] = serde_json::json!(timeout_stage_hits_json);
-        probe_json["diagnosis"] = serde_json::json!(diagnosis);
-        probe_json["attempts"] = serde_json::Value::Array(per_attempt);
-        probe_json["findings"] = serde_json::to_value(findings).unwrap_or_default();
-        probe_json["finished_at_ms"] = serde_json::json!(probe_finished_ms);
-        probe_json["elapsed_ms"] =
-            serde_json::json!(probe_finished_ms.saturating_sub(probe_started_ms));
-        probe_json["summary"] = serde_json::json!({
-            "attempts_total": repeat,
-            "attempts_with_status_ok": status_successes,
-            "attempts_with_info_ok": info_successes,
-            "attempts_with_any_success": attempts_with_any_success,
-            "success_ratio": success_ratio,
-            "attempts_with_open_failure": open_failures,
-            "attempts_with_status_failure": status_failures,
-            "attempts_with_info_failure": info_failures,
-            "attempts_with_test_label_success": test_label_successes,
-            "attempts_with_test_label_failure": test_label_failures
-        });
-        if compare_tty_cu && let Some(mapped) = mapped_tty_cu_peer(port) {
-            probe_json["peer_probe"] = probe_peer_once(&mapped);
+    match format {
+        Format::Json | Format::Sarif => {
+            let probe_finished_ms = now_ms();
+            let mut timeout_stage_hits_json = timeout_stage_hits;
+            timeout_stage_hits_json.sort();
+            timeout_stage_hits_json.dedup();
+            probe_json["success"] = serde_json::json!(success);
+            probe_json["status_successes"] = serde_json::json!(status_successes);
+            probe_json["info_successes"] = serde_json::json!(info_successes);
+            probe_json["status_failures"] = serde_json::json!(status_failures);
+            probe_json["info_failures"] = serde_json::json!(info_failures);
+            probe_json["open_successes"] = serde_json::json!(open_successes);
+            probe_json["open_failures"] = serde_json::json!(open_failures);
+            probe_json["test_label_successes"] = serde_json::json!(test_label_successes);
+            probe_json["test_label_failures"] = serde_json::json!(test_label_failures);
+            probe_json["attempts_with_any_success"] = serde_json::json!(attempts_with_any_success);
+            probe_json["success_ratio"] = serde_json::json!(success_ratio);
+            probe_json["timeout_stages"] = serde_json::json!(timeout_stage_hits_json);
+            probe_json["diagnosis"] = serde_json::json!(diagnosis);
+            probe_json["attempts"] = serde_json::Value::Array(per_attempt);
+            probe_json["findings"] = serde_json::to_value(findings).unwrap_or_default();
+            probe_json["finished_at_ms"] = serde_json::json!(probe_finished_ms);
+            probe_json["elapsed_ms"] =
+                serde_json::json!(probe_finished_ms.saturating_sub(probe_started_ms));
+            probe_json["summary"] = serde_json::json!({
+                "attempts_total": repeat,
+                "attempts_with_status_ok": status_successes,
+                "attempts_with_info_ok": info_successes,
+                "attempts_with_any_success": attempts_with_any_success,
+                "success_ratio": success_ratio,
+                "attempts_with_open_failure": open_failures,
+                "attempts_with_status_failure": status_failures,
+                "attempts_with_info_failure": info_failures,
+                "attempts_with_test_label_success": test_label_successes,
+                "attempts_with_test_label_failure": test_label_failures
+            });
+            if compare_tty_cu && let Some(mapped) = mapped_tty_cu_peer(port) {
+                probe_json["peer_probe"] = probe_peer_once(&mapped);
+            }
+            match format {
+                Format::Json => println!("{}", serde_json::to_string_pretty(&probe_json)?),
+                Format::Sarif => render_serial_probe_sarif(&probe_json)?,
+                Format::Pretty => {}
+            }
         }
-        println!("{}", serde_json::to_string_pretty(&probe_json)?);
-    } else {
-        eprintln!("serial probe report");
-        eprintln!("  port:      {}", port);
-        eprintln!("  baud:      {}", baud);
-        eprintln!(
-            "  settings:  data={:?} parity={:?} stop={:?} flow={:?}",
-            settings.data_bits, settings.parity, settings.stop_bits, settings.flow_control
-        );
-        eprintln!("  repeat:    {}", repeat);
-        if reopen_each_attempt {
-            eprintln!("  reopen:    each attempt");
-        }
-        if reopen_on_broken_pipe {
-            eprintln!("  recovery:  reopen on broken pipe");
-        }
-        if interval_ms > 0 {
-            eprintln!("  interval:  {} ms", interval_ms);
-        }
-        if require_all_attempts {
-            eprintln!("  success:   require all attempts");
-        } else if min_success_ratio > 0.0 {
-            eprintln!("  success:   min ratio {:.2}", min_success_ratio);
-        }
-        if compare_tty_cu && let Some(mapped) = mapped_tty_cu_peer(port) {
-            eprintln!("  peer hint: {}", mapped);
-        }
-        for finding in findings {
-            eprintln!("  - {}", finding);
-        }
-        eprintln!("  diagnosis: {}", diagnosis);
-        if diagnosis == "write_path_only_or_response_blocked" {
-            eprintln!("  hint: endpoint may allow writes but not return STX/ETX status frames.");
+        Format::Pretty => {
+            eprintln!("serial probe report");
+            eprintln!("  port:      {}", port);
+            eprintln!("  baud:      {}", baud);
             eprintln!(
-                "  hint: verify BT profile/channel and printer serial config (^SC ... ^JUS)."
+                "  settings:  data={:?} parity={:?} stop={:?} flow={:?}",
+                settings.data_bits, settings.parity, settings.stop_bits, settings.flow_control
             );
-        }
-        if compare_tty_cu && let Some(mapped) = mapped_tty_cu_peer(port) {
-            let peer = probe_peer_once(&mapped);
-            eprintln!("  peer probe:");
-            let peer_open_error = peer.get("open_error").and_then(|v| v.as_str());
-            if let Some(err) = peer_open_error {
-                eprintln!("    {} open failed: {}", mapped, err);
-            } else {
-                let diagnosis = peer
-                    .get("diagnosis")
-                    .and_then(|v| v.as_str())
-                    .unwrap_or("(unknown)");
-                let status_successes = peer
-                    .get("status_successes")
-                    .and_then(|v| v.as_u64())
-                    .unwrap_or(0);
-                let info_successes = peer
-                    .get("info_successes")
-                    .and_then(|v| v.as_u64())
-                    .unwrap_or(0);
-                let attempts_with_any_success = peer
-                    .get("attempts_with_any_success")
-                    .and_then(|v| v.as_u64())
-                    .unwrap_or(0);
-                let repeat_total = peer.get("repeat").and_then(|v| v.as_u64()).unwrap_or(0);
+            eprintln!("  repeat:    {}", repeat);
+            if reopen_each_attempt {
+                eprintln!("  reopen:    each attempt");
+            }
+            if reopen_on_broken_pipe {
+                eprintln!("  recovery:  reopen on broken pipe");
+            }
+            if interval_ms > 0 {
+                eprintln!("  interval:  {} ms", interval_ms);
+            }
+            if require_all_attempts {
+                eprintln!("  success:   require all attempts");
+            } else if min_success_ratio > 0.0 {
+                eprintln!("  success:   min ratio {:.2}", min_success_ratio);
+            }
+            if compare_tty_cu && let Some(mapped) = mapped_tty_cu_peer(port) {
+                eprintln!("  peer hint: {}", mapped);
+            }
+            for finding in findings {
+                eprintln!("  - {}", finding);
+            }
+            eprintln!("  diagnosis: {}", diagnosis);
+            if diagnosis == "write_path_only_or_response_blocked" {
                 eprintln!(
-                    "    {} diagnosis={} status_ok={} info_ok={} attempt_success={}/{}",
-                    mapped,
-                    diagnosis,
-                    status_successes,
-                    info_successes,
-                    attempts_with_any_success,
-                    repeat_total
+                    "  hint: endpoint may allow writes but not return STX/ETX status frames."
                 );
+                eprintln!(
+                    "  hint: verify BT profile/channel and printer serial config (^SC ... ^JUS)."
+                );
+            }
+            if compare_tty_cu && let Some(mapped) = mapped_tty_cu_peer(port) {
+                let peer = probe_peer_once(&mapped);
+                eprintln!("  peer probe:");
+                let peer_open_error = peer.get("open_error").and_then(|v| v.as_str());
+                if let Some(err) = peer_open_error {
+                    eprintln!("    {} open failed: {}", mapped, err);
+                } else {
+                    let diagnosis = peer
+                        .get("diagnosis")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("(unknown)");
+                    let status_successes = peer
+                        .get("status_successes")
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(0);
+                    let info_successes = peer
+                        .get("info_successes")
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(0);
+                    let attempts_with_any_success = peer
+                        .get("attempts_with_any_success")
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(0);
+                    let repeat_total = peer.get("repeat").and_then(|v| v.as_u64()).unwrap_or(0);
+                    eprintln!(
+                        "    {} diagnosis={} status_ok={} info_ok={} attempt_success={}/{}",
+                        mapped,
+                        diagnosis,
+                        status_successes,
+                        info_successes,
+                        attempts_with_any_success,
+                        repeat_total
+                    );
+                }
             }
         }
     }
@@ -2479,6 +2588,9 @@ fn cmd_bt_status(
                 "variables": results
             });
             println!("{}", serde_json::to_string_pretty(&out)?);
+        }
+        Format::Sarif => {
+            render_bt_status_sarif(&results, !had_errors)?;
         }
         Format::Pretty => {
             eprintln!("bluetooth status via tcp ({})", addr);
@@ -2675,6 +2787,9 @@ fn cmd_explain(id: &str, format: Format) -> Result<()> {
             });
             println!("{}", serde_json::to_string_pretty(&out)?);
         }
+        Format::Sarif => {
+            render_explain_sarif(id, diag::explain(id))?;
+        }
         Format::Pretty => {
             // Explanation is the expected output — write to stdout, not stderr.
             if let Some(text) = diag::explain(id) {
@@ -2821,6 +2936,9 @@ fn cmd_doctor(opts: DoctorOpts<'_>) -> Result<()> {
             });
             println!("{}", serde_json::to_string_pretty(&out)?);
         }
+        Format::Sarif => {
+            render_doctor_sarif(success, &tables_json, &profile_json, &printer_json)?;
+        }
         Format::Pretty => {
             eprintln!("zpl doctor - environment diagnostics");
             let tables_ok = tables_json
@@ -2883,6 +3001,165 @@ fn cmd_doctor(opts: DoctorOpts<'_>) -> Result<()> {
     }
 
     Ok(())
+}
+
+fn render_doctor_sarif(
+    success: bool,
+    tables_json: &serde_json::Value,
+    profile_json: &serde_json::Value,
+    printer_json: &serde_json::Value,
+) -> Result<()> {
+    let mut results = Vec::new();
+    let mut rules = Vec::new();
+
+    let mut push_result = |rule_id: &'static str, message: String| {
+        rules.push(sarif_rule(rule_id, rule_id));
+        results.push(sarif_result(rule_id, "error", message));
+    };
+
+    if tables_json
+        .get("ok")
+        .and_then(serde_json::Value::as_bool)
+        .is_some_and(|ok| !ok)
+    {
+        let message = tables_json
+            .get("message")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("parser tables check failed")
+            .to_string();
+        push_result("DOCTOR_TABLES_UNAVAILABLE", message);
+    }
+
+    if profile_json != &serde_json::Value::Null
+        && profile_json
+            .get("ok")
+            .and_then(serde_json::Value::as_bool)
+            .is_some_and(|ok| !ok)
+    {
+        let message = profile_json
+            .get("message")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("profile check failed")
+            .to_string();
+        push_result("DOCTOR_PROFILE_INVALID", message);
+    }
+
+    if printer_json != &serde_json::Value::Null
+        && printer_json
+            .get("ok")
+            .and_then(serde_json::Value::as_bool)
+            .is_some_and(|ok| !ok)
+    {
+        let message = printer_json
+            .get("message")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("printer reachability check failed")
+            .to_string();
+        push_result("DOCTOR_PRINTER_UNREACHABLE", message);
+    }
+
+    emit_sarif_run("zpl-toolchain-doctor", rules, results, success, None)
+}
+
+fn render_explain_sarif(id: &str, explanation: Option<&'static str>) -> Result<()> {
+    let mut rules = Vec::new();
+    let mut results = Vec::new();
+    if explanation.is_none() {
+        rules.push(sarif_rule(
+            "EXPLAIN_UNKNOWN_DIAGNOSTIC_ID",
+            "Unknown diagnostic ID passed to explain command",
+        ));
+        results.push(sarif_result(
+            "EXPLAIN_UNKNOWN_DIAGNOSTIC_ID",
+            "warning",
+            format!("No explanation available for diagnostic ID '{id}'"),
+        ));
+    }
+    let mut extra = serde_json::Map::new();
+    extra.insert(
+        "automationDetails".to_string(),
+        serde_json::json!({
+            "id": format!("zpl explain {id}"),
+            "description": {
+                "text": explanation.unwrap_or("No explanation available")
+            }
+        }),
+    );
+    emit_sarif_run("zpl-toolchain-explain", rules, results, true, Some(extra))
+}
+
+#[cfg(feature = "serial")]
+fn render_serial_probe_sarif(probe_json: &serde_json::Value) -> Result<()> {
+    let mut results = Vec::new();
+    let mut rules = Vec::new();
+    if probe_json
+        .get("success")
+        .and_then(serde_json::Value::as_bool)
+        .is_some_and(|ok| !ok)
+    {
+        let diagnosis = probe_json
+            .get("diagnosis")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("serial_probe_failed");
+        let message = probe_json
+            .get("message")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("serial probe failed")
+            .to_string();
+        let port = probe_json
+            .get("port")
+            .and_then(serde_json::Value::as_str)
+            .unwrap_or("(unknown)");
+        rules.push(sarif_rule(
+            "SERIAL_PROBE_FAILED",
+            "Serial transport probe failed",
+        ));
+        results.push(sarif_result(
+            "SERIAL_PROBE_FAILED",
+            "error",
+            format!("{message} (port={port}, diagnosis={diagnosis})"),
+        ));
+    }
+    emit_sarif_run(
+        "zpl-toolchain-serial-probe",
+        rules,
+        results,
+        probe_json
+            .get("success")
+            .and_then(serde_json::Value::as_bool)
+            .unwrap_or(false),
+        None,
+    )
+}
+
+#[cfg(feature = "tcp")]
+fn render_bt_status_sarif(results: &[serde_json::Value], success: bool) -> Result<()> {
+    let mut sarif_results = Vec::new();
+    let mut rules = Vec::new();
+    for value in results {
+        if let Some(error) = value.get("error").and_then(serde_json::Value::as_str) {
+            let name = value
+                .get("name")
+                .and_then(serde_json::Value::as_str)
+                .unwrap_or("unknown");
+            let rule_id = format!(
+                "BT_STATUS_{}_FAILED",
+                name.replace('.', "_").to_ascii_uppercase()
+            );
+            rules.push(sarif_rule(
+                &rule_id,
+                &format!("Bluetooth SGD query failed for {name}"),
+            ));
+            sarif_results.push(sarif_result(&rule_id, "error", format!("{name}: {error}")));
+        }
+    }
+    emit_sarif_run(
+        "zpl-toolchain-bt-status",
+        rules,
+        sarif_results,
+        success,
+        None,
+    )
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────

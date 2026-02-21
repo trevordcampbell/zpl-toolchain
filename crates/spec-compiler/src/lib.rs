@@ -9,74 +9,10 @@ use anyhow::{Context, Result};
 use serde_json::Value;
 use std::fs;
 use std::path::Path;
+pub use zpl_toolchain_jsonc_strip::strip_jsonc;
 
 /// The current spec schema version that this compiler expects.
 pub const SCHEMA_VERSION: &str = "1.1.1";
-
-/// Strip `//` and `/* */` comments from JSONC input.
-///
-/// Correctly handles:
-/// - Escaped quotes inside strings (`\"`)
-/// - Comment-like sequences inside strings (e.g., `"http://example.com"`)
-/// - Backslash escapes (`\\`)
-/// - Multi-byte UTF-8 characters (operates on `char` iterators, not raw bytes)
-pub fn strip_jsonc(input: &str) -> String {
-    let mut out = String::with_capacity(input.len());
-    let chars: Vec<char> = input.chars().collect();
-    let len = chars.len();
-    let mut i = 0usize;
-    let mut in_str = false;
-
-    while i < len {
-        let c = chars[i];
-
-        if in_str {
-            out.push(c);
-            if c == '\\' && i + 1 < len {
-                // Escaped character — push the next char verbatim and skip it
-                i += 1;
-                out.push(chars[i]);
-            } else if c == '"' {
-                in_str = false;
-            }
-            i += 1;
-            continue;
-        }
-
-        // Outside a string
-        if c == '"' {
-            in_str = true;
-            out.push(c);
-            i += 1;
-            continue;
-        }
-
-        if c == '/' && i + 1 < len {
-            let c2 = chars[i + 1];
-            // Line comment
-            if c2 == '/' {
-                i += 2;
-                while i < len && chars[i] != '\n' {
-                    i += 1;
-                }
-                continue;
-            }
-            // Block comment
-            if c2 == '*' {
-                i += 2;
-                while i + 1 < len && !(chars[i] == '*' && chars[i + 1] == '/') {
-                    i += 1;
-                }
-                i = (i + 2).min(len);
-                continue;
-            }
-        }
-
-        out.push(c);
-        i += 1;
-    }
-    out
-}
 
 /// Parse a JSONC string into a `serde_json::Value`, stripping comments first.
 pub fn parse_jsonc(input: &str) -> Result<Value> {

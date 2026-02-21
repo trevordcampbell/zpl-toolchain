@@ -15,7 +15,7 @@
       ],
       "effects": { "sets": ["parser.delimiter"] },
       "constraints": [
-        { "kind": "note", "message": "Takes immediate effect. Use ^JUS to persist across power cycles." }
+        { "kind": "note", "audience": "contextual", "message": "Takes immediate effect. Use ^JUS to persist across power cycles." }
       ],
       "docs": "Changes the parameter delimiter character from the default comma (,) to any other ASCII character. Affects all subsequent commands that use parameter separation."
     }

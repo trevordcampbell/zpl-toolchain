@@ -31,7 +31,7 @@
       ],
       "effects": { "sets": ["sensor.web", "sensor.media", "sensor.ribbon", "sensor.labelLength", "sensor.mediaLed", "sensor.ribbonLed", "sensor.mark", "sensor.markMedia", "sensor.markLed"] },
       "constraints": [
-        { "kind": "note", "message": "This command is ignored on the HC100 printer. Maximum values for parameters depend on printer platform." }
+        { "kind": "note", "audience": "contextual", "message": "This command is ignored on the HC100 printer. Maximum values for parameters depend on printer platform." }
       ],
       "docs": "Changes the values for media, web, ribbon, and label length sensors set during the media calibration process."
     }

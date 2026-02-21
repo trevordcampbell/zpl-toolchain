@@ -43,12 +43,14 @@
           "kind": "note",
           "expr": "when:arg:aIsValue:2",
           "severity": "info",
+          "audience": "contextual",
           "message": "A single ^SO2 command is supported per label; use ^SO3 for additional offsets."
         },
         {
           "kind": "note",
           "expr": "when:arg:aEmpty",
           "severity": "info",
+          "audience": "contextual",
           "message": "The clock_set value must be specified."
         }
       ],

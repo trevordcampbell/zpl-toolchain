@@ -10,7 +10,8 @@
         "ms-azuretools.vscode-docker",
         "vadimcn.vscode-lldb",
         "rust-lang.rust-analyzer",
-        "tamasfe.even-better-toml"
+        "tamasfe.even-better-toml",
+        "trevordcampbell.zpl-toolchain"
       ],
       "settings": {
         "editor.tabSize": 2,

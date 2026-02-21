@@ -16,7 +16,7 @@
       ],
       "effects": { "sets": ["label.top"] },
       "constraints": [
-        { "kind": "note", "message": "Range varies by printer: HC100 0-120, XiIIIPlus 600dpi -240 to 240, all others -120 to 120. Value shown on front panel is double the ZPL value." }
+        { "kind": "note", "audience": "contextual", "message": "Range varies by printer: HC100 0-120, XiIIIPlus 600dpi -240 to 240, all others -120 to 120. Value shown on front panel is double the ZPL value." }
       ],
       "docs": "Moves the entire label format up or down relative to the top edge of the label for fine-tuning position without changing other parameters."
     }

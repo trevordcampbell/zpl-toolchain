@@ -18,6 +18,10 @@
         { "name": "justification", "key": "z", "type": "enum", "enum": ["0", "1", "2"], "optional": true, "defaultFrom": "^FW", "defaultFromStateKey": "field.justification",
           "doc": "Field justification. 0=left, 1=right, 2=auto." }
       ],
+      "structuralRules": [
+        { "kind": "positionBounds", "action": "trackFieldOrigin" },
+        { "kind": "positionBounds", "action": "validateFieldOrigin" }
+      ],
       "constraints": [
         { "kind": "order", "expr": "before:^FS", "message": "^FT should appear before its ^FS", "severity": "info" }
       ],

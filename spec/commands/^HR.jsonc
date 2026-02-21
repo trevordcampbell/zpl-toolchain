@@ -32,7 +32,7 @@
           "doc": "End of antenna range. Values depend on printer model. Default: printer model dependent." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Tag calibration can take up to 5 minutes. Load RFID media, calibrate printer, close printhead, and feed at least one label before running. Results are returned to the host computer." }
+        { "kind": "note", "audience": "contextual", "message": "Tag calibration can take up to 5 minutes. Load RFID media, calibrate printer, close printhead, and feed at least one label before running. Results are returned to the host computer." }
       ],
       "docs": "Initiates RFID tag calibration to determine optimal programming position, antenna element, and read/write power levels for the RFID media being used."
     }

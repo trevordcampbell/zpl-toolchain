@@ -42,6 +42,16 @@ export interface PrintResult {
  * Contains all 24 fields from the three response lines,
  * matching the Rust `HostStatus` struct for full parity.
  */
+export type PrintMode =
+  | "TearOff"
+  | "PeelOff"
+  | "Rewind"
+  | "Applicator"
+  | "Cutter"
+  | "DelayedCutter"
+  | "Linerless"
+  | "Unknown";
+
 export interface PrinterStatus {
   // ── Convenience ────────────────────────────────────────────────────
   /** Printer is ready to accept data (not paused, head closed, media loaded). */
@@ -82,8 +92,8 @@ export interface PrinterStatus {
   ribbonOut: boolean;
   /** Thermal transfer mode active (field 3). */
   thermalTransferMode: boolean;
-  /** Print mode code (field 4): 0=tear-off, 1=peel-off, 2=rewind, etc. */
-  printMode: number;
+  /** Print mode (field 4). */
+  printMode: PrintMode;
   /** Print width mode (field 5). */
   printWidthMode: number;
   /** Label waiting to be taken (field 6). */
@@ -104,6 +114,9 @@ export interface PrinterStatus {
   /** The raw ~HS response string for advanced inspection. */
   raw: string;
 }
+
+/** Parsing mode for `~HS` status responses. */
+export type StatusParseMode = "lenient" | "strict";
 
 // ─── Browser Print SDK types ─────────────────────────────────────────────────
 
@@ -197,6 +210,37 @@ export interface ValidateOptions {
   strict?: boolean;
 }
 
+// ─── Job lifecycle (F13) ───────────────────────────────────────────────────────
+
+/**
+ * Opaque identifier for a logical print job (single label or batch).
+ * See contracts/fixtures/print-job-lifecycle.v1.json.
+ */
+export type JobId = string;
+
+/**
+ * Lifecycle phase of a print job.
+ * Aligned with contracts/fixtures/print-job-lifecycle.v1.json.
+ */
+export type JobPhase =
+  | "queued"
+  | "sending"
+  | "sent"
+  | "printing"
+  | "completed"
+  | "failed"
+  | "aborted";
+
+/**
+ * Generate a new unique job ID.
+ * Format: `job-{timestamp}-{random}` for process-local uniqueness.
+ */
+export function createJobId(): JobId {
+  const ts = Date.now().toString(36);
+  const r = Math.random().toString(36).slice(2, 10);
+  return `job-${ts}-${r}`;
+}
+
 // ─── Batch printing ──────────────────────────────────────────────────────────
 
 /** Options for batch printing with status polling. */
@@ -221,6 +265,12 @@ export interface BatchProgress {
 
   /** Latest printer status (only present when `statusInterval` is set). */
   status?: PrinterStatus;
+
+  /** Current lifecycle phase of this batch. */
+  phase: JobPhase;
+
+  /** Job ID for correlation with completion tracking. */
+  jobId: JobId;
 }
 
 /** Final result of a batch print operation. */
@@ -230,6 +280,9 @@ export interface BatchResult {
 
   /** Total number of labels in the batch. */
   total: number;
+
+  /** Job ID for correlation with completion tracking. */
+  jobId: JobId;
 
   /**
    * Present when the batch stops mid-stream due to an error.
@@ -259,12 +312,28 @@ export type PrintErrorCode =
 export class PrintError extends Error {
   public readonly code: PrintErrorCode;
 
-  constructor(message: string, code: PrintErrorCode, cause?: unknown) {
+  /**
+   * When code is TIMEOUT from waitForCompletion, the printer's last-reported
+   * formats in buffer and labels remaining.
+   */
+  public readonly formatsInBuffer?: number;
+  public readonly labelsRemaining?: number;
+
+  constructor(
+    message: string,
+    code: PrintErrorCode,
+    cause?: unknown,
+    completionState?: { formatsInBuffer: number; labelsRemaining: number }
+  ) {
     super(message);
     this.name = "PrintError";
     this.code = code;
     if (cause) {
       this.cause = cause;
+    }
+    if (completionState) {
+      this.formatsInBuffer = completionState.formatsInBuffer;
+      this.labelsRemaining = completionState.labelsRemaining;
     }
   }
 }

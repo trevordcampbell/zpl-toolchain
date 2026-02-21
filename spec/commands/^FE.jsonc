@@ -19,7 +19,7 @@
           "kind": "note",
           "expr": "after:^FD",
           "severity": "info",
-          "message": "Must precede each ^FD command where it is used."
+          "audience": "contextual", "message": "Must precede each ^FD command where it is used."
         },
         {
           "kind": "note",

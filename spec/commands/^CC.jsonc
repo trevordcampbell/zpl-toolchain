@@ -15,7 +15,7 @@
       ],
       "effects": { "sets": ["parser.caretPrefix"] },
       "constraints": [
-        { "kind": "note", "message": "Takes immediate effect. All subsequent format commands must use the new prefix character. Use ^JUS to persist across power cycles." }
+        { "kind": "note", "audience": "contextual", "message": "Takes immediate effect. All subsequent format commands must use the new prefix character. Use ^JUS to persist across power cycles." }
       ],
       "docs": "Changes the format command prefix character from the default caret (^) to any other ASCII character. Takes immediate effect for all subsequent commands."
     }

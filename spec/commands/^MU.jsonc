@@ -26,7 +26,7 @@
           "kind": "note",
           "expr": "after:first:^FO",
           "severity": "info",
-          "message": "Should appear at the beginning of the label format."
+          "audience": "contextual", "message": "Should appear at the beginning of the label format."
         },
         {
           "kind": "note",

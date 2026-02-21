@@ -11,6 +11,7 @@ use std::collections::HashSet;
 use std::env;
 use std::fs;
 use std::path::Path;
+use zpl_toolchain_jsonc_strip::strip_jsonc;
 
 fn main() {
     let spec_path = Path::new("spec/diagnostics.jsonc");
@@ -19,10 +20,7 @@ fn main() {
     let raw = fs::read_to_string(spec_path)
         .unwrap_or_else(|e| panic!("failed to read {}: {e}", spec_path.display()));
 
-    // Use the shared JSONC stripper from spec-compiler (handles line, inline,
-    // and block comments correctly). We inline a minimal version here to avoid
-    // adding a build dependency on spec-compiler.
-    let stripped = strip_jsonc_comments(&raw);
+    let stripped = strip_jsonc(&raw);
 
     let spec: serde_json::Value =
         serde_json::from_str(&stripped).expect("failed to parse diagnostics.jsonc as JSON");
@@ -88,12 +86,7 @@ fn main() {
         let description = entry["description"]
             .as_str()
             .unwrap_or_else(|| panic!("diagnostics[{i}] (id={id}) missing `description`"));
-        // Escape backslashes, quotes, and newlines for valid Rust string literals.
-        let escaped = description
-            .replace('\\', "\\\\")
-            .replace('"', "\\\"")
-            .replace('\n', "\\n")
-            .replace('\r', "\\r");
+        let escaped = escape_rust_string_literal(description);
         explain.push_str(&format!("    \"{id}\" => Some(\"{escaped}\"),\n"));
     }
 
@@ -203,11 +196,7 @@ fn main() {
                         "diagnostics[{i}] (id={id}) messageTemplates.{variant} references placeholder '{{{placeholder}}}' not listed in contextKeys"
                     );
                 }
-                let escaped = template
-                    .replace('\\', "\\\\")
-                    .replace('"', "\\\"")
-                    .replace('\n', "\\n")
-                    .replace('\r', "\\r");
+                let escaped = escape_rust_string_literal(template);
                 templates.push_str(&format!(
                     "    (\"{id}\", \"{variant}\") => Some(\"{escaped}\"),\n"
                 ));
@@ -219,62 +208,8 @@ fn main() {
         .expect("failed to write generated_templates.rs");
 }
 
-/// Strip JSONC comments (// line, /* block */) while preserving string contents.
-/// Operates on chars (not bytes) to correctly handle UTF-8.
-fn strip_jsonc_comments(input: &str) -> String {
-    let mut out = String::with_capacity(input.len());
-    let chars: Vec<char> = input.chars().collect();
-    let len = chars.len();
-    let mut i = 0;
-    let mut in_str = false;
-
-    while i < len {
-        let c = chars[i];
-
-        if in_str {
-            out.push(c);
-            if c == '\\' && i + 1 < len {
-                i += 1;
-                out.push(chars[i]);
-            } else if c == '"' {
-                in_str = false;
-            }
-            i += 1;
-            continue;
-        }
-
-        if c == '"' {
-            in_str = true;
-            out.push(c);
-            i += 1;
-            continue;
-        }
-
-        if c == '/' && i + 1 < len {
-            let c2 = chars[i + 1];
-            if c2 == '/' {
-                // Line comment — skip to end of line
-                i += 2;
-                while i < len && chars[i] != '\n' {
-                    i += 1;
-                }
-                continue;
-            }
-            if c2 == '*' {
-                // Block comment — skip to */
-                i += 2;
-                while i + 1 < len && !(chars[i] == '*' && chars[i + 1] == '/') {
-                    i += 1;
-                }
-                i = (i + 2).min(len);
-                continue;
-            }
-        }
-
-        out.push(c);
-        i += 1;
-    }
-    out
+fn escape_rust_string_literal(value: &str) -> String {
+    value.chars().flat_map(char::escape_default).collect()
 }
 
 fn extract_template_placeholders(template: &str) -> HashSet<String> {

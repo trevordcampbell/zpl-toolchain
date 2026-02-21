@@ -16,6 +16,9 @@
           "profileConstraint": { "field": "page.width_dots", "op": "lte" } }
       ],
       "effects": { "sets": ["label.width"] },
+      "structuralRules": [
+        { "kind": "positionBounds", "action": "trackWidth" }
+      ],
       "constraints": [],
       "docs": "Set printable label width in dots (bounded by profile when provided). Default: last permanently saved value."
     }

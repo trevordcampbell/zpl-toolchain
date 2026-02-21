@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.16](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.15...v0.1.16) - 2026-02-21
+
+### Added
+
+- *(zpl)* finalize spec-driven validator architecture and editor suggested edits
+
+### Fixed
+
+- *(spec)* require explicit constraint scopes and align suggested-edit integration test
+
 ## [0.1.15](https://github.com/trevordcampbell/zpl-toolchain/compare/v0.1.14...v0.1.15) - 2026-02-16
 
 ### Added

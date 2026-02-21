@@ -16,7 +16,7 @@
       ],
       "effects": { "sets": ["printhead.resistance"] },
       "constraints": [
-        { "kind": "note", "message": "Setting a value higher than the printhead rating could damage the printhead. New printer models automatically set head resistance." }
+        { "kind": "note", "audience": "contextual", "message": "Setting a value higher than the printhead rating could damage the printhead. New printer models automatically set head resistance." }
       ],
       "docs": "Sets the printhead resistance value. The value should match or be less than the resistance rating on the printhead being used."
     }

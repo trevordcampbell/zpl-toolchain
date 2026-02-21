@@ -20,7 +20,7 @@
           "kind": "note",
           "expr": "when:arg:aEmpty",
           "severity": "info",
-          "message": "When a parameter is not given, the instruction is ignored."
+          "audience": "contextual", "message": "When a parameter is not given, the instruction is ignored."
         }
       ],
       "docs": "Sets the head cold warning indicator based on the operating environment. Enables or disables the warning when the printhead temperature is too low."

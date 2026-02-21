@@ -24,8 +24,8 @@
           "doc": "CODABLOCK variant (A=Code 39, E=Code 128 with auto FNC4, F=Code 128)" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BB to set module width", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BB should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BB to set module width", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BB should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print a CODABLOCK two-dimensional stacked barcode (modes A, E, F) for encoding large amounts of data.",
       "fieldDataRules": { "notes": "Character set depends on mode. Mode A: Code 39 set (0-9, A-Z, - . $ / + % space); invalid chars produce no barcode or error. Mode E/F: full ASCII except ZPL-reserved chars; function codes via ^FH (FNC1=0x80, FNC2=0x81, FNC3=0x82, FNC4=0x83, NUL=0x84); chars above 0x84 invalid" }

@@ -65,6 +65,14 @@ This guide describes how to author ZPL II command specifications under `spec/com
     - `lengthParity`: `"even"` or `"odd"`.
     - `notes`: human-readable description (not used for automated validation).
     - See `docs/BARCODE_DATA_RULES.md` for the full reference.
+  - `structuralRules` (optional): schema-driven semantic rule payloads used by validator dispatch/indexing.
+    - Typical usages:
+      - `duplicateFieldNumber` (`^FN`)
+      - `positionBounds` actions (`^PW`, `^LL`, `^FO`, `^FT`)
+      - `fontReference` actions (`^CW`, `^A`)
+      - `mediaModes` targets (`^MM`, `^MN`, `^MT`)
+      - `gfDataLength` / `gfPreflightTracking` (`^GF`)
+    - See command examples in `spec/commands/^FN.jsonc`, `^PW.jsonc`, `^FO.jsonc`, and `^GF.jsonc`.
   - `docs`, `examples` (optional): documentation strings and command examples.
 
 ## Note constraints (kind: note)
@@ -117,10 +125,20 @@ Examples:
 
 ### Scope
 
-- `scope: "label"` (default) — Evaluate ordering against commands in the entire label.
+- `scope: "label"` — Evaluate constraints against commands in the entire label.
 - `scope: "field"` — Evaluate within the current field (`^FO`…`^FS`).
 
-Use `scope: "field"` for field-scoped commands so ordering is checked per-field, not label-wide.
+For `kind: "order"`, `kind: "requires"`, and `kind: "incompatible"`, `scope` is required.
+For `kind: "note"` and `kind: "custom"`, `scope` is optional; when omitted, evaluation follows command scope (`field` commands evaluate in-field, others evaluate label-wide).
+Use `scope: "field"` for field-scoped commands so checks are evaluated per-field, not label-wide.
+
+Examples:
+
+```jsonc
+{ "kind": "order", "expr": "before:^FD|^FV", "scope": "field", "message": "^FB should precede its field data", "severity": "info" }
+{ "kind": "requires", "expr": "^BY", "scope": "label", "message": "^BY should precede ^BC", "severity": "warn" }
+{ "kind": "note", "expr": "after:first:^FS", "audience": "contextual", "message": "Compatibility note after first ^FS." } // scope optional
+```
 
 ## Authoring examples
 

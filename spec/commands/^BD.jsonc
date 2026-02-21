@@ -18,7 +18,7 @@
           "doc": "Total number of symbols in the structured append sequence (1-8)" }
       ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BD should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BD should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print a UPS MaxiCode two-dimensional barcode symbol.",
       "fieldDataRules": { "maxLength": 138, "notes": "Mode 2/3: ^FD <hpm><lpm> with structured postal data. Mode 2 hpm: 15 numeric digits (class+country+zip5+zip4). Mode 3 hpm: 12 alphanumeric chars (class+country+postal6). lpm uses GS/RS/EOT separators (via ^FH for hex). Mode 4/5/6: accepts any data. UPS requires uppercase" }

@@ -42,6 +42,7 @@ This document summarizes the ZPL spec registry schema used by the spec-compiler.
   "defaults": { /* command-level defaults */ },
   "units": "dots",                          // command-level units
   "effects": { "sets": ["state.key"] },     // cross-command state (object format only)
+  "structuralRules": [ /* structural semantic rule payloads */ ],
   "fieldDataRules": {                        // barcode field data validation (optional)
     "characterSet": "0-9",                   // compact charset notation
     "exactLength": 12,                       // or minLength/maxLength
@@ -87,6 +88,18 @@ This document summarizes the ZPL spec registry schema used by the spec-compiler.
 - `order`: relative ordering constraint
 - `range`: conditional ranges outside of args
 - `note`/`custom`: documentation or tool-specific rule
+- `scope`: constraint evaluation scope (`label` or `field`)
+
+`scope` is required for `order`, `requires`, and `incompatible` constraints.
+For `note` and `custom`, `scope` is optional and defaults to command scope.
+
+Example:
+
+```jsonc
+{ "kind": "requires", "expr": "^BY", "scope": "label", "message": "^BY should precede this command" }
+{ "kind": "order", "expr": "before:^FD|^FV", "scope": "field", "message": "Should precede field data" }
+{ "kind": "note", "audience": "contextual", "message": "Explanatory note" } // scope optional
+```
 
 Validator enforces presence/order, numeric ranges/enums via `args`, conditional range/rounding, and profile-based gates (e.g., ^PW). More predicates and unit conversions are planned.
 
@@ -117,7 +130,7 @@ Validator enforces presence/order, numeric ranges/enums via `args`, conditional 
 
 - The schema (`spec/schema/zpl-spec.schema.jsonc`) implements v1.1.1 features: signatures/composites, `args`/`argUnion`, `constraints`, conditional range and rounding, enums (string/object), and examples.
 - The spec-compiler validates per-command files against this schema and passes through fields into generated tables and bundles.
-- The validator consumes `args` and enforces presence/order, ranges/enums, conditional range/rounding, profile constraints (`profileConstraint`), printer gates (`printerGates`), media validation, barcode `fieldDataRules` validation (ZPL2401/2402), `^MU` unit conversion, typed value-state default resolution (`defaultFrom` + `defaultFromStateKey`), device-level state tracking, and structural/semantic checks.
+- The validator consumes `args` and enforces presence/order, ranges/enums, conditional range/rounding, profile constraints (`profileConstraint`), printer gates (`printerGates`), media validation, barcode `fieldDataRules` validation (ZPL2401/2402), `^MU` unit conversion, typed value-state default resolution (`defaultFrom` + `defaultFromStateKey`), device-level state tracking, and structural/semantic checks driven by `structuralRules` + `structuralRuleIndex`.
 
 ## Versioning
 

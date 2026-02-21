@@ -130,3 +130,39 @@ fn doctor_invalid_tables_emits_doctor_json_shape() {
         json["tables"]["message"]
     );
 }
+
+#[test]
+fn doctor_invalid_profile_emits_sarif_result() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let profile_path = dir.path().join("bad-profile.json");
+    fs::write(&profile_path, "{ not json").expect("write profile fixture");
+
+    let output = zpl_cmd()
+        .args([
+            "doctor",
+            "--profile",
+            &profile_path.to_string_lossy(),
+            "--output",
+            "sarif",
+        ])
+        .output()
+        .expect("run doctor command");
+
+    assert!(!output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let sarif: serde_json::Value = serde_json::from_str(&stdout).expect("valid sarif json");
+    assert_eq!(sarif["version"], "2.1.0");
+    let results = sarif["runs"][0]["results"]
+        .as_array()
+        .expect("sarif results array");
+    assert!(
+        results.iter().any(|result| {
+            result["ruleId"] == "DOCTOR_PROFILE_INVALID"
+                && result["message"]["text"]
+                    .as_str()
+                    .is_some_and(|m| m.contains("failed to parse/validate profile"))
+        }),
+        "expected profile failure SARIF result, got: {}",
+        sarif
+    );
+}

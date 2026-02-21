@@ -18,8 +18,8 @@
           "doc": "MicroPDF417 symbol mode (0=automatic, 1-33=specific column/row configurations)" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BF to set module width", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BF should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BF to set module width", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BF should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print a MicroPDF417 barcode, a compact variant of PDF417 for area-efficient applications.",
       "fieldDataRules": { "maxLength": 250, "notes": "Capacity: 250 7-bit ASCII chars, 150 8-bit chars, or 366 numeric digits; compact 2D variant of PDF417" }

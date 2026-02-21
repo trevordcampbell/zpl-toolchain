@@ -32,7 +32,7 @@
           "doc": "Transmit power level. Values: 1, 5, 20, 30, 50, 100." }
       ],
       "constraints": [
-        { "kind": "note", "message": "This command is not valid for Link-OS printers and is only supported in selected other models. Used for 802.11b wireless print servers." }
+        { "kind": "note", "audience": "contextual", "message": "This command is not valid for Link-OS printers and is only supported in selected other models. Used for 802.11b wireless print servers." }
       ],
       "docs": "Changes the transmission rate and power for 802.11b wireless print servers."
     }

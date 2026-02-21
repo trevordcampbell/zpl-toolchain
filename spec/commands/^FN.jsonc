@@ -17,6 +17,9 @@
           "optional": true,
           "doc": "Optional prompt string displayed to the operator when using keyboard input or applications. Enclosed in quotes if it contains commas." }
       ],
+      "structuralRules": [
+        { "kind": "duplicateFieldNumber", "argIndex": 0 }
+      ],
       "constraints": [],
       "docs": "Assigns a field number for use with stored formats (^DF/^XF). When a format is recalled with ^XF, the ^FN fields are populated with data from the recalling format's ^FN-matched ^FD fields."
     }

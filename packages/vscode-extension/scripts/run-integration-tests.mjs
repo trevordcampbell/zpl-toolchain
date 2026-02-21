@@ -14,7 +14,15 @@ function run(command, args) {
   process.exit(1);
 }
 
-if (process.platform === "linux") {
+const isLinuxArm64 = process.platform === "linux" && process.arch === "arm64";
+const hasExplicitExecutable = Boolean(process.env.VSCODE_EXECUTABLE_PATH?.trim());
+const forced = process.env.FORCE_VSCODE_INTEGRATION === "1";
+
+if (isLinuxArm64 && !forced && !hasExplicitExecutable) {
+  // Let runTest handle linux/arm64 skip policy directly without xvfb-run,
+  // so a deliberate skip stays a successful local check.
+  run("node", [testEntry]);
+} else if (process.platform === "linux") {
   const check = spawnSync("xvfb-run", ["--help"], {
     stdio: "ignore",
     shell: false,

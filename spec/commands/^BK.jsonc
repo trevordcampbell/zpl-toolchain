@@ -26,8 +26,8 @@
           "doc": "Stop character for the Codabar symbol" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BK to set module width", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BK should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BK to set module width", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BK should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print an ANSI Codabar barcode used in libraries, medical, and shipping applications.",
       "fieldDataRules": { "characterSet": "0-9\\-$:/.+", "notes": "Digits 0-9 and special characters - $ : / . + (start/stop chars A-D are set via k,l parameters, not part of field data)" }

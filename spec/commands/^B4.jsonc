@@ -20,8 +20,8 @@
           "doc": "Starting encoding mode (0-5 for specific modes, A=automatic)" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^B4 to set module width", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^B4 should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^B4 to set module width", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^B4 should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print a Code 49 multi-row barcode capable of encoding the full 128-character ASCII set.",
       "fieldDataRules": { "notes": "Full 128-character ASCII set; multi-row stacked symbology" }

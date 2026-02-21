@@ -23,7 +23,7 @@
       ],
       "effects": { "sets": ["rfid.readPower", "rfid.writePower", "rfid.antenna"] },
       "constraints": [
-        { "kind": "note", "message": "Printers automatically select the best antenna and power levels during RFID transponder calibration. For Japan, maximum RFID read and write power are limited to comply with local radio regulations; any power setting of 24 or higher results in the same output." }
+        { "kind": "note", "audience": "contextual", "message": "Printers automatically select the best antenna and power levels during RFID transponder calibration. For Japan, maximum RFID read and write power are limited to comply with local radio regulations; any power setting of 24 or higher results in the same output." }
       ],
       "docs": "Sets the RFID read and write power levels and antenna element selection when desired levels are not achieved through RFID tag calibration."
     }

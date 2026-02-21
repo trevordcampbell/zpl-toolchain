@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use anyhow::Result;
+use anyhow::{Result, bail};
 use clap::{Parser, Subcommand};
 use zpl_toolchain_spec_compiler::{SCHEMA_VERSION, pipeline, write_json_pretty};
 
@@ -63,16 +63,22 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-/// Warn on stderr about any schema versions that don't match the expected version.
-fn warn_schema_versions(versions: &std::collections::BTreeSet<String>) {
-    for sv in versions {
-        if sv != SCHEMA_VERSION {
-            eprintln!(
-                "warn: unexpected schemaVersion '{}' (expected '{}')",
-                sv, SCHEMA_VERSION
-            );
-        }
+/// Enforce strict schema-version invariants across loaded spec files.
+fn validate_schema_versions(versions: &std::collections::BTreeSet<String>) -> Result<()> {
+    if versions.is_empty() {
+        bail!("no schemaVersion values were discovered while loading specs");
     }
+    if versions.len() > 1 {
+        let found = versions.iter().cloned().collect::<Vec<_>>().join(", ");
+        bail!(
+            "mixed schemaVersion values are not allowed (expected a single version, found: {found})"
+        );
+    }
+    let only = versions.iter().next().expect("checked non-empty");
+    if only != SCHEMA_VERSION {
+        bail!("unexpected schemaVersion '{only}' (expected '{SCHEMA_VERSION}')");
+    }
+    Ok(())
 }
 
 fn check(spec_dir: PathBuf) -> Result<()> {
@@ -85,7 +91,7 @@ fn check(spec_dir: PathBuf) -> Result<()> {
     );
 
     // 2. Validate schema versions
-    warn_schema_versions(&loaded.schema_versions);
+    validate_schema_versions(&loaded.schema_versions)?;
 
     // 3. Cross-field validation
     let validation_errors = pipeline::validate_cross_field(&loaded.commands, &spec_dir);
@@ -122,7 +128,7 @@ fn build(spec_dir: PathBuf, out_dir: PathBuf, strict: bool) -> Result<()> {
     let loaded = pipeline::load_spec_files(&spec_dir)?;
 
     // 2. Validate schema versions
-    warn_schema_versions(&loaded.schema_versions);
+    validate_schema_versions(&loaded.schema_versions)?;
 
     // 3. Cross-field validation (non-fatal warnings)
     let validation_errors = pipeline::validate_cross_field(&loaded.commands, &spec_dir);
@@ -139,8 +145,18 @@ fn build(spec_dir: PathBuf, out_dir: PathBuf, strict: bool) -> Result<()> {
         );
     }
 
-    // 4. Load master code list
-    let master_codes = pipeline::load_master_codes("docs/public/schema/zpl-commands.jsonc");
+    // 4. Load master code list (resolve from workspace root, not process CWD)
+    let workspace_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(|p| p.parent())
+        .expect("spec-compiler manifest should be nested under workspace/crates/spec-compiler")
+        .to_path_buf();
+    let master_codes_path = workspace_root.join("docs/public/schema/zpl-commands.jsonc");
+    let master_codes = pipeline::load_master_codes(
+        master_codes_path
+            .to_str()
+            .expect("master codes path must be valid UTF-8"),
+    );
 
     // 5. Generate parser tables (includes opcode trie inline)
     let tables = pipeline::generate_tables(&loaded.commands, &loaded.schema_versions)?;

@@ -53,6 +53,48 @@ fn validator_diagnostics_have_spans() {
 }
 
 #[test]
+fn validator_diagnostics_are_emitted_in_deterministic_order() {
+    let tables = &*common::TABLES;
+    // Intentionally trigger multiple diagnostics across several commands.
+    let result = parse_with_tables("^XA^BY999^FN1^FN1^FO9999,9999^FDX^FS^XZ", Some(tables));
+    let vr = validate::validate(&result.ast, tables);
+    assert!(
+        vr.issues.len() >= 2,
+        "expected multiple diagnostics for deterministic-ordering check"
+    );
+
+    let mut expected = vr
+        .issues
+        .iter()
+        .map(|d| {
+            (
+                d.span.map_or(usize::MAX, |s| s.start),
+                d.id.to_string(),
+                d.message.clone(),
+            )
+        })
+        .collect::<Vec<_>>();
+    expected.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
+
+    let actual = vr
+        .issues
+        .iter()
+        .map(|d| {
+            (
+                d.span.map_or(usize::MAX, |s| s.start),
+                d.id.to_string(),
+                d.message.clone(),
+            )
+        })
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        actual, expected,
+        "validator diagnostics must be stable by span then id"
+    );
+}
+
+#[test]
 fn diag_no_false_positives_valid_label() {
     let tables = &*common::TABLES;
     // A well-formed label should produce NO error-level diagnostics
@@ -3508,6 +3550,69 @@ where
         .unwrap_or_else(|| panic!("expected command {code} in parser tables"));
     f(&mut tables.commands[idx]);
     tables
+}
+
+#[test]
+fn structural_trigger_index_opens_field_used_when_flag_mutated() {
+    let tables = mutate_command_in_tables(&common::TABLES, "^FO", |cmd| {
+        cmd.opens_field = false;
+    });
+
+    let result = parse_with_tables("^XA^FO10,10^FDHello^FS^XZ", Some(&tables));
+    let vr = validate::validate(&result.ast, &tables);
+
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::FIELD_DATA_WITHOUT_ORIGIN),
+        "trigger index should preserve field-open semantics even when opens_field flag is mutated: {:?}",
+        vr.issues
+    );
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::ORPHANED_FIELD_SEPARATOR),
+        "trigger index should preserve ^FS pairing semantics when opens_field flag is mutated: {:?}",
+        vr.issues
+    );
+}
+
+#[test]
+fn structural_trigger_index_field_data_used_when_flag_mutated() {
+    let tables = mutate_command_in_tables(&common::TABLES, "^FD", |cmd| {
+        cmd.field_data = false;
+    });
+
+    // ^FD accepts inline payload that may contain commas. Even with the command-local
+    // field_data flag removed, trigger index should keep arity relaxation for ^FD.
+    let result = parse_with_tables("^XA^FO10,10^FDA,B^FS^XZ", Some(&tables));
+    let vr = validate::validate(&result.ast, &tables);
+
+    assert!(
+        !vr.issues.iter().any(|d| d.id == codes::ARITY),
+        "trigger index should preserve field-data arity behavior when field_data flag is mutated: {:?}",
+        vr.issues
+    );
+}
+
+#[test]
+fn structural_effect_index_producer_used_when_effects_mutated() {
+    let tables = mutate_command_in_tables(&common::TABLES, "^BY", |cmd| {
+        cmd.effects = None;
+    });
+
+    // ^BC height defaults from ^BY. Even with command-local effects removed,
+    // byEffect index should still identify ^BY as a producer.
+    let result = parse_with_tables("^XA^BY2,3,50^BCN,,N,N,N^FD12345^FS^XZ", Some(&tables));
+    let vr = validate::validate(&result.ast, &tables);
+
+    assert!(
+        !vr.issues
+            .iter()
+            .any(|d| d.id == codes::REQUIRED_MISSING && d.message.contains("^BC")),
+        "effect index should preserve producer semantics for ^BY even when effects metadata is mutated: {:?}",
+        vr.issues
+    );
 }
 
 #[test]

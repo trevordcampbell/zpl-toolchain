@@ -1,12 +1,14 @@
 import { describe, it } from "node:test";
 import { strict as assert } from "node:assert";
-import { parseHostStatus } from "../status.js";
+import {
+  parseHostStatus,
+  parseHostStatusLenient,
+  parseHostStatusStrict,
+} from "../status.js";
+import { loadPrintStatusFramingFixture } from "./contracts-fixture.js";
 
-// A realistic ~HS response from a Zebra ZD421
-const MOCK_HS_RESPONSE =
-  "\x02030,0,0,1245,000,0,0,0,000,0,0,0\x03\r\n" +
-  "\x02000,0,0,0,0,2,4,0,00000000,1,000\x03\r\n" +
-  "\x021234,0\x03";
+const fixture = loadPrintStatusFramingFixture();
+const MOCK_HS_RESPONSE = fixture.host_status.healthy_raw;
 
 // ~HS with error conditions
 const MOCK_HS_ERRORS =
@@ -22,16 +24,16 @@ describe("parseHostStatus", () => {
     assert.equal(status.paperOut, false);
     assert.equal(status.paused, false);
     assert.equal(status.labelLengthDots, 1245);
-    assert.equal(status.formatsInBuffer, 0);
+    assert.equal(status.formatsInBuffer, fixture.host_status.expected_healthy.formats_in_buffer);
     assert.equal(status.bufferFull, false);
     assert.equal(status.commDiagMode, false);
     assert.equal(status.partialFormat, false);
     assert.equal(status.corruptRam, false);
     assert.equal(status.underTemperature, false);
     assert.equal(status.overTemperature, false);
-    assert.equal(status.headOpen, false);
-    assert.equal(status.ribbonOut, false);
-    assert.equal(status.labelsRemaining, 0);
+    assert.equal(status.headOpen, fixture.host_status.expected_healthy.head_up);
+    assert.equal(status.ribbonOut, fixture.host_status.expected_healthy.ribbon_out);
+    assert.equal(status.labelsRemaining, fixture.host_status.expected_healthy.labels_remaining);
     assert.equal(status.password, 1234);
     assert.equal(status.staticRamInstalled, false);
     assert.equal(status.raw, MOCK_HS_RESPONSE);
@@ -52,26 +54,62 @@ describe("parseHostStatus", () => {
     assert.equal(status.ribbonOut, true);
     assert.equal(status.labelsRemaining, 5);
     assert.equal(status.thermalTransferMode, true);
-    assert.equal(status.printMode, 3);
+    assert.equal(status.printMode, "Applicator");
     assert.equal(status.staticRamInstalled, true);
   });
 
-  it("handles empty input gracefully", () => {
-    const status = parseHostStatus("");
+  it("throws on empty input (strict default)", () => {
+    assert.throws(
+      () => parseHostStatus(""),
+      /~HS requires 3 frames/
+    );
+  });
 
-    assert.equal(status.ready, true); // no errors detected = ready
+  it("throws on partial response (strict default)", () => {
+    const partial = fixture.host_status.truncated_raw;
+    assert.throws(
+      () => parseHostStatus(partial),
+      /~HS requires 3 frames/
+    );
+  });
+
+  it("lenient parser handles empty input", () => {
+    const status = parseHostStatusLenient("");
+    assert.equal(status.ready, true);
     assert.equal(status.paperOut, false);
     assert.equal(status.paused, false);
     assert.equal(status.labelsRemaining, 0);
   });
 
-  it("handles partial response (only line 1)", () => {
+  it("lenient parser handles partial response", () => {
     const partial = "\x02030,0,0,800,002,0,0,0,000,0,0,0\x03";
-    const status = parseHostStatus(partial);
+    const status = parseHostStatusLenient(partial);
 
     assert.equal(status.labelLengthDots, 800);
     assert.equal(status.formatsInBuffer, 2);
     assert.equal(status.labelsRemaining, 0); // line 2 missing, defaults to 0
+  });
+
+  it("strict parser rejects malformed numeric field", () => {
+    const malformed =
+      "\x02030,0,0,1245,000,0,0,0,000,0,0,0\x03\r\n" +
+      "\x02000,0,0,0,abc,2,4,0,00000000,1,000\x03\r\n" +
+      "\x021234,0\x03";
+    assert.throws(
+      () => parseHostStatusStrict(malformed),
+      /cannot parse field 4/
+    );
+  });
+
+  it("strict parser rejects unknown print mode", () => {
+    const unknownMode =
+      "\x02030,0,0,1245,000,0,0,0,000,0,0,0\x03\r\n" +
+      "\x02000,0,0,0,9,2,4,0,00000000,1,000\x03\r\n" +
+      "\x021234,0\x03";
+    assert.throws(
+      () => parseHostStatusStrict(unknownMode),
+      /unknown print mode code: 9/
+    );
   });
 
   it("preserves raw response string", () => {

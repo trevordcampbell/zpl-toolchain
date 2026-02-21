@@ -20,7 +20,7 @@
           "doc": "Line color. B=black, W=white." }
       ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FS", "message": "^GE should appear before its ^FS", "severity": "info" }
+        { "kind": "order", "expr": "before:^FS", "message": "^GE should appear before its ^FS", "severity": "info", "scope": "field"}
       ],
       "docs": "Produces an ellipse in the label format with specified width, height, border thickness, and color."
     }

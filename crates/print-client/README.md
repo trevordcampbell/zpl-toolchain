@@ -10,6 +10,7 @@ Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) pr
 - **Split trait design**: `Printer` (send-only) + `StatusQuery` (bidirectional)
 - **Status parsing**: `~HS` → `HostStatus` (24 fields), `~HI` → `PrinterInfo`
 - **Batch printing**: `send_batch()` / `send_batch_with_status()` with progress callbacks and `ControlFlow` abort; `wait_for_completion()` generic polling
+- **Job lifecycle (F13)**: `JobId`, `JobPhase`, `create_job_id()` for correlation; deterministic completion semantics
 - **Retry with backoff**: `RetryPrinter<P>` wrapper with exponential backoff and jitter; `ReconnectRetryPrinter<P>` for automatic reconnection between retry attempts
 - **Semver-safe**: `#[non_exhaustive]` on all public structs and enums
 - **Synchronous**: No async runtime required — uses `std::net` and `std::io`

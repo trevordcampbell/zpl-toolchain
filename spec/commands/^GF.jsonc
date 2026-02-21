@@ -22,8 +22,21 @@
         { "name": "data", "key": "data", "type": "string",
           "doc": "Raw graphic data in the format specified by the compression parameter." }
       ],
+      "structuralRules": [
+        {
+          "kind": "gfDataLength",
+          "compressionArgIndex": 0,
+          "declaredByteCountArgIndex": 1,
+          "dataArgIndex": 4
+        },
+        {
+          "kind": "gfPreflightTracking",
+          "graphicFieldCountArgIndex": 2,
+          "bytesPerRowArgIndex": 3
+        }
+      ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FS", "message": "^GF header must precede its ^FS-delimited data block", "severity": "info" }
+        { "kind": "order", "expr": "before:^FS", "message": "^GF header must precede its ^FS-delimited data block", "severity": "info", "scope": "field"}
       ],
       "docs": "Graphic field: download graphic data directly into bitmap storage. Parameters: compression type (A=ASCII hex, B=binary, C=compressed binary), binary byte count, graphic field count, bytes per row, followed by data."
     }

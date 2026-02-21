@@ -24,7 +24,7 @@
           "doc": "Mask pattern applied to the symbol (0-7)" }
       ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BQ should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BQ should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print a QR Code two-dimensional matrix barcode with configurable model, magnification, and error correction.",
       "fieldDataRules": { "notes": "^FD contains embedded switch fields: [D<codeNo><divs><parity>,]<errCorr><inputMode>,<[charMode]data>. Error correction (H/Q/M/L) and input mode (A=automatic, M=manual) are mandatory. Manual mode requires character mode: N=numeric (0-9), A=alphanumeric (0-9 A-Z space $%*+-./:), Bxxxx=byte (xxxx=4-digit count), K=Kanji. Automatic mode cannot encode bytes 0x80-0x9F and 0xE0-0xFF" }

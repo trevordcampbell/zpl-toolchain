@@ -15,7 +15,7 @@ Everything below is **done and shipped**:
 - **Validator** — table-driven: type/range/enum/length checking, typed cross-command value state tracking (`defaultFrom` + `defaultFromStateKey`), constraint DSL (`requires`/`incompatible`/`order`/`emptyData`/`note`), profile-aware bounds, printer gates, media validation, barcode field data validation (29 symbologies), 46 diagnostic codes with structured context
 - **Formatter** — spec-driven, configurable indentation, trailing-arg trimming, round-trip fidelity
 - **Profiles** — 11 printer profiles, hardware feature gates, DPI-dependent defaults, media capabilities
-- **CLI** — `parse`, `syntax-check` (`check` alias), `lint` (`validate` alias), `format`, `print`, `explain`, `doctor` with `--output pretty|json`
+- **CLI** — `parse`, `syntax-check` (`check` alias), `lint` (`validate` alias), `format`, `print`, `explain`, `doctor` with `--output pretty|json|sarif`
 - **Bindings** — unified 5-function core API across WASM (TypeScript), Python (PyO3), C FFI, Go (cgo), .NET (P/Invoke). Native (non-WASM) targets additionally expose print/status/info APIs with typed and `_with_options` variants for hardware printing
 - **CI/CD** — release-plz automation, publishing to crates.io, npm, PyPI, Go module tagging, cross-platform builds
 - **DX distribution** — `@zpl-toolchain/cli` npm wrapper enables `npx @zpl-toolchain/cli` without requiring Rust toolchains
@@ -58,6 +58,19 @@ Expand from 5 samples (141 lines) to 30–50 curated labels. See [CORPUS_EXPANSI
 - Add criterion benchmarks for parse/validate/format across corpus
 - Establish per-label timing thresholds for CI
 - Profile before optimizing (the backlog lists several deferred optimizations)
+
+Current implementation status:
+
+- `crates/core/examples/pipeline_benchmark.rs` includes baseline sample labels plus synthetic scenarios (`trivial`, `effect-heavy`, `field-heavy`, `mixed`).
+- CI runs `scripts/check-validator-benchmark.mjs` in the `validator-benchmark` matrix job (ubuntu/macos/windows) and fails on validate-phase per-iter regressions with OS-specific tolerance ratios.
+- Guardrail thresholds are intentionally conservative for CI stability and should be tightened over time (ratchet-only policy).
+
+Threshold maintenance policy (ratchet-only):
+
+1. Run benchmark locally in release mode with stable iterations (`ZPL_BENCH_ITERS=100` or higher).
+2. Only decrease thresholds when results are consistently lower across multiple runs.
+3. Never increase thresholds without a documented root cause and explicit acceptance in PR notes.
+4. Keep the guardrail focused on `validate` per-iter timing, since validator throughput is the primary contract in this phase.
 
 **Effort:** 1 week | **Risk:** Low | **Depends on:** Corpus (1a)
 
@@ -456,6 +469,10 @@ Ideas from the original plan that we've consciously decided to defer or drop, wi
 | **Label ABI** | Versioned template metadata is useful, but premature before templates exist. | After template system (4b) is proven |
 | **BLAKE3 structural hashing** | Nothing to hash yet. Add content-addressed caching when the renderer produces artifacts and caching becomes a measurable need. | After renderer is production-quality |
 | **Combo matrices** | The existing constraint DSL (`requires`/`incompatible`) handles cross-command validation well. A separate matrix system adds complexity without clear benefit. | If constraint DSL proves insufficient |
+| **Streaming parser/token iterator** | Current parser architecture is simpler and stable; streaming introduces substantial state/diagnostic complexity without current evidence of need. | If memory/throughput benchmarks show parser bottlenecks on target workloads |
+| **Incremental editor parsing** | Full reparse remains acceptable for current file sizes; incremental parsing adds invalidation complexity and correctness risk. | If measured editor latency exceeds thresholds on representative documents |
+| **Streaming corpus processing mode** | Existing parse+validate flow is adequate for present workloads; dedicated streaming mode should be evidence-driven. | If real batch workloads exceed current memory/throughput envelope |
+| **Spooler/backpressure subsystem** | Current batch/retry semantics cover present needs; spooler adds queue-state and delivery-contract complexity. | If production use requires queue fairness, backpressure, and richer delivery-state observability |
 | **NuGet publishing** (.NET) | .NET bindings exist but aren't published to NuGet. Low demand signal so far. | If .NET users request it |
 | **VS Code extension publisher namespace migration** | Current extension identity is `trevordcampbell.zpl-toolchain`. Migration to a project namespace (e.g., `zpl-toolchain.*`) would change extension IDs/install/defaultFormatter references and requires marketplace/Open VSX namespace ownership + token updates. | Revisit before first public extension marketplace/Open VSX release if org branding is preferred |
 | **Pin GitHub Actions to commit SHAs** | Current CI/release workflows intentionally use major tag refs (`@v4`, `@v5`, etc.) for maintainability while release infrastructure is stabilizing. Advisory `zizmor` reports `unpinned-uses`; hardening is desirable but operationally sensitive and should be done as a coordinated, verified sweep. | Revisit after current release-flow stabilization window; execute as a dedicated hardening pass |
@@ -521,6 +538,10 @@ Phase 5a is complete. Phases 1, 2, and 4 are fully independent and can proceed i
 
 | Date | Change |
 |------|--------|
+| 2026-02-20 | Expanded validator benchmark guardrail to an OS matrix (ubuntu/macos/windows) with OS-specific tolerance ratios and promoted conformance checks into explicit runtime lanes (`rust`, `ts-print`). |
+| 2026-02-20 | Added validator benchmark guardrail to CI (`validator-benchmark` job) and a ratchet-only threshold maintenance policy under Phase 1b. |
+| 2026-02-20 | Added [COMPATIBILITY_POLICY.md](COMPATIBILITY_POLICY.md): compatibility/deprecation governance, conformance CI gates, drift-prevention checklist. |
+| 2026-02-20 | Cross-surface conformance hardening pass: TypeScript `~HS` parsing defaults to strict mode (with explicit strict/lenient exports), TS `tcpQuery` uses strict STX/ETX frame-count semantics for known framed commands, spec-compiler now hard-fails on mixed/unexpected schema versions, JSONC comment stripping unified into shared `crates/jsonc-strip`, and a shared contracts fixture baseline (`contracts/fixtures/bindings-parity.v1.json`) now drives bindings parity tests. |
 | 2026-02-16 | Official quality/refinement execution pass: CRLF/CR lexer correctness landed; semicolon comment semantics removed in favor of official `^FX` comments; VS Code syntax/comment UX aligned to `^FX ... ^FS`; TS print `tcpQuery` now handles framed bursty `~HS`/`~HI` responses robustly; validator internals split into focused modules without behavior drift; strict parser-table policy applied across CLI/bindings (explicit > embedded > actionable hard error); fuzz coverage expanded and core benchmark harness added. |
 | 2026-02-14 | VS Code extension polish + release hardening: richer completions with category/scope metadata, extension integration coverage expanded (including non-default formatter settings), and linux/arm64 extension-test runner auto-detects local editor CLIs for better local architecture coverage. |
 | 2026-02-08 | Implemented Phase 5a: print client with TCP/USB/serial transports, split Printer/StatusQuery trait design, STX/ETX frame parser, ~HS/~HI status parsing, retry with exponential backoff, CLI integration (`zpl print`), Python/FFI bindings, TypeScript package. Design doc and user guide added. |

@@ -95,11 +95,40 @@ fn main() -> Result<(), String> {
         ("usps_surepost", "samples/usps_surepost_sample.zpl"),
         ("compliance", "samples/compliance_label.zpl"),
     ];
+    let inline_scenarios = [
+        ("trivial_empty", "^XA^XZ"),
+        ("trivial_non_indexed", "^XA^ZZ123^XZ"),
+        (
+            "effect_heavy",
+            "^XA^BY2,3,50^CF0,30,30^FWN,0^PW812^LL1218^CI28^PR4^MD10^XZ",
+        ),
+        (
+            "field_heavy",
+            "^XA\
+^FO20,20^A0N,30,30^FDLine 1^FS\
+^FO20,60^A0N,30,30^FDLine 2^FS\
+^FO20,100^A0N,30,30^FDLine 3^FS\
+^FO20,140^A0N,30,30^FDLine 4^FS\
+^FO20,180^A0N,30,30^FDLine 5^FS\
+^XZ",
+        ),
+        (
+            "mixed_effects_fields",
+            "^XA^BY2,3,40^PW812^LL1218\
+^FO40,40^BCN,80,N,N,N^FD123456^FS\
+^FO40,160^A0N,30,30^FDmixed label^FS\
+^FO40,220^BQN,2,6^FDQA,hello^FS\
+^XZ",
+        ),
+    ];
 
     for (label, path) in sample_paths {
         let input = fs::read_to_string(path)
             .map_err(|e| format!("failed to read sample '{}': {e}", path))?;
         run_benchmark(label, &input, &tables, iterations);
+    }
+    for (label, input) in inline_scenarios {
+        run_benchmark(label, input, &tables, iterations);
     }
 
     Ok(())

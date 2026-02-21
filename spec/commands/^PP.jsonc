@@ -9,7 +9,7 @@
       "scope": "document",
       "arity": 0,
       "constraints": [
-        { "kind": "note", "message": "~PP stops printing immediately after the current label completes. ^PP is not immediate — several labels might print before the pause takes effect. The printer remains paused until PAUSE is pressed or ~PS is sent." }
+        { "kind": "note", "audience": "contextual", "message": "~PP stops printing immediately after the current label completes. ^PP is not immediate — several labels might print before the pause takes effect. The printer remains paused until PAUSE is pressed or ~PS is sent." }
       ],
       "docs": "Places the printer in Pause Mode after the current label is complete. Identical to pressing PAUSE on the control panel."
     }

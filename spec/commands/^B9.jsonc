@@ -22,8 +22,8 @@
           "doc": "Whether to print the check digit in the interpretation line" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^B9 to set module width", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^B9 should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^B9 to set module width", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^B9 should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print a UPC-E barcode, a zero-suppressed variation of UPC-A.",
       "fieldDataRules": { "characterSet": "0-9", "exactLength": 10, "notes": "10 digits (5 manufacturer + 5 product)" }

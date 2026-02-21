@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "profile": {
+    "id": "test",
+    "schema_version": "1.0.0",
+    "dpi": 203,
+    "page": {
+      "width_dots": 800,
+      "height_dots": 1200
+    }
+  },
+  "parse": [
+    {
+      "id": "simple-text",
+      "zpl": "^XA^FO50,50^A0N,30,30^FDHello^FS^XZ"
+    },
+    {
+      "id": "prefix-and-home",
+      "zpl": "^XA^MUI,203,203^LH1,0^FO598,0^FDx^FS^XZ"
+    },
+    {
+      "id": "barcode-field",
+      "zpl": "^XA^BY3,2,100^FO50,50^BCN,100,Y,N,N^FD12345^FS^XZ"
+    }
+  ],
+  "validate": [
+    {
+      "id": "bounds-overflow",
+      "zpl": "^XA^FO9999,100^FDtest^FS^XZ"
+    },
+    {
+      "id": "memory-estimation",
+      "zpl": "^XA^MUM^FO100,0^GFA,10,10,10,FFFFFFFFFFFFFFFFFFFF^FS^XZ"
+    },
+    {
+      "id": "barcode-constraints",
+      "zpl": "^XA^BY3,2,100^FO50,50^BCN,100,Y,N,N^FD12345^FS^XZ"
+    }
+  ]
+}

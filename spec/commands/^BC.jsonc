@@ -24,8 +24,8 @@
           "doc": "Encoding mode (N=no mode, U=UCC Case mode, A=auto mode, D=UCC/EAN mode)" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BC to set module width", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BC should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BC to set module width", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BC should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print a Code 128 barcode with options for height, text, and checks.",
       "fieldDataRules": { "notes": "Full ASCII via subsets A (control+upper), B (printable, default), C (numeric pairs 00-99). Subset switching via > codes (>9=start A, >:=start B, >;=start C, >5=C, >6=B, >7=A, >8=FNC1). Chars ^ > ~ require invocation codes. Mod 103 check digit always auto-calculated. Mode U: exactly 19 digits (auto-pads/truncates). Mode A: auto-selects subsets. Mode D: GS1 AI-aware, strips parens/spaces" }

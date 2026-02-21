@@ -26,6 +26,9 @@ jobs:
       - name: Validate CI/devcontainer toolchain alignment
         run: node scripts/check-devcontainer-ci-toolchains.mjs
 
+      - name: Validate contract fixtures
+        run: node scripts/validate-contract-fixtures.mjs
+
       - uses: ./.github/actions/setup-rust
         with:
           components: rustfmt, clippy
@@ -53,6 +56,53 @@ jobs:
 
       - name: Validate install.sh
         run: ./scripts/validate-install-sh.sh
+
+  # ── Conformance matrix: cross-language contract fixture gates ─────────────
+  conformance:
+    name: Conformance (${{ matrix.runtime }})
+    needs: [fast-gate]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [rust, ts-print]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        if: matrix.runtime == 'rust'
+        with:
+          cache-key: ci-conformance
+
+      - name: Install nextest
+        if: matrix.runtime == 'rust'
+        uses: taiki-e/install-action@nextest
+
+      - name: Contract tests (bindings parity + print status/framing)
+        if: matrix.runtime == 'rust'
+        run: cargo nextest run -p zpl_toolchain_bindings_common -p zpl_toolchain_print_client --locked
+
+      - uses: actions/setup-node@v4
+        if: matrix.runtime == 'ts-print'
+        with:
+          node-version: "24.13.1"
+          cache: npm
+          cache-dependency-path: packages/ts/print/package-lock.json
+
+      - name: Install dependencies (TS print)
+        if: matrix.runtime == 'ts-print'
+        working-directory: packages/ts/print
+        run: npm ci
+
+      - name: Build TS print package
+        if: matrix.runtime == 'ts-print'
+        working-directory: packages/ts/print
+        run: npm run build
+
+      - name: Contract fixture conformance tests (TS print)
+        if: matrix.runtime == 'ts-print'
+        working-directory: packages/ts/print
+        run: node --test dist/test/status.test.js dist/test/print.test.js dist/test/batch.test.js
 
   # ── Core: build, lint, test across OS matrix ──────────────────────────
   build:
@@ -87,6 +137,36 @@ jobs:
 
       - name: Test
         run: cargo nextest run --workspace --locked
+
+  # ── Validator benchmark guardrail ──────────────────────────────────────
+  validator-benchmark:
+    name: Validator Benchmark (${{ matrix.os }})
+    needs: [fast-gate]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            tolerance-ratio: "0.10"
+          - os: macos-latest
+            tolerance-ratio: "0.15"
+          - os: windows-latest
+            tolerance-ratio: "0.20"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/setup-rust
+        with:
+          cache-key: ci-validator-benchmark-${{ matrix.os }}
+
+      - name: Run validator benchmark guardrail
+        env:
+          ZPL_BENCH_ITERS: "100"
+          ZPL_BENCH_TOLERANCE_RATIO: ${{ matrix.tolerance-ratio }}
+        run: node scripts/check-validator-benchmark.mjs
 
   # ── Spec-compiler: validate spec files ────────────────────────────────
   spec-check:
@@ -206,6 +286,10 @@ jobs:
         working-directory: packages/ts/print
         run: |
           node --input-type=module -e "import { canBindLocalTcp } from './dist/test/network-availability.js'; const ok = await canBindLocalTcp(); if (!ok) { console.error('Local TCP bind unavailable; integration tests would be skipped.'); process.exit(1); } console.log('Local TCP bind available for integration tests.');"
+
+      - name: Contract fixture conformance tests (TS print)
+        working-directory: packages/ts/print
+        run: node --test dist/test/status.test.js dist/test/print.test.js dist/test/batch.test.js
 
       - name: Test
         working-directory: packages/ts/print

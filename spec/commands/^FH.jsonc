@@ -16,7 +16,7 @@
           "doc": "Hexadecimal escape character used in subsequent ^FD data. Default is underscore (_)." }
       ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^FH should precede field data (^FD/^FV)", "severity": "info" }
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^FH should precede field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Enable hexadecimal escape indicator for field data (default '_')."
     }

@@ -1,11 +1,15 @@
 import { describe, it } from "node:test";
 import { strict as assert } from "node:assert";
 import net from "node:net";
-import { print, printBatch, PrintError, TcpPrinter } from "../index.js";
+import { print, printBatch, PrintError, TcpPrinter, tcpQuery } from "../index.js";
 import { createMockTcpServer } from "./mock-tcp-server.js";
 import { canBindLocalTcp } from "./network-availability.js";
+import { loadPrintStatusFramingFixture } from "./contracts-fixture.js";
 
 const NETWORK_INTEGRATION_AVAILABLE = await canBindLocalTcp();
+const fixture = loadPrintStatusFramingFixture();
+const hsExpectedFrameCount =
+  fixture.commands.find((entry) => entry.command === "~HS")?.expected_frame_count ?? 3;
 
 async function waitFor(
   predicate: () => boolean,
@@ -72,11 +76,7 @@ describe("TcpPrinter/printBatch resilience", {
           socket.end();
           return;
         }
-        const frames = [
-          "\x02030,0,0,1245,000,0,0,0,000,0,0,0\x03\r\n",
-          "\x02000,0,0,0,0,2,4,0,00000000,1,000\x03\r\n",
-          "\x021234,0\x03\r\n",
-        ];
+        const frames = fixture.host_status.healthy_raw.split("\x03").filter(Boolean).map((f) => `${f}\x03`);
         socket.write(frames[0]);
         await new Promise((resolve) => setTimeout(resolve, 325));
         socket.write(frames[1]);
@@ -109,6 +109,41 @@ describe("TcpPrinter/printBatch resilience", {
       assert.equal(status.labelsRemaining, 0);
     } finally {
       await printer.close();
+      await new Promise<void>((resolve) => server.close(() => resolve()));
+    }
+  });
+
+  it("tcpQuery rejects framed ~HS responses with wrong frame count", async () => {
+    const server = net.createServer((socket) => {
+      socket.on("data", (data) => {
+        const payload = data.toString("utf-8");
+        if (!payload.includes("~HS")) {
+          socket.end();
+          return;
+        }
+        socket.write(fixture.host_status.truncated_raw);
+        socket.end();
+      });
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      server.once("error", reject);
+      server.listen(0, "127.0.0.1", () => resolve());
+    });
+    const address = server.address();
+    if (!address || typeof address === "string") {
+      server.close();
+      throw new Error("Failed to bind test server");
+    }
+
+    try {
+      await assert.rejects(
+        () => tcpQuery("127.0.0.1", address.port, "~HS", 1000),
+        (err: unknown) =>
+          err instanceof PrintError &&
+          err.message.includes(`returned 2 frames (expected ${hsExpectedFrameCount})`)
+      );
+    } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
   });
@@ -161,6 +196,27 @@ describe("TcpPrinter/printBatch resilience", {
       assert.equal(result.sent, 1);
       assert.equal(result.total, 2);
       assert.equal(result.error?.message, "Operation aborted");
+    } finally {
+      await mock.close();
+    }
+  });
+
+  it("printBatch returns abort error when progress callback aborts", async () => {
+    const mock = await createMockTcpServer();
+    try {
+      const result = await printBatch(
+        ["^XA^FD1^FS^XZ", "^XA^FD2^FS^XZ"],
+        { host: "127.0.0.1", port: mock.port, timeout: 500, maxRetries: 0 },
+        undefined,
+        (progress) => {
+          if (progress.phase === "queued") return;
+          if (progress.sent >= 1) return false;
+        },
+      );
+      assert.equal(result.sent, 1);
+      assert.equal(result.total, 2);
+      assert.equal(result.error?.message, "Operation aborted");
+      assert.equal(result.error?.index, 1);
     } finally {
       await mock.close();
     }

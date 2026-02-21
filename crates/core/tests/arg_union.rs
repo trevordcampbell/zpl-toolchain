@@ -77,6 +77,7 @@ fn arg_union_accepts_either_shape() {
             constraints: None,
             constraint_defaults: None,
             effects: None,
+            structural_rules: None,
             plane: None,
             scope: None,
             placement: None,

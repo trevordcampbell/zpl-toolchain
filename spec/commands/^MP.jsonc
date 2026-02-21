@@ -20,7 +20,7 @@
           "kind": "note",
           "expr": "when:arg:aEmpty",
           "severity": "info",
-          "message": "A value must be entered or the command is ignored."
+          "audience": "contextual", "message": "A value must be entered or the command is ignored."
         },
         {
           "kind": "note",

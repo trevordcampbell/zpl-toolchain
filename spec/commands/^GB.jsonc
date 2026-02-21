@@ -22,7 +22,7 @@
           "doc": "Degree of corner rounding. 0=no rounding (square corners) to 8=heaviest rounding." }
       ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FS", "message": "^GB should appear before its ^FS", "severity": "info" }
+        { "kind": "order", "expr": "before:^FS", "message": "^GB should appear before its ^FS", "severity": "info", "scope": "field"}
       ],
       "docs": "Draw a graphic box/line with width, height, border thickness, color, and corner rounding (0=none to 8=heaviest)."
     }

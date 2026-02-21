@@ -22,8 +22,8 @@
           "doc": "Whether to print the interpretation line above the barcode" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BP to set module width", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BP should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BP to set module width", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BP should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print a Plessey barcode, a pulse-width modulated continuous non-self-checking symbology.",
       "fieldDataRules": { "characterSet": "0-9A-F", "notes": "Hexadecimal digits (0-9, A-F) per Plessey barcode standard; ZPL guide does not explicitly restrict character set but Plessey natively supports hex encoding" }

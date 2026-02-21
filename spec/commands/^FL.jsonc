@@ -20,7 +20,7 @@
       ],
       "effects": { "sets": ["font.linking"] },
       "constraints": [
-        { "kind": "note", "message": "A font can have up to five fonts linked to it. Use ^JUS to permanently save. Linking remains until broken or printer power off." }
+        { "kind": "note", "audience": "contextual", "message": "A font can have up to five fonts linked to it. Use ^JUS to permanently save. Linking remains until broken or printer power off." }
       ],
       "docs": "Links TrueType fonts together so that if the base font lacks a glyph, the printer looks to linked fonts for the character."
     }

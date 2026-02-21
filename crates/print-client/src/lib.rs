@@ -6,6 +6,7 @@ mod addr;
 mod config;
 mod error;
 mod frame;
+mod job;
 mod retry;
 #[cfg(feature = "serial")]
 mod serial;
@@ -20,6 +21,7 @@ pub use addr::resolve_printer_addr;
 pub use config::{BatchOptions, PrinterConfig, PrinterTimeouts, RetryConfig};
 pub use error::{PrintError, PrinterErrorKind};
 pub use frame::{expected_frame_count, read_frames};
+pub use job::{JobId, JobPhase, create_job_id};
 pub use retry::{ReconnectRetryPrinter, RetryPrinter};
 #[cfg(feature = "serial")]
 pub use serial::{
@@ -92,6 +94,10 @@ pub struct BatchProgress {
     pub total: usize,
     /// Latest printer status (if polling was enabled).
     pub status: Option<HostStatus>,
+    /// Current lifecycle phase of this batch.
+    pub phase: JobPhase,
+    /// Job ID for correlation with completion tracking.
+    pub job_id: JobId,
 }
 
 /// Result of a batch print operation.
@@ -102,6 +108,8 @@ pub struct BatchResult {
     pub sent: usize,
     /// Total labels in the batch.
     pub total: usize,
+    /// Job ID for correlation with completion tracking.
+    pub job_id: JobId,
 }
 
 /// Send a batch of labels with optional progress reporting.
@@ -117,24 +125,80 @@ where
     P: Printer,
     F: FnMut(BatchProgress) -> ControlFlow<(), ()>,
 {
+    let job_id = create_job_id();
     let total = labels.len();
-    for (i, label) in labels.iter().enumerate() {
-        printer.send_raw(label.as_ref())?;
+    let queued = BatchProgress {
+        sent: 0,
+        total,
+        status: None,
+        phase: JobPhase::Queued,
+        job_id: job_id.clone(),
+    };
+    if let ControlFlow::Break(()) = on_progress(queued) {
+        let aborted = BatchProgress {
+            sent: 0,
+            total,
+            status: None,
+            phase: JobPhase::Aborted,
+            job_id: job_id.clone(),
+        };
+        let _ = on_progress(aborted);
+        return Ok(BatchResult {
+            sent: 0,
+            total,
+            job_id,
+        });
+    }
 
-        let status = None; // Status polling requires send_batch_with_status()
+    for (i, label) in labels.iter().enumerate() {
+        let phase = if i + 1 < total {
+            JobPhase::Sending
+        } else {
+            JobPhase::Sent
+        };
+
+        if let Err(err) = printer.send_raw(label.as_ref()) {
+            let failed = BatchProgress {
+                sent: i,
+                total,
+                status: None,
+                phase: JobPhase::Failed,
+                job_id: job_id.clone(),
+            };
+            let _ = on_progress(failed);
+            return Err(err);
+        }
 
         let progress = BatchProgress {
             sent: i + 1,
             total,
-            status,
+            status: None,
+            phase,
+            job_id: job_id.clone(),
         };
 
         if let ControlFlow::Break(()) = on_progress(progress) {
-            return Ok(BatchResult { sent: i + 1, total });
+            let aborted = BatchProgress {
+                sent: i + 1,
+                total,
+                status: None,
+                phase: JobPhase::Aborted,
+                job_id: job_id.clone(),
+            };
+            let _ = on_progress(aborted);
+            return Ok(BatchResult {
+                sent: i + 1,
+                total,
+                job_id: job_id.clone(),
+            });
         }
     }
 
-    Ok(BatchResult { sent: total, total })
+    Ok(BatchResult {
+        sent: total,
+        total,
+        job_id,
+    })
 }
 
 /// Send a batch of labels with status polling (requires bidirectional transport).
@@ -148,9 +212,49 @@ where
     P: StatusQuery,
     F: FnMut(BatchProgress) -> ControlFlow<(), ()>,
 {
+    let job_id = create_job_id();
     let total = labels.len();
+    let queued = BatchProgress {
+        sent: 0,
+        total,
+        status: None,
+        phase: JobPhase::Queued,
+        job_id: job_id.clone(),
+    };
+    if let ControlFlow::Break(()) = on_progress(queued) {
+        let aborted = BatchProgress {
+            sent: 0,
+            total,
+            status: None,
+            phase: JobPhase::Aborted,
+            job_id: job_id.clone(),
+        };
+        let _ = on_progress(aborted);
+        return Ok(BatchResult {
+            sent: 0,
+            total,
+            job_id,
+        });
+    }
+
     for (i, label) in labels.iter().enumerate() {
-        printer.send_raw(label.as_ref())?;
+        let phase = if i + 1 < total {
+            JobPhase::Sending
+        } else {
+            JobPhase::Sent
+        };
+
+        if let Err(err) = printer.send_raw(label.as_ref()) {
+            let failed = BatchProgress {
+                sent: i,
+                total,
+                status: None,
+                phase: JobPhase::Failed,
+                job_id: job_id.clone(),
+            };
+            let _ = on_progress(failed);
+            return Err(err);
+        }
 
         let status = if let Some(interval) = opts.status_interval {
             if (i + 1) % interval.get() == 0 {
@@ -165,15 +269,33 @@ where
         let progress = BatchProgress {
             sent: i + 1,
             total,
-            status,
+            status: status.clone(),
+            phase,
+            job_id: job_id.clone(),
         };
 
         if let ControlFlow::Break(()) = on_progress(progress) {
-            return Ok(BatchResult { sent: i + 1, total });
+            let aborted = BatchProgress {
+                sent: i + 1,
+                total,
+                status: status.clone(),
+                phase: JobPhase::Aborted,
+                job_id: job_id.clone(),
+            };
+            let _ = on_progress(aborted);
+            return Ok(BatchResult {
+                sent: i + 1,
+                total,
+                job_id: job_id.clone(),
+            });
         }
     }
 
-    Ok(BatchResult { sent: total, total })
+    Ok(BatchResult {
+        sent: total,
+        total,
+        job_id,
+    })
 }
 
 // ── Completion polling ─────────────────────────────────────────────────
@@ -247,6 +369,7 @@ mod tests {
         assert_eq!(result.sent, 3);
         assert_eq!(result.total, 3);
         assert_eq!(printer.sent.len(), 3);
+        assert!(result.job_id.as_str().starts_with("job-"));
     }
 
     #[test]
@@ -259,6 +382,7 @@ mod tests {
         let result = send_batch(&mut printer, &labels, |_| ControlFlow::Continue(())).unwrap();
         assert_eq!(result.sent, 0);
         assert_eq!(result.total, 0);
+        assert!(result.job_id.as_str().starts_with("job-"));
     }
 
     #[test]
@@ -278,6 +402,7 @@ mod tests {
         .unwrap();
         assert_eq!(result.sent, 2);
         assert_eq!(result.total, 5);
+        assert!(result.job_id.as_str().starts_with("job-"));
     }
 
     #[test]
@@ -353,14 +478,18 @@ mod tests {
         // Status polled after label 2 and 4 (every 2 labels)
         assert_eq!(printer.status_queries, 2);
 
-        // Labels at sent=2 and sent=4 should have status
-        assert!(progresses[1].status.is_some()); // sent=2
-        assert!(progresses[3].status.is_some()); // sent=4
+        // First callback is queued sentinel.
+        assert_eq!(progresses[0].sent, 0);
+        assert_eq!(progresses[0].phase, JobPhase::Queued);
 
-        // Labels at sent=1, 3, 5 should NOT have status
-        assert!(progresses[0].status.is_none()); // sent=1
-        assert!(progresses[2].status.is_none()); // sent=3
-        assert!(progresses[4].status.is_none()); // sent=5
+        // Labels at sent=2 and sent=4 should have status.
+        assert!(progresses[2].status.is_some()); // sent=2
+        assert!(progresses[4].status.is_some()); // sent=4
+
+        // Labels at sent=1, 3, 5 should NOT have status.
+        assert!(progresses[1].status.is_none()); // sent=1
+        assert!(progresses[3].status.is_none()); // sent=3
+        assert!(progresses[5].status.is_none()); // sent=5
     }
 
     #[test]
@@ -413,6 +542,54 @@ mod tests {
         assert_eq!(result.total, 5);
         assert_eq!(printer.sent.len(), 3);
         assert_eq!(printer.status_queries, 1); // polled after label 2 only
+    }
+
+    #[test]
+    fn batch_emits_queued_and_aborted_phases() {
+        let mut printer = MockBatchPrinter {
+            sent: Vec::new(),
+            fail_on: None,
+        };
+        let labels = vec!["one", "two", "three"];
+        let mut phases = Vec::new();
+        let result = send_batch(&mut printer, &labels, |progress| {
+            phases.push(progress.phase);
+            if progress.sent >= 1 {
+                ControlFlow::Break(())
+            } else {
+                ControlFlow::Continue(())
+            }
+        })
+        .unwrap();
+
+        assert_eq!(result.sent, 1);
+        assert_eq!(phases[0], JobPhase::Queued);
+        assert!(phases.contains(&JobPhase::Sending) || phases.contains(&JobPhase::Sent));
+        assert_eq!(
+            *phases.last().expect("at least one phase"),
+            JobPhase::Aborted
+        );
+    }
+
+    #[test]
+    fn batch_emits_failed_phase_before_error() {
+        let mut printer = MockBatchPrinter {
+            sent: Vec::new(),
+            fail_on: Some(0),
+        };
+        let labels = vec!["fail"];
+        let mut phases = Vec::new();
+        let result = send_batch(&mut printer, &labels, |progress| {
+            phases.push(progress.phase);
+            ControlFlow::Continue(())
+        });
+
+        assert!(result.is_err());
+        assert_eq!(phases[0], JobPhase::Queued);
+        assert_eq!(
+            *phases.last().expect("at least one phase"),
+            JobPhase::Failed
+        );
     }
 
     #[test]

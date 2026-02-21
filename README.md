@@ -32,6 +32,7 @@ ZPL II is the standard language for Zebra thermal label printers, used across lo
 ### Validation
 
 - **Table-driven validator** — arity, types, ranges, enums, typed cross-command state defaults (`defaultFrom` + `defaultFromStateKey`), constraint DSL (`requires`, `incompatible`, `order`, `emptyData`), profile-aware bounds checking
+- **Schema-driven structural semantics** — `structuralRules` + generated `structuralRuleIndex` drive duplicate field numbers, position bounds, font/media checks, and `^GF` semantic preflight without command-code branching
 - **Preflight diagnostics** — graphics bounds (`^GF`), memory estimation, missing explicit dimensions, and estimated object overflow checks for text/barcodes — catch layout issues before printing
 - **Barcode data validation** — field data checked against barcode symbology rules (Code 128, QR, EAN/UPC, etc.)
 
@@ -52,9 +53,10 @@ ZPL II is the standard language for Zebra thermal label printers, used across lo
 
 ### Developer Experience
 
-- **CLI** — `parse`, `syntax-check` (`check` alias), `lint` (`validate` alias), `format`, `print`, `explain`, `doctor` with `--output pretty|json` auto-detection
+- **CLI** — `parse`, `syntax-check` (`check` alias), `lint` (`validate` alias), `format`, `print`, `explain`, `doctor` with `--output pretty|json|sarif` auto-detection
 - **VS Code extension** — syntax highlighting, diagnostics, formatting, hover docs, and diagnostic explain actions in VS Code-family editors (see `docs/VSCODE_EXTENSION.md`)
 - **Language bindings** — unified API across WASM, Python, C FFI, Go, and .NET
+- **CI perf guardrail** — validator benchmark regression gate via `scripts/check-validator-benchmark.mjs`
 - **Zero clippy warnings, 465+ passing tests** — parser, validator, emitter, print client, preflight, batch API, browser SDK, and more
 
 ---
@@ -149,7 +151,8 @@ COMMANDS:
   doctor         Run environment/configuration diagnostics
 
 GLOBAL OPTIONS:
-  --output <pretty|json>   Output format (default: auto-detect TTY)
+  --output <pretty|json|sarif>   Output format (default: auto-detect TTY)
+                                 sarif = SARIF 2.1.0 for CI/tooling (e.g. GitHub Code Scanning)
 ```
 
 `parse`, `syntax-check`, `lint`, and `format` accept `-` as the file path to read ZPL from stdin.
@@ -235,6 +238,9 @@ zpl parse label.zpl
 
 # Lint with printer profile
 zpl lint label.zpl --profile profiles/zebra-generic-203.json
+
+# SARIF output for CI (GitHub Code Scanning, etc.)
+zpl lint label.zpl --output sarif > results.sarif
 
 # Auto-format in place
 zpl format label.zpl --write
@@ -374,6 +380,7 @@ zpl-toolchain/
     core/              Parser, validator, emitter, AST
     cli/               CLI (parse, syntax-check, lint, format, print, explain)
     print-client/      TCP, USB, serial print client with retry and batch
+    jsonc-strip/       Shared JSONC comment stripping utility
     diagnostics/       46 diagnostic codes (auto-generated from spec)
     spec-tables/       Shared types (CommandEntry, Arg, Constraint, etc.)
     spec-compiler/     Spec compiler (validate specs → generate tables)
@@ -393,6 +400,7 @@ zpl-toolchain/
     commands/          216 per-command JSONC spec files
     schema/            JSONC schema + profile schema
   profiles/            11 shipped printer profiles
+  contracts/           Cross-binding parity fixtures and contracts
   samples/             Sample ZPL label files
   docs/                Guides, references, ADRs
 ```
@@ -422,6 +430,7 @@ cargo run -p zpl_toolchain_spec_compiler -- build --spec-dir spec --out-dir gene
 | [Barcode Data Rules](docs/BARCODE_DATA_RULES.md) | Barcode field data validation |
 | [State Map](docs/STATE_MAP.md) | Cross-command state tracking |
 | [Roadmap](docs/ROADMAP.md) | Long-term vision, phases, and priorities |
+| [Compatibility Policy](docs/COMPATIBILITY_POLICY.md) | Compatibility, deprecation, and conformance governance |
 | [VS Code Extension](docs/VSCODE_EXTENSION.md) | Extension setup, usage, and packaging |
 | [Release Process](docs/RELEASE.md) | Automated release workflow and publishing |
 | [Homebrew](docs/HOMEBREW.md) | Install via Homebrew, formula update guide |

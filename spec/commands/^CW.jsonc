@@ -24,6 +24,9 @@
           "doc": "Font file extension (typically FNT or TTF)." }
       ],
       "effects": { "sets": ["font.identifierMap"] },
+      "structuralRules": [
+        { "kind": "fontReference", "action": "register", "argIndex": 0 }
+      ],
       "constraints": [
         {
           "kind": "note",

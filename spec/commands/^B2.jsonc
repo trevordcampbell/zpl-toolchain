@@ -24,8 +24,8 @@
           "doc": "Whether to use character count placeholder for variable-length data" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^B2 to set module width", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^B2 should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^B2 to set module width", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^B2 should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print an Interleaved 2 of 5 barcode, a high-density self-checking continuous numeric symbology.",
       "fieldDataRules": { "characterSet": "0-9", "lengthParity": "even", "notes": "Even digit count required; printer auto-adds leading 0 if odd" }

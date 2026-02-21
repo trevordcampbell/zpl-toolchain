@@ -30,6 +30,9 @@
           "doc": "Prepeel select. Y = enable prepeel, N = disable prepeel. Not supported by Link-OS printers." }
       ],
       "effects": { "sets": ["print.mode"] },
+      "structuralRules": [
+        { "kind": "mediaModes", "target": "supportedModes", "argIndex": 0 }
+      ],
       "constraints": [
         {
           "kind": "note",

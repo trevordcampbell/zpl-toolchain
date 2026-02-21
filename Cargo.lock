@@ -1151,6 +1151,7 @@ version = "0.1.9"
 dependencies = [
  "serde",
  "serde_json",
+ "zpl_toolchain_jsonc_strip",
 ]
 
 [[package]]
@@ -1161,6 +1162,10 @@ dependencies = [
  "serde_json",
  "zpl_toolchain_bindings_common",
 ]
+
+[[package]]
+name = "zpl_toolchain_jsonc_strip"
+version = "0.1.0"
 
 [[package]]
 name = "zpl_toolchain_print_client"
@@ -1203,6 +1208,7 @@ dependencies = [
  "serde",
  "serde_json",
  "walkdir",
+ "zpl_toolchain_jsonc_strip",
  "zpl_toolchain_spec_tables",
 ]
 

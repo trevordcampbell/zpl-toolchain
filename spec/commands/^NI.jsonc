@@ -15,7 +15,7 @@
           "doc": "Network ID number assigned, must be a three-digit entry. Values: 001 to 999. Default: 000 (none)." }
       ],
       "constraints": [
-        { "kind": "note", "message": "The last network ID number set is the one recognized by the system. Used only with RS-485 printer communications." }
+        { "kind": "note", "audience": "contextual", "message": "The last network ID number set is the one recognized by the system. Used only with RS-485 printer communications." }
       ],
       "docs": "Assigns a network ID number to the printer for use in a network."
     }

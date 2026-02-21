@@ -4,6 +4,7 @@ import * as vscode from "vscode";
 import { getCoreApi, type CoreDiagnostic } from "./coreApi";
 import { resolveArgIndexWithSignature } from "./completionArgs";
 import { partitionCoreIssues } from "./diagnosticRouting";
+import { buildSuggestedEditAction } from "./suggestedEdits";
 import {
   loadDocsBundle,
   type CommandDoc,
@@ -44,6 +45,8 @@ type CompletionContextState = {
   inLabel: boolean;
   inField: boolean;
 };
+
+type DiagnosticWithData = vscode.Diagnostic & { data?: unknown };
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   const diagnostics = vscode.languages.createDiagnosticCollection(DIAGNOSTIC_SOURCE);
@@ -366,16 +369,20 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   const codeActionProvider: vscode.CodeActionProvider = {
     provideCodeActions: (
-      _document,
+      document,
       _range,
       context,
       _token
-    ): vscode.ProviderResult<vscode.Command[]> => {
-      const actions: vscode.Command[] = [];
+    ): vscode.ProviderResult<(vscode.CodeAction | vscode.Command)[]> => {
+      const actions: (vscode.CodeAction | vscode.Command)[] = [];
       for (const diagnostic of context.diagnostics) {
         const id = typeof diagnostic.code === "string" ? diagnostic.code : undefined;
         if (!id) {
           continue;
+        }
+        const suggestedEdit = buildSuggestedEditAction(document, diagnostic);
+        if (suggestedEdit) {
+          actions.push(suggestedEdit);
         }
         actions.push({
           title: `Explain ${id}`,
@@ -491,6 +498,7 @@ function toVsDiagnostics(
     const diagnostic = new vscode.Diagnostic(range, issue.message, mapSeverity(issue.severity));
     diagnostic.source = DIAGNOSTIC_SOURCE;
     diagnostic.code = issue.id;
+    (diagnostic as DiagnosticWithData).data = issue.context;
     return diagnostic;
   });
 }

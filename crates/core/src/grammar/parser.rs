@@ -183,7 +183,14 @@ impl<'a> Parser<'a> {
                         format!("unterminated raw data for {} at end of input", &command),
                         Some(span),
                     )
-                    .with_context(ctx!("command" => command.clone(), "expected" => "^FS")),
+                    .with_context(ctx!(
+                        "command" => command.clone(),
+                        "expected" => "^FS",
+                        "suggested_edit.kind" => "insert",
+                        "suggested_edit.text" => "^FS",
+                        "suggested_edit.position" => "range.end",
+                        "suggested_edit.title" => "Insert ^FS (field separator)"
+                    )),
                 );
                 let data = self.input[content_start..].to_string();
                 if !data.is_empty() {
@@ -212,7 +219,13 @@ impl<'a> Parser<'a> {
                         "missing field separator (^FS) before end of input",
                         Some(Span::new(content_start, self.input.len())),
                     )
-                    .with_context(ctx!("expected" => "^FS")),
+                    .with_context(ctx!(
+                        "expected" => "^FS",
+                        "suggested_edit.kind" => "insert",
+                        "suggested_edit.text" => "^FS",
+                        "suggested_edit.position" => "range.end",
+                        "suggested_edit.title" => "Insert ^FS (field separator)"
+                    )),
                 );
             }
             Mode::Normal => {} // nothing to clean up
@@ -225,7 +238,13 @@ impl<'a> Parser<'a> {
                     "missing terminator (^XZ)",
                     Some(Span::new(self.input.len(), self.input.len())),
                 )
-                .with_context(ctx!("expected" => "^XZ")),
+                .with_context(ctx!(
+                    "expected" => "^XZ",
+                    "suggested_edit.kind" => "insert",
+                    "suggested_edit.text" => "^XZ",
+                    "suggested_edit.position" => "document.end",
+                    "suggested_edit.title" => "Insert ^XZ (label terminator)"
+                )),
             );
             self.labels.push(Label {
                 nodes: std::mem::take(&mut self.nodes),
@@ -574,7 +593,13 @@ impl<'a> Parser<'a> {
                         "missing field separator (^FS) before ^XZ",
                         Some(cmd_span),
                     )
-                    .with_context(ctx!("expected" => "^FS")),
+                    .with_context(ctx!(
+                        "expected" => "^FS",
+                        "suggested_edit.kind" => "insert",
+                        "suggested_edit.text" => "^FS",
+                        "suggested_edit.position" => "range.start",
+                        "suggested_edit.title" => "Insert ^FS (field separator)"
+                    )),
                 );
                 self.mode = Mode::Normal;
                 self.fh_active = false;

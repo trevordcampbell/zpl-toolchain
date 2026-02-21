@@ -24,8 +24,8 @@
           "doc": "Whether to include the check digit in the interpretation line" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BM to set module width", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BM should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BM to set module width", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BM should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print an MSI barcode, a pulse-width modulated continuous non-self-checking symbology.",
       "fieldDataRules": { "characterSet": "0-9", "minLength": 1, "maxLength": 14, "notes": "Numeric only; max 14 digits when check digit e=B/C/D, max 13 when e=A (no check digit)" }

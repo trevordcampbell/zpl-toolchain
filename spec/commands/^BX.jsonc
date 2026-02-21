@@ -28,7 +28,7 @@
           "doc": "Symbol aspect ratio (1=square, 2=rectangular)" }
       ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BX should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BX should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print a Data Matrix symbol (height, quality, rows/cols, format, and more).",
       "fieldDataRules": { "maxLength": 3072, "notes": "Quality 0-140: max 596 chars; character set by format ID (f): 1=numeric+space, 2=uppercase+space, 3=alphanumeric+punctuation, 4=alphanumeric+space, 5=full 7-bit ASCII, 6=full 8-bit ISO (default). Quality 200 (ECC 200): max 3072 bytes; escape sequences via ~ or _ (param g) for control chars and FNC codes" }

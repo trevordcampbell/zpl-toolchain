@@ -18,7 +18,7 @@
           "doc": "Magnification factor on the y-axis." }
       ],
       "constraints": [
-        { "kind": "order", "expr": "before:^FS", "message": "^XG should appear before its ^FS", "severity": "info" }
+        { "kind": "order", "expr": "before:^FS", "message": "^XG should appear before its ^FS", "severity": "info", "scope": "field"}
       ],
       "docs": "Recalls one or more stored graphic images for printing. An image can be recalled and resized as many times as needed in each format. Uses magnification factors to scale the image."
     }

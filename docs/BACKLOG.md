@@ -2,7 +2,7 @@
 
 > Single source of truth for tactical work items. For the strategic roadmap (phases, priorities, and architectural decisions), see [ROADMAP.md](ROADMAP.md). Original plans archived at `docs/research/archive/`.
 >
-> Last updated: 2026-02-16
+> Last updated: 2026-02-20
 
 ---
 
@@ -119,7 +119,7 @@ Before implementation work starts in `crates/renderer/`, complete these research
 
 #### Deferred (Tier C — Lower Priority or High Effort)
 
-- [ ] **Validator module split** (1,400 lines → 8 sub-modules) — high effort, medium benefit; do after ValidationContext/splits settle
+- [x] **Validator module split** — `validate/mod.rs` is now a thin orchestrator over extracted modules (`args`, `constraints`, `context`, `state`, `semantic`, `preflight`) with index/planning-driven dispatch.
 - [ ] **`Cow<'a, str>` in AST nodes** — high churn (~100 sites), limited benefit since FFI serialization needs owned strings
 - [ ] **JSON Schema validation in spec-compiler** — needs new dependency; serde + cross-field validation already catches issues. *Note:* A `crates/spec/` crate previously existed that embedded the schema via `include_str!("spec/schema/zpl-spec.schema.jsonc")` for this purpose. It was removed (unused, 9 lines) — if needed, the spec-compiler can `include_str!` the schema directly or read it from disk (it already reads spec files from disk). The schema file itself remains at `spec/schema/zpl-spec.schema.jsonc`.
 - [ ] **Parser `parse_command()` sub-module split** — moderate benefit but parser is well-structured
@@ -132,7 +132,7 @@ Before implementation work starts in `crates/renderer/`, complete these research
 - [x] **Homebrew formula** — `Formula/zpl-toolchain.rb` in-repo; `brew install --formula Formula/zpl-toolchain.rb`; docs in [HOMEBREW.md](HOMEBREW.md); macOS ARM64 and Linux x64 only (Intel Mac/Linux ARM64: use cargo install)
 - [x] **Homebrew tap CI automation** — release workflow now updates the configured formula path in the tap repo using release artifact checksums (`HOMEBREW_TAP_REPO` + `HOMEBREW_TAP_TOKEN`, optional `HOMEBREW_TAP_FORMULA_PATH`); idempotent (commits only when formula content changes)
 - [x] **CI optimization: Python runtime matrix split by trigger** — full 3.9-3.13 on push to main; reduced subset (3.9, 3.12, 3.13) on PRs to reduce cycle time
-- [x] **`zpl doctor` diagnostic command** — initial implementation ships table availability checks, profile validity checks, and optional TCP printer reachability diagnostics with pretty/JSON output
+- [x] **`zpl doctor` diagnostic command** — initial implementation ships table availability checks, profile validity checks, and optional TCP printer reachability diagnostics with pretty/JSON/SARIF output
 - [x] **`zpl check` / `zpl validate` command aliases** — added as visible aliases for `syntax-check` and `lint` to improve CLI discoverability without breaking existing commands
 - [x] **Python bindings: return native dicts** — parse/validate/print/query APIs now return native dict/list objects directly
 - [x] **`npx @zpl-toolchain/cli` wrapper** — npm package that downloads the matching pre-built release binary, caches it locally, and runs `zpl` without requiring Rust
@@ -217,6 +217,10 @@ Before implementation work starts in `crates/renderer/`, complete these research
 - [x] Document `^CI` variable-length remap limitation — documented in `^CI.jsonc` constraint note
 - [ ] Schema v2 refactor — normalized param schemas, command maps, structured effects, DSL-based constraints (see `docs/research/schema-v2-proposal.md`). *Deferred in ROADMAP.md — revisit when current schema becomes a bottleneck.*
 - [ ] Schema parity gaps — `argUnion` examples, richer constraints
+- [ ] **F06 (deferred): streaming parser/token iterator spike** — evaluate only if benchmark evidence (memory/throughput) shows parser architecture bottlenecks on target workloads. Capture required invariants up front: byte-accurate spans, prefix/delimiter mutation correctness, and parity with current diagnostics behavior.
+- [ ] **F11 (deferred): incremental editor parsing prototype** — evaluate only if measured extension/editor latency exceeds target thresholds on representative large files. Require objective before/after telemetry and correctness parity tests for diagnostics/ranges before considering rollout.
+- [ ] **F12 (deferred): streaming mode for very large corpus pipelines** — revisit when real batch workloads exceed current parse+validate throughput/memory envelope. Scope as a pipeline mode (input iteration + bounded-memory processing), not a default-path rewrite.
+- [ ] **F14 (deferred): spooler/backpressure design pass** — revisit when production demand requires queue fairness, backpressure, cancellation semantics, and delivery-state observability beyond current batch/retry APIs. Start with a minimal contract (job states, queue limits, retry policy hooks) before any implementation.
 - [ ] **Preflight ZPL2311 precision upgrade (much later)** — current object-bounds check is intentionally heuristic (`validate_object_bounds()` estimates text width from char count/font defaults and barcode width from generic module heuristics). Revisit with a spec-driven estimator layer (per-symbology barcode sizing + device-font metrics table + orientation-aware geometry) to reduce false positives/negatives while staying renderer-independent.
 - ~~Query/response schemas for tilde commands (`~HM`, `~HS`, `~HQES`)~~ — *Dropped per ROADMAP.md. The print client (Phase 5a) can send `~HS` and parse the response without a formal schema system.*
 - [ ] Signature builder for exact `Format:` string emission

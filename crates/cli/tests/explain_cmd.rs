@@ -50,3 +50,21 @@ fn explain_pretty_shows_human_readable_text() {
         "unexpected output: {stdout}"
     );
 }
+
+#[test]
+fn explain_sarif_output_shape() {
+    let output = zpl_cmd()
+        .args(["explain", "ZPL1201", "--output", "sarif"])
+        .output()
+        .expect("run explain command");
+
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let sarif: serde_json::Value = serde_json::from_str(&stdout).expect("valid sarif");
+    assert_eq!(sarif["version"].as_str(), Some("2.1.0"));
+    assert_eq!(
+        sarif["runs"][0]["tool"]["driver"]["name"].as_str(),
+        Some("zpl-toolchain-explain")
+    );
+    assert!(sarif["runs"][0]["results"].is_array());
+}

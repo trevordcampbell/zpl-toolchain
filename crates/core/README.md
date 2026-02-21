@@ -28,8 +28,9 @@ Part of the [zpl-toolchain](https://github.com/trevordcampbell/zpl-toolchain) pr
   - Numeric/string constraints, enums, conditional range.
   - Rounding policy (toMultiple) and profile gates (e.g., `^PW` width, `^LL` height).
   - Constraints: requires, incompatible, order (before:/after:), emptyData, note.
-- Spec-driven structural validation via `FieldTracker` using `CommandEntry` flags (`opens_field`, `closes_field`, `requires_field`, etc.).
-- Semantic validation: duplicate `^FN`, position bounds, font references, `^FH` hex escapes (configurable indicator via `hex_escape` module), `^GF` data length (with multi-line `RawData` continuation support), barcode `^FD` data format validation (character set and length/parity rules via `fieldDataRules`), and more.
+- Spec-driven structural validation via generated `structuralRuleIndex` trigger memberships (resolved through validator planning context / structural flags).
+- Semantic validation is schema-driven via `structuralRules` payloads (duplicate `^FN`, position bounds, font/media checks, `^GF` length/preflight), plus `^FH` hex escapes (configurable indicator via `hex_escape` module) and barcode `^FD` data format validation (character set and length/parity rules via `fieldDataRules`).
+- Validator internals are split into focused modules (`args`, `constraints`, `semantic`, `preflight`, `context`, `state`) with `validate/mod.rs` as the orchestration layer.
 - Device-level state tracking: `DeviceState` with unit system (`^MU`) persisting across labels; `convert_to_dots()` for unit-aware range validation.
 - Dynamic prefix/delimiter support: `^CC`/`~CC`/`^CT`/`~CT` prefix changes and `^CD`/`~CD` delimiter changes tracked at both lexer and parser levels (lexer re-tokenizes with new delimiter character); commands with non-comma signature joiners (`:`, `.`) correctly preserved.
 - Spec-driven `^A` split rule via `SplitRule` struct (replaces hardcoded font+orientation splitting).

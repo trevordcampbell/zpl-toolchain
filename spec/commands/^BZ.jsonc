@@ -22,8 +22,8 @@
           "doc": "Postal code format (0=Postnet, 1=Planet Code, 2=reserved, 3=USPS Intelligent Mail)" }
       ],
       "constraints": [
-        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BZ to set module width", "severity": "warn" },
-        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BZ should precede its field data (^FD/^FV)", "severity": "info" }
+        { "kind": "requires", "expr": "^BY", "message": "^BY should precede ^BZ to set module width", "severity": "warn", "scope": "label"},
+        { "kind": "order", "expr": "before:^FD|^FV", "message": "^BZ should precede its field data (^FD/^FV)", "severity": "info", "scope": "field"}
       ],
       "docs": "Print a POSTAL barcode (Postnet, Planet, or USPS Intelligent Mail) for automated mail handling.",
       "fieldDataRules": { "characterSet": "0-9", "maxLength": 31, "notes": "Numeric digits only. Length depends on postal type (t param): Postnet (t=0): 5, 9, or 11 digits; Planet Code (t=1): 11 or 13 digits; USPS Intelligent Mail (t=3): 20, 25, 29, or 31 digits. Check digit auto-calculated where applicable" }

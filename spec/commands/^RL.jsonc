@@ -28,7 +28,7 @@
           "doc": "For mode M: USER memory bank function (U=unlock, L=lock, O=permanently unlock, P=permanently lock)." }
       ],
       "constraints": [
-        { "kind": "note", "message": "Three distinct sub-formats: ^RLP (lock all, no params), ^RLB,s,n (lock sections), ^RLM,k,a,e,u (lock/unlock banks). The mode letter is concatenated directly to ^RL without a comma. For lock/unlock (M mode), the access password must be set to non-default (not 00000000)." }
+        { "kind": "note", "audience": "contextual", "message": "Three distinct sub-formats: ^RLP (lock all, no params), ^RLB,s,n (lock sections), ^RLM,k,a,e,u (lock/unlock banks). The mode letter is concatenated directly to ^RL without a comma. For lock/unlock (M mode), the access password must be set to non-default (not 00000000)." }
       ],
       "docs": "Locks or unlocks RFID tag memory. Supports permanent lock of all memory (P), permanent lock of specified sections (B), and reversible lock/unlock of individual memory banks (M)."
     }

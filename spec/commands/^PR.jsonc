@@ -22,7 +22,7 @@
       ],
       "effects": { "sets": ["print.speed", "print.slewSpeed", "print.backfeedSpeed"] },
       "constraints": [
-        { "kind": "note", "message": "Speed values are capped by the printer's maximum capability. Letter aliases: A=2, B=3, C=4, D=6, E=8 ips." }
+        { "kind": "note", "audience": "contextual", "message": "Speed values are capped by the printer's maximum capability. Letter aliases: A=2, B=3, C=4, D=6, E=8 ips." }
       ],
       "docs": "Sets print, slew, and backfeed speeds. Setting persists until reissued or printer is powered off."
     }
